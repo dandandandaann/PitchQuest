@@ -10,7 +10,12 @@ export interface PitchData {
   cents: number;
 }
 
-export function usePitchDetection(audioContext: AudioContext | null) {
+interface UsePitchDetectionOptions {
+  audioContext: AudioContext | null;
+  transposeOffset?: number;
+}
+
+export function usePitchDetection({ audioContext, transposeOffset = 0 }: UsePitchDetectionOptions) {
   const [pitchData, setPitchData] = useState<PitchData | null>(null);
   const nodeRef = useRef<AudioWorkletNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -20,50 +25,75 @@ export function usePitchDetection(audioContext: AudioContext | null) {
   useEffect(() => {
     if (!audioContext) return;
 
+    let isMounted = true;
+
     const setup = async () => {
       // Load the processor. We'll put it in public/ for now to ensure Vite serves it directly.
       await audioContext.audioWorklet.addModule('/pitch-processor.js');
-      
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
-      
+
       const source = audioContext.createMediaStreamSource(stream);
       const node = new AudioWorkletNode(audioContext, 'pitch-processor');
       nodeRef.current = node;
 
       const detector = PitchDetector.forFloat32Array(2048);
-      
-      node.port.onmessage = (event) => {
+
+      const messageHandler = (event: MessageEvent) => {
+        if (!isMounted) return;
+
         const buffer = event.data;
         const [freq, clarity] = detector.findPitch(buffer, audioContext.sampleRate);
-        
+
         if (clarity > 0.9 && freq > 80 && freq < 1500) {
           const filteredFreq = medianFilter.current.add(freq);
-          const { noteName, cents } = frequencyToNote(filteredFreq);
+          const { noteName, cents } = frequencyToNote(filteredFreq, transposeOffset);
           const smoothedCents = Math.round(centsAverage.current.add(cents));
-          
-          setPitchData({ 
-            frequency: filteredFreq, 
-            clarity, 
-            noteName, 
-            cents: smoothedCents 
-          });
+
+          if (isMounted) {
+            setPitchData({
+              frequency: filteredFreq,
+              clarity,
+              noteName,
+              cents: smoothedCents
+            });
+          }
         } else {
-          setPitchData(null);
+          if (isMounted) {
+            setPitchData(null);
+          }
         }
       };
 
+      node.port.onmessage = messageHandler;
       source.connect(node);
       node.connect(audioContext.destination);
     };
 
     setup();
 
+    // Cleanup function to prevent memory leaks and handler accumulation
     return () => {
-      if (nodeRef.current) nodeRef.current.disconnect();
-      if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+      isMounted = false;
+
+      if (nodeRef.current) {
+        try {
+          nodeRef.current.port.onmessage = null;
+          nodeRef.current.disconnect();
+        } catch (e) {
+          // Node may already be disconnected
+        }
+        nodeRef.current = null;
+      }
+
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
     };
-  }, [audioContext]);
+
+  }, [audioContext, transposeOffset]);
 
   return pitchData;
 }
