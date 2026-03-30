@@ -85,7 +85,7 @@ export function SidebarLayout() {
       </Drawer>
       <Box
         component="main"
-        sx={{ flexGrow: 1, bgcolor: 'background.default', p: 3, minHeight: '100vh' }}
+        sx={{ flexGrow: 1, bgcolor: 'background.default', p: 3, minHeight: '100vh', minWidth: 0 }}
       >
         <Outlet />
       </Box>

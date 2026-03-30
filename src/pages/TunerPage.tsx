@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAudioContext } from '../audio/hooks/useAudioContext';
 import { usePitchDetection } from '../audio/hooks/usePitchDetection';
 import { PitchDisplay } from '../components/PitchDisplay';
 import { CentsMeter } from '../components/CentsMeter';
+import { NoteHistory } from '../components/NoteHistory';
 import '../App.css';
 
 // Note to semitone offset mapping for transposition
@@ -31,6 +32,7 @@ const TRANSPOSITION_NOTES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A
 export function TunerPage() {
     const { isStarted, startAudio, stopAudio, audioContext } = useAudioContext();
     const [transposeNote, setTransposeNote] = useState<string>('C');
+    const [noteHistory, setNoteHistory] = useState<string[]>([]);
 
     // Calculate transpose offset: if instrument plays C but we want to hear Bb, offset is -2 (down 2 semitones)
     const transposeOffset = NOTE_OFFSETS[transposeNote];
@@ -39,6 +41,16 @@ export function TunerPage() {
         audioContext,
         transposeOffset: transposeOffset ?? 0
     });
+
+    // Track note history when a valid note is detected
+    useEffect(() => {
+        if (pitchData?.noteName && pitchData.cents !== null) {
+            setNoteHistory(prev => {
+                const newHistory = [...prev, pitchData.noteName];
+                return newHistory.slice(-100); // Keep only the last 10 notes
+            });
+        }
+    }, [pitchData]);
 
     return (
         <div className="TunerPage">
@@ -78,6 +90,8 @@ export function TunerPage() {
                             frequency={pitchData?.frequency || null}
                         />
                         <CentsMeter cents={pitchData?.cents ?? null} />
+
+                        <NoteHistory history={noteHistory} />
 
                         <div style={{ textAlign: 'center', marginTop: '2rem' }}>
                             <button onClick={stopAudio}>Stop Microphone</button>

@@ -161,6 +161,115 @@
   }
 }
 
+.TunerPage {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
+
+/* Note History - Horizontal scrolling list */
+.note-history-container {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: var(--accent-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    margin-left: auto;
+    margin-right: auto;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.note-history-container h3 {
+    margin: 0 0 0.75rem 0;
+    font-size: 0.9rem;
+    color: var(--text-h);
+    text-align: center;
+}
+
+.note-history-scroll {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding: 0.5rem;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    justify-content: flex-start;
+    width: 100%;
+    box-sizing: border-box;
+    /* Ensure it doesn't expand the container */
+    max-width: 100%;
+}
+
+.note-history-scroll::-webkit-scrollbar {
+    height: 6px;
+}
+
+.note-history-scroll::-webkit-scrollbar-track {
+    background: var(--bg);
+    border-radius: 3px;
+}
+
+.note-history-scroll::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 3px;
+}
+
+.note-history-item {
+    flex-shrink: 0;
+    padding: 0.5rem 1rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--text-h);
+    background: var(--accent);
+    border-radius: 6px;
+    white-space: nowrap;
+    animation: slideInFromRight 0.3s ease-out, fadeOut 0.5s ease-in forwards;
+}
+
+/* Note-specific colors */
+.note-C { background-color: #e74c3c; }
+.note-C\# { background-color: #c0392b; }
+.note-Db { background-color: #c0392b; }
+.note-D { background-color: #e67e22; }
+.note-D\# { background-color: #d35400; }
+.note-Eb { background-color: #d35400; }
+.note-E { background-color: #f1c40f; }
+.note-F { background-color: #2ecc71; }
+.note-F\# { background-color: #27ae60; }
+.note-Gb { background-color: #27ae60; }
+.note-G { background-color: #3498db; }
+.note-G\# { background-color: #2980b9; }
+.note-Ab { background-color: #2980b9; }
+.note-A { background-color: #9b59b6; }
+.note-A\# { background-color: #8e44ad; }
+.note-Bb { background-color: #8e44ad; }
+.note-B { background-color: #1abc9c; }
+
+@keyframes slideInFromRight {
+    from {
+        transform: translateX(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0.5;
+    }
+}
+
 .ticks {
   position: relative;
   width: 100%;
