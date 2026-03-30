@@ -29,7 +29,8 @@ export function usePitchDetection({ audioContext, transposeOffset = 0 }: UsePitc
 
     const setup = async () => {
       // Load the processor. We'll put it in public/ for now to ensure Vite serves it directly.
-      await audioContext.audioWorklet.addModule('/pitch-processor.js');
+      const baseUrl = import.meta.env.BASE_URL || '/';
+      await audioContext.audioWorklet.addModule(`${baseUrl}pitch-processor.js`);
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
