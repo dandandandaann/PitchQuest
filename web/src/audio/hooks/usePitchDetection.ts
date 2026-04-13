@@ -23,6 +23,9 @@ export function usePitchDetection({ audioContext, transposeOffset = 0, holdDurat
   const medianFilter = useRef(new MedianFilter(5));
   const centsAverage = useRef(new MovingAverage(3));
   const holdTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Keep ref in sync with holdDuration so messageHandler always uses current value
+  const holdDurationRef = useRef(holdDuration);
+  holdDurationRef.current = holdDuration;
 
   useEffect(() => {
     if (!audioContext) return;
@@ -74,7 +77,7 @@ export function usePitchDetection({ audioContext, transposeOffset = 0, holdDurat
             if (isMounted) {
               setPitchData(null);
             }
-          }, holdDuration);
+          }, holdDurationRef.current);
         }
       };
 
