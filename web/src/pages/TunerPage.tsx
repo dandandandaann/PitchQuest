@@ -98,7 +98,7 @@ export function TunerPage() {
                             </select>
                         </div>
 
-                        <div style={{ textAlign: 'center', marginBottom: '1rem', marginTop: '1rem' }}>
+                        <div style={{ textAlign: 'center', marginBottom: '1rem', marginTop: '1rem', visibility: 'hidden' }}>
                             <label htmlFor="hold-duration" style={{ marginRight: '0.5rem' }}>Hold Duration (ms):</label>
                             <input
                                 id="hold-duration"

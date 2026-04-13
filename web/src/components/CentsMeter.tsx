@@ -47,7 +47,7 @@ export const CentsMeter: React.FC<CentsMeterProps> = ({ cents }) => {
             </div>
             <div style={{height: '1em'}}>
                 {isPlaying && (
-                    <div style={{ textAlign: 'center', fontWeight: 'bold', color: Math.abs(cents) < 10 ? '#4caf50' : '#f44336' }}>
+                    <div style={{ textAlign: 'center', fontWeight: 'bold', color: Math.abs(cents) < 10 ? '#4caf50' : Math.abs(cents) < 20 ? '#ffdd00' : '#f44336' }}>
                         {cents > 0 ? '+' : ''}{cents} cents
                     </div>
                 )}
