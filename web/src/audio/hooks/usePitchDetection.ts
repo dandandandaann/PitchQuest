@@ -26,6 +26,8 @@ export function usePitchDetection({ audioContext, transposeOffset = 0, holdDurat
   // Keep ref in sync with holdDuration so messageHandler always uses current value
   const holdDurationRef = useRef(holdDuration);
   holdDurationRef.current = holdDuration;
+  // Track when silence first started for Max Hold fix
+  const silenceStartRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!audioContext) return;
@@ -53,6 +55,8 @@ export function usePitchDetection({ audioContext, transposeOffset = 0, holdDurat
         const [freq, clarity] = detector.findPitch(buffer, audioContext.sampleRate);
 
         if (clarity > 0.9 && freq > 80 && freq < 1500) {
+          // Sound detected - reset silence tracking
+          silenceStartRef.current = null;
           if (holdTimeoutRef.current) {
             clearTimeout(holdTimeoutRef.current);
             holdTimeoutRef.current = null;
@@ -70,14 +74,33 @@ export function usePitchDetection({ audioContext, transposeOffset = 0, holdDurat
             });
           }
         } else {
-          if (holdTimeoutRef.current) {
-            clearTimeout(holdTimeoutRef.current);
+          // Silence detected - track for Max Hold
+          if (silenceStartRef.current === null) {
+            silenceStartRef.current = Date.now();
           }
-          holdTimeoutRef.current = setTimeout(() => {
-            if (isMounted) {
-              setPitchData(null);
+
+          const silenceElapsed = Date.now() - silenceStartRef.current;
+          if (silenceElapsed >= holdDurationRef.current) {
+            // Max hold exceeded - force clear
+            setPitchData(null);
+            silenceStartRef.current = null;
+            if (holdTimeoutRef.current) {
+              clearTimeout(holdTimeoutRef.current);
+              holdTimeoutRef.current = null;
             }
-          }, holdDurationRef.current);
+            silenceStartRef.current = null;
+          } else {
+            // Continue resetting timer for brief gaps
+            if (holdTimeoutRef.current) {
+              clearTimeout(holdTimeoutRef.current);
+            }
+            holdTimeoutRef.current = setTimeout(() => {
+              if (isMounted) {
+                setPitchData(null);
+              }
+              silenceStartRef.current = null;
+            }, holdDurationRef.current);
+          }
         }
       };
 
