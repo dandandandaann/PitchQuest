@@ -21,6 +21,7 @@ export function usePitchDetection({ audioContext, transposeOffset = 0 }: UsePitc
   const streamRef = useRef<MediaStream | null>(null);
   const medianFilter = useRef(new MedianFilter(5));
   const centsAverage = useRef(new MovingAverage(3));
+  const holdTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!audioContext) return;
@@ -48,6 +49,10 @@ export function usePitchDetection({ audioContext, transposeOffset = 0 }: UsePitc
         const [freq, clarity] = detector.findPitch(buffer, audioContext.sampleRate);
 
         if (clarity > 0.9 && freq > 80 && freq < 1500) {
+          if (holdTimeoutRef.current) {
+            clearTimeout(holdTimeoutRef.current);
+            holdTimeoutRef.current = null;
+          }
           const filteredFreq = medianFilter.current.add(freq);
           const { noteName, cents } = frequencyToNote(filteredFreq, transposeOffset);
           const smoothedCents = Math.round(centsAverage.current.add(cents));
@@ -61,9 +66,14 @@ export function usePitchDetection({ audioContext, transposeOffset = 0 }: UsePitc
             });
           }
         } else {
-          if (isMounted) {
-            setPitchData(null);
+          if (holdTimeoutRef.current) {
+            clearTimeout(holdTimeoutRef.current);
           }
+          holdTimeoutRef.current = setTimeout(() => {
+            if (isMounted) {
+              setPitchData(null);
+            }
+          }, 500);
         }
       };
 
@@ -77,6 +87,11 @@ export function usePitchDetection({ audioContext, transposeOffset = 0 }: UsePitc
     // Cleanup function to prevent memory leaks and handler accumulation
     return () => {
       isMounted = false;
+
+      if (holdTimeoutRef.current) {
+        clearTimeout(holdTimeoutRef.current);
+        holdTimeoutRef.current = null;
+      }
 
       if (nodeRef.current) {
         try {

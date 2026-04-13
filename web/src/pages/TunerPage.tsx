@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAudioContext } from '../audio/hooks/useAudioContext';
 import { usePitchDetection } from '../audio/hooks/usePitchDetection';
 import { PitchDisplay } from '../components/PitchDisplay';
@@ -42,13 +42,24 @@ export function TunerPage() {
         transposeOffset: transposeOffset ?? 0
     });
 
+    // Refs for history deduplication - track last added time and note
+    const lastHistoryTimeRef = useRef<number>(0);
+    const lastHistoryNoteRef = useRef<string>('');
+
     // Track note history when a valid note is detected
     useEffect(() => {
         if (pitchData?.noteName && pitchData.cents !== null) {
-            setNoteHistory(prev => {
-                const newHistory = [...prev, pitchData.noteName];
-                return newHistory.slice(-100); // Keep only the last 10 notes
-            });
+            const shouldAdd = pitchData.noteName !== lastHistoryNoteRef.current ||
+                              Date.now() - lastHistoryTimeRef.current >= 2000;
+            if (shouldAdd) {
+                // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: need to update history when pitch changes
+                setNoteHistory(prev => {
+                    const newHistory = [...prev, pitchData.noteName];
+                    return newHistory.slice(-100); // Keep only the last 10 notes
+                });
+                lastHistoryTimeRef.current = Date.now();
+                lastHistoryNoteRef.current = pitchData.noteName;
+            }
         }
     }, [pitchData]);
 
