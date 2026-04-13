@@ -13,9 +13,10 @@ export interface PitchData {
 interface UsePitchDetectionOptions {
   audioContext: AudioContext | null;
   transposeOffset?: number;
+  holdDuration?: number; // ms, default 500
 }
 
-export function usePitchDetection({ audioContext, transposeOffset = 0 }: UsePitchDetectionOptions) {
+export function usePitchDetection({ audioContext, transposeOffset = 0, holdDuration = 500 }: UsePitchDetectionOptions) {
   const [pitchData, setPitchData] = useState<PitchData | null>(null);
   const nodeRef = useRef<AudioWorkletNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -73,7 +74,7 @@ export function usePitchDetection({ audioContext, transposeOffset = 0 }: UsePitc
             if (isMounted) {
               setPitchData(null);
             }
-          }, 500);
+          }, holdDuration);
         }
       };
 

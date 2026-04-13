@@ -32,6 +32,7 @@ const TRANSPOSITION_NOTES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A
 export function TunerPage() {
     const { isStarted, startAudio, stopAudio, audioContext } = useAudioContext();
     const [transposeNote, setTransposeNote] = useState<string>('C');
+    const [holdDuration, setHoldDuration] = useState<number>(500);
     const [noteHistory, setNoteHistory] = useState<string[]>([]);
 
     // Calculate transpose offset: if instrument plays C but we want to hear Bb, offset is -2 (down 2 semitones)
@@ -39,7 +40,8 @@ export function TunerPage() {
 
     const pitchData = usePitchDetection({
         audioContext,
-        transposeOffset: transposeOffset ?? 0
+        transposeOffset: transposeOffset ?? 0,
+        holdDuration
     });
 
     // Refs for history deduplication - track last added time and note
@@ -94,6 +96,20 @@ export function TunerPage() {
                                     <option key={note} value={note}>{note}</option>
                                 ))}
                             </select>
+                        </div>
+
+                        <div style={{ textAlign: 'center', marginBottom: '1rem', marginTop: '1rem' }}>
+                            <label htmlFor="hold-duration" style={{ marginRight: '0.5rem' }}>Hold Duration (ms):</label>
+                            <input
+                                id="hold-duration"
+                                type="number"
+                                min={100}
+                                max={2000}
+                                step={100}
+                                value={holdDuration}
+                                onChange={(e) => setHoldDuration(Math.max(100, Math.min(2000, Number(e.target.value))))}
+                                style={{ padding: '0.5rem', fontSize: '1rem', width: '80px' }}
+                            />
                         </div>
 
                         <PitchDisplay
