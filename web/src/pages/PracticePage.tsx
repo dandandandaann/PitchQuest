@@ -1,9 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useAudioContext } from '../audio/hooks/useAudioContext';
 import { usePitchDetection } from '../audio/hooks/usePitchDetection';
 import { NoteSegmenter } from '../audio/NoteSegmenter';
 import type { DetectedNote } from '../audio/types';
-import { formatCents } from '../audio/utils/format';
+import { DEFAULT_BPM, annotateNotes, msPerBeat } from '../audio/TimingEngine';
+import type { BeatNote } from '../audio/TimingEngine';
+import { formatCents, formatBeats } from '../audio/utils/format';
 import { runSegmenterHarness, type HarnessResult } from '../audio/NoteSegmenter.test-harness';
 import '../App.css';
 
@@ -15,6 +17,18 @@ export function PracticePage() {
     const segmenterRef = useRef<NoteSegmenter | null>(null);
     const [showDevPanel, setShowDevPanel] = useState(false);
     const [harnessResult, setHarnessResult] = useState<HarnessResult | null>(null);
+    const [bpm, setBpm] = useState<number>(DEFAULT_BPM);
+
+    const beatNotes: BeatNote[] = useMemo(() => annotateNotes(detectedNotes, bpm), [detectedNotes, bpm]);
+
+    const handleBpmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const raw = e.target.value;
+        if (raw === '') return; // ignore empty; keep last valid
+        const n = Number.parseInt(raw, 10);
+        if (Number.isNaN(n)) return;
+        const clamped = Math.max(30, Math.min(300, n));
+        setBpm(clamped);
+    };
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: dev-only harness runs once on mount
@@ -70,6 +84,23 @@ export function PracticePage() {
                     Notes appear here when you sing or play. Each row is one held pitch (after segmentation heuristics).
                 </p>
 
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '1rem 0' }}>
+                    <label htmlFor="bpm-input">BPM:</label>
+                    <input
+                        id="bpm-input"
+                        type="number"
+                        min={30}
+                        max={300}
+                        step={1}
+                        value={bpm}
+                        onChange={handleBpmChange}
+                        style={{ width: '5rem', padding: '0.25rem' }}
+                    />
+                    <span style={{ opacity: 0.7, fontSize: '0.9rem' }}>
+                        1 beat = {msPerBeat(bpm).toFixed(0)}ms
+                    </span>
+                </div>
+
                 {!isStarted ? (
                     <div style={{ textAlign: 'center', marginTop: '2rem' }}>
                         <button
@@ -83,14 +114,17 @@ export function PracticePage() {
                     <div>
                         <section className="detected-notes">
                             <h3>Detected Notes (live)</h3>
+                            <p style={{ opacity: 0.7, fontSize: '0.85rem', margin: '0 0 0.5rem 0' }}>
+                                BPM: {bpm}  •  1 beat = {msPerBeat(bpm).toFixed(0)}ms
+                            </p>
                             {detectedNotes.length === 0 ? (
                                 <p style={{ opacity: 0.6 }}>Sing or play a note to start...</p>
                             ) : (
                                 <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                                    {detectedNotes.map((n, i) => (
+                                    {beatNotes.map((n, i) => (
                                         <li key={`${n.startMs}-${i}`} style={{ display: 'flex', gap: '1rem', padding: '0.25rem 0', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                                             <span style={{ fontSize: '1.5rem', fontWeight: 'bold', minWidth: '4rem' }}>{n.noteName}</span>
-                                            <span style={{ minWidth: '5rem' }}>{n.durationMs}ms</span>
+                                            <span style={{ minWidth: '8rem' }}>{n.durationMs}ms ({formatBeats(n.durationBeats)})</span>
                                             <span style={{ minWidth: '4rem' }}>{formatCents(n.avgCents)}</span>
                                         </li>
                                     ))}
