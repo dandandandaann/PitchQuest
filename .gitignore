@@ -2,3 +2,6 @@
 .sisyphus
 .aider
 .roo
+
+# Local temp directory for AI tooling
+.tmp/
