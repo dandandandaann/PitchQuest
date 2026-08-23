@@ -4,6 +4,7 @@ import { usePitchDetection } from '../audio/hooks/usePitchDetection';
 import { NoteSegmenter } from '../audio/NoteSegmenter';
 import type { DetectedNote } from '../audio/types';
 import { formatCents } from '../audio/utils/format';
+import { runSegmenterHarness, type HarnessResult } from '../audio/NoteSegmenter.test-harness';
 import '../App.css';
 
 const MAX_DETECTED_NOTES = 20; // Live log cap for segmented notes
@@ -12,6 +13,13 @@ export function PracticePage() {
     const { isStarted, startAudio, stopAudio, audioContext } = useAudioContext();
     const [detectedNotes, setDetectedNotes] = useState<DetectedNote[]>([]);
     const segmenterRef = useRef<NoteSegmenter | null>(null);
+    const [showDevPanel, setShowDevPanel] = useState(false);
+    const [harnessResult, setHarnessResult] = useState<HarnessResult | null>(null);
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: dev-only harness runs once on mount
+        setHarnessResult(runSegmenterHarness());
+    }, []);
 
     const pitchData = usePitchDetection({
         audioContext,
@@ -100,6 +108,25 @@ export function PracticePage() {
             <footer style={{ marginTop: '3rem', fontSize: '0.8rem', opacity: 0.6 }}>
                 <p>Buffer: 2048 | Algorithm: YIN | Library: pitchy</p>
             </footer>
+
+            <div style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem' }}>
+                <button onClick={() => setShowDevPanel(s => !s)} style={{ padding: '0.25rem 0.75rem' }}>
+                    {showDevPanel ? 'Hide' : 'Show'} dev panel
+                </button>
+                {showDevPanel && harnessResult && (
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
+                        <strong>Harness: {harnessResult.pass}/{harnessResult.pass + harnessResult.fail} pass</strong>
+                        <ul style={{ marginTop: '0.5rem', paddingLeft: '1.5rem' }}>
+                            {harnessResult.details.map((d, i) => (
+                                <li key={i} style={{ color: d.pass ? 'lightgreen' : 'salmon' }}>
+                                    {d.pass ? '✓' : '✗'} {d.name}
+                                    {d.diff && <div style={{ opacity: 0.7, fontSize: '0.8rem' }}>{d.diff}</div>}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
