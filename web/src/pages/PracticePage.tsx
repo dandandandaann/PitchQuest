@@ -8,6 +8,7 @@ import type { BeatNote } from '../audio/TimingEngine';
 import { formatCents, formatBeats } from '../audio/utils/format';
 import { runSegmenterHarness, type HarnessResult } from '../audio/NoteSegmenter.test-harness';
 import { runTimingEngineHarness, type TimingResult } from '../audio/TimingEngine.test-harness';
+import { runMusicXmlParserHarness, type MusicXmlResult } from '../score/MusicXmlParser.test-harness';
 import '../App.css';
 
 const MAX_DETECTED_NOTES = 20; // Live log cap for segmented notes
@@ -19,6 +20,7 @@ export function PracticePage() {
     const [showDevPanel, setShowDevPanel] = useState(false);
     const [harnessResult, setHarnessResult] = useState<HarnessResult | null>(null);
     const [timingResult, setTimingResult] = useState<TimingResult | null>(null);
+    const [musicXmlResult, setMusicXmlResult] = useState<MusicXmlResult | null>(null);
     const [bpm, setBpm] = useState<number>(DEFAULT_BPM);
 
     const beatNotes: BeatNote[] = useMemo(() => annotateNotes(detectedNotes, bpm), [detectedNotes, bpm]);
@@ -36,6 +38,7 @@ export function PracticePage() {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: dev-only harness runs once on mount
         setHarnessResult(runSegmenterHarness());
         setTimingResult(runTimingEngineHarness());
+        setMusicXmlResult(runMusicXmlParserHarness());
     }, []);
 
     const pitchData = usePitchDetection({
@@ -180,6 +183,19 @@ export function PracticePage() {
                                 <strong>Timing Engine: {timingResult.pass}/{timingResult.pass + timingResult.fail} pass</strong>
                                 <ul style={{ marginTop: '0.5rem', paddingLeft: '1.5rem' }}>
                                     {timingResult.details.map((d, i) => (
+                                        <li key={i} style={{ color: d.pass ? 'lightgreen' : 'salmon' }}>
+                                            {d.pass ? '✓' : '✗'} {d.name}
+                                            {d.diff && <div style={{ opacity: 0.7, fontSize: '0.8rem' }}>{d.diff}</div>}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                        {musicXmlResult && (
+                            <div style={{ marginTop: '0.75rem' }}>
+                                <strong>Score Parser: {musicXmlResult.pass}/{musicXmlResult.pass + musicXmlResult.fail} pass</strong>
+                                <ul style={{ marginTop: '0.5rem', paddingLeft: '1.5rem' }}>
+                                    {musicXmlResult.details.map((d, i) => (
                                         <li key={i} style={{ color: d.pass ? 'lightgreen' : 'salmon' }}>
                                             {d.pass ? '✓' : '✗'} {d.name}
                                             {d.diff && <div style={{ opacity: 0.7, fontSize: '0.8rem' }}>{d.diff}</div>}

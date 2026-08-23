@@ -38,7 +38,7 @@ const TYPE_TO_QUARTERS: Record<string, number> = {
  *  - Single part only (uses the first <part> element).
  *  - Single voice (no <voice> filtering).
  *  - No <chord> (throws if encountered).
- *  - No <rest> notes are emitted; they're silently skipped.
+ *  - Rests advance the beat counter without emitting an ExpectedNote.
  *  - No <backup>, <forward>, repeats, ties, grace notes.
  *  - No <transpose>; pitches are absolute.
  *  - No <key>/<time>/<sound tempo> parsing for beat conversion. The caller
@@ -93,30 +93,10 @@ export function parseMusicXml(xml: string, opts: ParseMusicXmlOptions): Expected
         throw new Error('parseMusicXml: <chord> not supported in v1');
       }
 
-      // Rests advance no counter and emit no note.
-      if (note.querySelector('rest') !== null) continue;
-
-      const step = note.querySelector('pitch > step')?.textContent?.trim();
-      const alterStr = note.querySelector('pitch > alter')?.textContent?.trim();
-      const octaveStr = note.querySelector('pitch > octave')?.textContent?.trim();
-
-      if (!step || !octaveStr) {
-        throw new Error('parseMusicXml: missing <step> or <octave> in note');
-      }
-      const pcForStep = STEP_TO_PC[step];
-      if (pcForStep === undefined) {
-        throw new Error(`parseMusicXml: invalid step "${step}"`);
-      }
-
-      const alter = alterStr ? Number.parseInt(alterStr, 10) : 0;
-      const octave = Number.parseInt(octaveStr, 10);
-      const pc = pcForStep + alter;
-      const midi = (octave + 1) * 12 + pc;
-      // FLAT_NAMES lookup handles sharps gracefully too: B# → C, E# → F.
-      const noteName = FLAT_NAMES[((pc % 12) + 12) % 12] + octave;
-
       // Duration: prefer the explicit integer <duration>/divisions path
       // (most common in exported scores), fall back to <type>+<time>.
+      // Computed first because BOTH pitched notes and rests need it:
+      // rests consume time even though they emit no ExpectedNote.
       const durationStr = note.querySelector('duration')?.textContent?.trim();
       const typeStr = note.querySelector('type')?.textContent?.trim();
 
@@ -138,6 +118,31 @@ export function parseMusicXml(xml: string, opts: ParseMusicXmlOptions): Expected
       } else {
         throw new Error('parseMusicXml: note has no <duration> and unknown <type>');
       }
+
+      // Rests advance the beat counter but emit no ExpectedNote.
+      if (note.querySelector('rest') !== null) {
+        currentBeat += durationBeats;
+        continue;
+      }
+
+      const step = note.querySelector('pitch > step')?.textContent?.trim();
+      const alterStr = note.querySelector('pitch > alter')?.textContent?.trim();
+      const octaveStr = note.querySelector('pitch > octave')?.textContent?.trim();
+
+      if (!step || !octaveStr) {
+        throw new Error('parseMusicXml: missing <step> or <octave> in note');
+      }
+      const pcForStep = STEP_TO_PC[step];
+      if (pcForStep === undefined) {
+        throw new Error(`parseMusicXml: invalid step "${step}"`);
+      }
+
+      const alter = alterStr ? Number.parseInt(alterStr, 10) : 0;
+      const octave = Number.parseInt(octaveStr, 10);
+      const pc = pcForStep + alter;
+      const midi = (octave + 1) * 12 + pc;
+      // FLAT_NAMES lookup handles sharps gracefully too: B# → C, E# → F.
+      const noteName = FLAT_NAMES[((pc % 12) + 12) % 12] + octave;
 
       out.push({ noteName, midi, startBeat: currentBeat, durationBeats });
       currentBeat += durationBeats;
