@@ -21,7 +21,6 @@
  *    are silently ignored. They do NOT appear in the output.
  */
 
-import type { DetectedNote } from './types';
 import type { ExpectedNote } from '../score/types';
 import type { BeatNote } from './TimingEngine';
 
@@ -33,8 +32,8 @@ export const DEFAULT_WINDOW_AFTER_BEATS = 0.5;
 
 export interface MatchedNote {
   expected: ExpectedNote;
-  /** The detected note matched to this expected note, or null if no candidate was found in the window. */
-  detected: DetectedNote | null;
+  /** The detected note matched to this expected note, or null if no candidate was found in the window. Always a BeatNote (carries startBeat/durationBeats). */
+  detected: BeatNote | null;
   /** Average cents-deviation of the detected note, or null if unmatched. */
   pitchErrorCents: number | null;
   /** `detected.startBeat - expected.startBeat`, or null if unmatched. */
