@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAudioContext } from '../audio/hooks/useAudioContext';
 import { usePitchDetection } from '../audio/hooks/usePitchDetection';
+import type { PitchData } from '../audio/hooks/usePitchDetection';
 import { PitchDisplay } from '../components/PitchDisplay';
 import { CentsMeter } from '../components/CentsMeter';
 import { NoteHistory } from '../components/NoteHistory';
@@ -28,11 +29,11 @@ const NOTE_OFFSETS: Record<string, number> = {
 };
 
 const TRANSPOSITION_NOTES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+const HOLD_MS = 500; // Visual hold duration for the cents meter/note display
 
 export function TunerPage() {
     const { isStarted, startAudio, stopAudio, audioContext } = useAudioContext();
     const [transposeNote, setTransposeNote] = useState<string>('C');
-    const [holdDuration, setHoldDuration] = useState<number>(500);
     const [noteHistory, setNoteHistory] = useState<string[]>([]);
 
     // Calculate transpose offset: if instrument plays C but we want to hear Bb, offset is -2 (down 2 semitones)
@@ -40,15 +41,44 @@ export function TunerPage() {
 
     const pitchData = usePitchDetection({
         audioContext,
-        transposeOffset: transposeOffset ?? 0,
-        holdDuration
+        transposeOffset: transposeOffset ?? 0
     });
+
+    // Visual hold state: mirrors pitchData but keeps the last value on screen for HOLD_MS after silence.
+    const [displayedPitchData, setDisplayedPitchData] = useState<PitchData | null>(null);
+    const holdTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        if (pitchData) {
+            if (holdTimeoutRef.current) {
+                clearTimeout(holdTimeoutRef.current);
+                holdTimeoutRef.current = null;
+            }
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: mirror hook output into display state with a hold timer
+            setDisplayedPitchData(pitchData);
+        } else {
+            if (holdTimeoutRef.current) {
+                clearTimeout(holdTimeoutRef.current);
+            }
+            holdTimeoutRef.current = setTimeout(() => {
+                setDisplayedPitchData(null);
+                holdTimeoutRef.current = null;
+            }, HOLD_MS);
+        }
+        return () => {
+            if (holdTimeoutRef.current) {
+                clearTimeout(holdTimeoutRef.current);
+                holdTimeoutRef.current = null;
+            }
+        };
+    }, [pitchData]);
 
     // Refs for history deduplication - track last added time and note
     const lastHistoryTimeRef = useRef<number>(0);
     const lastHistoryNoteRef = useRef<string>('');
 
-    // Track note history when a valid note is detected
+    // Track note history when a valid note is detected (uses RAW pitchData, not held,
+    // so segmentation-relevant silence gaps are preserved).
     useEffect(() => {
         if (pitchData?.noteName && pitchData.cents !== null) {
             const shouldAdd = pitchData.noteName !== lastHistoryNoteRef.current ||
@@ -98,25 +128,11 @@ export function TunerPage() {
                             </select>
                         </div>
 
-                        <div style={{ textAlign: 'center', marginBottom: '1rem', marginTop: '1rem', visibility: 'visible' }}>
-                            <label htmlFor="hold-duration" style={{ marginRight: '0.5rem' }}>Hold Duration (ms):</label>
-                            <input
-                                id="hold-duration"
-                                type="number"
-                                min={100}
-                                max={2000}
-                                step={100}
-                                value={holdDuration}
-                                onChange={(e) => setHoldDuration(Math.max(100, Math.min(2000, Number(e.target.value))))}
-                                style={{ padding: '0.5rem', fontSize: '1rem', width: '80px' }}
-                            />
-                        </div>
-
                         <PitchDisplay
-                            noteName={pitchData?.noteName || null}
-                            frequency={pitchData?.frequency || null}
+                            noteName={displayedPitchData?.noteName || null}
+                            frequency={displayedPitchData?.frequency || null}
                         />
-                        <CentsMeter cents={pitchData?.cents ?? null} />
+                        <CentsMeter cents={displayedPitchData?.cents ?? null} />
 
                         <NoteHistory history={noteHistory} />
 

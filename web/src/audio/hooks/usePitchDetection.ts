@@ -8,26 +8,25 @@ export interface PitchData {
   clarity: number;
   noteName: string;
   cents: number;
+  timestamp: number; // ms, monotonic, from performance.now()
 }
 
 interface UsePitchDetectionOptions {
   audioContext: AudioContext | null;
   transposeOffset?: number;
-  holdDuration?: number; // ms, default 500
 }
 
-export function usePitchDetection({ audioContext, transposeOffset = 0, holdDuration = 500 }: UsePitchDetectionOptions) {
+const FILTER_RESET_GAP_MS = 150;
+
+export function usePitchDetection({ audioContext, transposeOffset = 0 }: UsePitchDetectionOptions) {
   const [pitchData, setPitchData] = useState<PitchData | null>(null);
   const nodeRef = useRef<AudioWorkletNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const medianFilter = useRef(new MedianFilter(5));
   const centsAverage = useRef(new MovingAverage(3));
-  const holdTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Keep ref in sync with holdDuration so messageHandler always uses current value
-  const holdDurationRef = useRef(holdDuration);
-  holdDurationRef.current = holdDuration;
-  // Track when silence first started for Max Hold fix
-  const silenceStartRef = useRef<number | null>(null);
+  // Tracks the timestamp of the last emitted sound frame, so we can detect
+  // a silence gap long enough (>150ms) to reset filters across note boundaries.
+  const lastSoundTimestampRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!audioContext) return;
@@ -54,13 +53,19 @@ export function usePitchDetection({ audioContext, transposeOffset = 0, holdDurat
         const buffer = event.data;
         const [freq, clarity] = detector.findPitch(buffer, audioContext.sampleRate);
 
+        // Capture timestamp once per frame so every emitted value uses the same instant.
+        const ts = performance.now();
+
         if (clarity > 0.9 && freq > 80 && freq < 1500) {
-          // Sound detected - reset silence tracking
-          silenceStartRef.current = null;
-          if (holdTimeoutRef.current) {
-            clearTimeout(holdTimeoutRef.current);
-            holdTimeoutRef.current = null;
+          // Sound frame: optionally reset filters if silence gap exceeded threshold.
+          const lastSoundTs = lastSoundTimestampRef.current;
+          const gapSinceLastSound = lastSoundTs === null ? 0 : ts - lastSoundTs;
+          if (gapSinceLastSound > FILTER_RESET_GAP_MS) {
+            medianFilter.current = new MedianFilter(5);
+            centsAverage.current = new MovingAverage(3);
           }
+          lastSoundTimestampRef.current = ts;
+
           const filteredFreq = medianFilter.current.add(freq);
           const { noteName, cents } = frequencyToNote(filteredFreq, transposeOffset);
           const smoothedCents = Math.round(centsAverage.current.add(cents));
@@ -70,36 +75,15 @@ export function usePitchDetection({ audioContext, transposeOffset = 0, holdDurat
               frequency: filteredFreq,
               clarity,
               noteName,
-              cents: smoothedCents
+              cents: smoothedCents,
+              timestamp: ts
             });
           }
         } else {
-          // Silence detected - track for Max Hold
-          if (silenceStartRef.current === null) {
-            silenceStartRef.current = Date.now();
-          }
-
-          const silenceElapsed = Date.now() - silenceStartRef.current;
-          if (silenceElapsed >= holdDurationRef.current) {
-            // Max hold exceeded - force clear
+          // Silence frame: emit null immediately. lastSoundTimestampRef is intentionally
+          // NOT updated here so the next sound frame can compute gapSinceLastSound.
+          if (isMounted) {
             setPitchData(null);
-            silenceStartRef.current = null;
-            if (holdTimeoutRef.current) {
-              clearTimeout(holdTimeoutRef.current);
-              holdTimeoutRef.current = null;
-            }
-            silenceStartRef.current = null;
-          } else {
-            // Continue resetting timer for brief gaps
-            if (holdTimeoutRef.current) {
-              clearTimeout(holdTimeoutRef.current);
-            }
-            holdTimeoutRef.current = setTimeout(() => {
-              if (isMounted) {
-                setPitchData(null);
-              }
-              silenceStartRef.current = null;
-            }, holdDurationRef.current);
           }
         }
       };
@@ -115,16 +99,11 @@ export function usePitchDetection({ audioContext, transposeOffset = 0, holdDurat
     return () => {
       isMounted = false;
 
-      if (holdTimeoutRef.current) {
-        clearTimeout(holdTimeoutRef.current);
-        holdTimeoutRef.current = null;
-      }
-
       if (nodeRef.current) {
         try {
           nodeRef.current.port.onmessage = null;
           nodeRef.current.disconnect();
-        } catch (e) {
+        } catch {
           // Node may already be disconnected
         }
         nodeRef.current = null;
