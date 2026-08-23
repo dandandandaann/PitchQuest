@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import MicIcon from '@mui/icons-material/Mic';
+import SchoolIcon from '@mui/icons-material/School';
 
 const drawerWidth = 240;
 
@@ -26,6 +27,10 @@ export function SidebarLayout() {
 
   const tunerItems = [
     { text: 'Tuner', icon: <MicIcon />, path: '/tuner' },
+  ];
+
+  const practiceItems = [
+    { text: 'Practice', icon: <SchoolIcon />, path: '/practice' },
   ];
 
   return (
@@ -71,7 +76,27 @@ export function SidebarLayout() {
         >
           {tunerItems.map((item) => (
             <ListItem key={item.text} disablePadding>
-              <ListItemButton 
+              <ListItemButton
+                onClick={() => navigate(item.path)}
+                selected={location.pathname === item.path}
+              >
+                <ListItemIcon>{item.icon}</ListItemIcon>
+                <ListItemText primary={item.text} />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+        <Divider />
+        <List
+          subheader={
+            <ListSubheader component="div" id="nested-list-practice-subheader">
+              Practice
+            </ListSubheader>
+          }
+        >
+          {practiceItems.map((item) => (
+            <ListItem key={item.text} disablePadding>
+              <ListItemButton
                 onClick={() => navigate(item.path)}
                 selected={location.pathname === item.path}
               >

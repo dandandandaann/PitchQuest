@@ -2,8 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useAudioContext } from '../audio/hooks/useAudioContext';
 import { usePitchDetection } from '../audio/hooks/usePitchDetection';
 import type { PitchData } from '../audio/hooks/usePitchDetection';
-import { NoteSegmenter } from '../audio/NoteSegmenter';
-import type { DetectedNote } from '../audio/types';
 import { PitchDisplay } from '../components/PitchDisplay';
 import { CentsMeter } from '../components/CentsMeter';
 import '../App.css';
@@ -31,17 +29,10 @@ const NOTE_OFFSETS: Record<string, number> = {
 
 const TRANSPOSITION_NOTES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
 const HOLD_MS = 500; // Visual hold duration for the cents meter/note display
-const MAX_DETECTED_NOTES = 20; // Live log cap for segmented notes
-
-function formatCents(c: number): string {
-    return `${c >= 0 ? '+' : ''}${c}¢`;
-}
 
 export function TunerPage() {
     const { isStarted, startAudio, stopAudio, audioContext } = useAudioContext();
     const [transposeNote, setTransposeNote] = useState<string>('C');
-    const [detectedNotes, setDetectedNotes] = useState<DetectedNote[]>([]);
-    const segmenterRef = useRef<NoteSegmenter | null>(null);
 
     // Calculate transpose offset: if instrument plays C but we want to hear Bb, offset is -2 (down 2 semitones)
     const transposeOffset = NOTE_OFFSETS[transposeNote];
@@ -78,36 +69,6 @@ export function TunerPage() {
                 holdTimeoutRef.current = null;
             }
         };
-    }, [pitchData]);
-
-    // Manage segmenter lifecycle across mic on/off transitions:
-    //  - isStarted false → true: create a fresh segmenter and clear the live log.
-    //  - isStarted true  → false: flush any in-flight note into the log, drop the segmenter.
-    const lastIsStartedRef = useRef<boolean>(false);
-    useEffect(() => {
-        if (isStarted && !lastIsStartedRef.current) {
-            segmenterRef.current = new NoteSegmenter();
-            // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: reset log at session start
-            setDetectedNotes([]);
-        } else if (!isStarted && lastIsStartedRef.current) {
-            const flushed = segmenterRef.current?.flush() ?? [];
-            if (flushed.length > 0) {
-                setDetectedNotes(prev => [...prev, ...flushed].slice(-MAX_DETECTED_NOTES));
-            }
-            segmenterRef.current = null;
-        }
-        lastIsStartedRef.current = isStarted;
-    }, [isStarted]);
-
-    // Feed raw pitchData into the segmenter. Uses RAW (not displayedPitchData)
-    // because segmentation depends on real silence gaps, not the visual hold.
-    useEffect(() => {
-        const segmenter = segmenterRef.current;
-        if (segmenter === null) return;
-        const finalized = segmenter.push(pitchData);
-        if (finalized.length > 0) {
-            setDetectedNotes(prev => [...prev, ...finalized].slice(-MAX_DETECTED_NOTES));
-        }
     }, [pitchData]);
 
     return (
@@ -148,23 +109,6 @@ export function TunerPage() {
                             frequency={displayedPitchData?.frequency || null}
                         />
                         <CentsMeter cents={displayedPitchData?.cents ?? null} />
-
-                        <section className="detected-notes">
-                            <h3>Detected Notes (live)</h3>
-                            {detectedNotes.length === 0 ? (
-                                <p style={{ opacity: 0.6 }}>Sing or play a note to start...</p>
-                            ) : (
-                                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                                    {detectedNotes.map((n, i) => (
-                                        <li key={`${n.startMs}-${i}`} style={{ display: 'flex', gap: '1rem', padding: '0.25rem 0', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                                            <span style={{ fontSize: '1.5rem', fontWeight: 'bold', minWidth: '4rem' }}>{n.noteName}</span>
-                                            <span style={{ minWidth: '5rem' }}>{n.durationMs}ms</span>
-                                            <span style={{ minWidth: '4rem' }}>{formatCents(n.avgCents)}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </section>
 
                         <div style={{ textAlign: 'center', marginTop: '2rem' }}>
                             <button onClick={stopAudio}>Stop Microphone</button>

@@ -2,6 +2,7 @@ import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { SidebarLayout } from './components/SidebarLayout';
 import { HomePage } from './pages/HomePage';
 import { TunerPage } from './pages/TunerPage';
+import { PracticePage } from './pages/PracticePage';
 import './App.css';
 
 function App() {
@@ -10,6 +11,7 @@ function App() {
       <Routes>
         <Route element={<SidebarLayout />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/practice" element={<PracticePage />} />
           <Route path="/tuner" element={<TunerPage />} />
           {/* Redirect any other path to Home */}
           <Route path="*" element={<Navigate to="/" replace />} />
