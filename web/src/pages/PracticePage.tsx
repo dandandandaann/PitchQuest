@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useAudioContext } from '../audio/hooks/useAudioContext';
-import { usePitchDetection } from '../audio/hooks/usePitchDetection';
+import { usePitchDetection, type PitchData } from '../audio/hooks/usePitchDetection';
 import { NoteSegmenter } from '../audio/NoteSegmenter';
 import type { DetectedNote } from '../audio/types';
 import { DEFAULT_BPM, annotateNotes, msPerBeat } from '../audio/TimingEngine';
@@ -13,7 +13,7 @@ import '../App.css';
 const MAX_DETECTED_NOTES = 20; // Live log cap for segmented notes
 
 export function PracticePage() {
-    const { isStarted, startAudio, stopAudio, audioContext } = useAudioContext();
+    const { isStarted, startAudio, stopAudio, audioContext, audioStartPerfNow } = useAudioContext();
     const [detectedNotes, setDetectedNotes] = useState<DetectedNote[]>([]);
     const segmenterRef = useRef<NoteSegmenter | null>(null);
     const [showDevPanel, setShowDevPanel] = useState(false);
@@ -66,11 +66,21 @@ export function PracticePage() {
     useEffect(() => {
         const segmenter = segmenterRef.current;
         if (segmenter === null) return;
-        const finalized = segmenter.push(pitchData);
+
+        // If we have an anchor and a real (non-null) frame, shift the timestamp
+        // so the segmenter's startMs is "ms since AudioContext start". Null frames
+        // are passed through unchanged — the segmenter's silence-gap branch uses
+        // wall-clock time, which is unaffected by the offset.
+        let frameToPush: PitchData | null = pitchData;
+        if (frameToPush !== null && audioStartPerfNow !== null) {
+            frameToPush = { ...frameToPush, timestamp: frameToPush.timestamp - audioStartPerfNow };
+        }
+
+        const finalized = segmenter.push(frameToPush);
         if (finalized.length > 0) {
             setDetectedNotes(prev => [...prev, ...finalized].slice(-MAX_DETECTED_NOTES));
         }
-    }, [pitchData]);
+    }, [pitchData, audioStartPerfNow]);
 
     return (
         <div className="PracticePage">
