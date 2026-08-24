@@ -109,7 +109,7 @@ export function useScoreSession(opts: {
      */
     playMode?: PlayMode;
 }): ScoreSession {
-    const { audioRunning, audioStartPerfNow, bpm, playMode = 'wait' } = opts;
+    const { audioRunning, bpm, playMode = 'wait' } = opts;
 
     // -------------------------------------------------------------------------
     // State
@@ -145,6 +145,18 @@ export function useScoreSession(opts: {
     // Ref so the rAF tick (a closure created once in useEffect) always sees
     // the current playMode without needing to be recreated on every prop change.
     const playModeRef = useRef<PlayMode>(playMode);
+
+    /**
+     * Per-score beat-zero anchor.
+     *
+     * Captured fresh in `setExpected` so that switching scores mid-session
+     * resets the beat clock to 0 for the new piece, instead of using the
+     * audioContext-level `audioStartPerfNow` which would be deep into the
+     * song timeline.
+     *
+     * Null when no score is loaded.
+     */
+    const scoreStartPerfNowRef = useRef<number | null>(null);
     useEffect(() => {
         playModeRef.current = playMode;
     }, [playMode]);
@@ -161,6 +173,8 @@ export function useScoreSession(opts: {
         setActiveTier(next.length > 0 ? null : null);
         // Recreate the matcher with the new expected list.
         matcherRef.current = next.length > 0 ? new IncrementalMatcher(next) : null;
+        // Capture a fresh beat-zero anchor so the new score starts at beat 0.
+        scoreStartPerfNowRef.current = next.length > 0 ? performance.now() : null;
     }, []);
 
     // -------------------------------------------------------------------------
@@ -173,6 +187,7 @@ export function useScoreSession(opts: {
         setCurrentIndex(0);
         setActiveTier(null);
         matcherRef.current = null;
+        scoreStartPerfNowRef.current = null;
     }, []);
 
     // -------------------------------------------------------------------------
@@ -229,7 +244,7 @@ export function useScoreSession(opts: {
      *   rAF fires before cleanup (edge case), the frame callback is cancelled.
      */
     useEffect(() => {
-        if (!audioRunning || audioStartPerfNow === null) return;
+        if (!audioRunning) return;
 
         let cancelled = false;
 
@@ -253,7 +268,14 @@ export function useScoreSession(opts: {
                 return;
             }
 
-            const currentBeat = (performance.now() - audioStartPerfNow) / msPerBeat(bpm);
+            // Guard: no score loaded yet — keep the loop alive but bail.
+            const scoreStart = scoreStartPerfNowRef.current;
+            if (scoreStart === null) {
+                rafRef.current = requestAnimationFrame(tick);
+                return;
+            }
+
+            const currentBeat = (performance.now() - scoreStart) / msPerBeat(bpm);
             const active = matcher.active;
             const deadline = active.startBeat + active.durationBeats + LANE_CONFIG.GRACE_BEATS;
 
@@ -284,7 +306,7 @@ export function useScoreSession(opts: {
                 rafRef.current = null;
             }
         };
-    }, [audioRunning, audioStartPerfNow, bpm, playMode]);
+    }, [audioRunning, bpm, playMode]);
 
     // -------------------------------------------------------------------------
     // Return public interface
