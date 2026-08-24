@@ -5,12 +5,14 @@ import { NoteSegmenter } from '../audio/NoteSegmenter';
 import type { DetectedNote } from '../audio/types';
 import { DEFAULT_BPM, annotateNotes, msPerBeat } from '../audio/TimingEngine';
 import type { BeatNote } from '../audio/TimingEngine';
+import type { ExpectedNote } from '../score/types';
 import { formatCents, formatBeats } from '../audio/utils/format';
 import { runSegmenterHarness, type HarnessResult } from '../audio/NoteSegmenter.test-harness';
 import { runTimingEngineHarness, type TimingResult } from '../audio/TimingEngine.test-harness';
 import { runMusicXmlParserHarness, type MusicXmlResult } from '../score/MusicXmlParser.test-harness';
 import { runMatcherHarness, type MatcherResult } from '../audio/Matcher.test-harness';
 import { runScorerHarness, type ScorerResult } from '../audio/Scorer.test-harness';
+import { ScorePicker } from '../components/ScorePicker';
 import '../App.css';
 
 const MAX_DETECTED_NOTES = 20; // Live log cap for segmented notes
@@ -25,7 +27,14 @@ export function PracticePage() {
     const [musicXmlResult, setMusicXmlResult] = useState<MusicXmlResult | null>(null);
     const [matcherResult, setMatcherResult] = useState<MatcherResult | null>(null);
     const [scorerResult, setScorerResult] = useState<ScorerResult | null>(null);
+
+    // Score picker state
     const [bpm, setBpm] = useState<number>(DEFAULT_BPM);
+    const [loadedScore, setLoadedScore] = useState<{
+        expected: ExpectedNote[];
+        bpm: number;
+        source: { id: string; title: string; composer: string };
+    } | null>(null);
 
     const beatNotes: BeatNote[] = useMemo(() => annotateNotes(detectedNotes, bpm), [detectedNotes, bpm]);
 
@@ -36,6 +45,20 @@ export function PracticePage() {
         if (Number.isNaN(n)) return;
         const clamped = Math.max(30, Math.min(300, n));
         setBpm(clamped);
+    };
+
+    const handleScoreLoaded = (
+        expected: ExpectedNote[],
+        scoreBpm: number,
+        source: { id: string; title: string; composer: string },
+    ) => {
+        setLoadedScore({ expected, bpm: scoreBpm, source });
+        setBpm(scoreBpm); // sync BPM input to loaded score's tempo
+    };
+
+    const handleClearScore = () => {
+        setLoadedScore(null);
+        // Keep the current BPM (user may have tuned it); don't force back to DEFAULT_BPM
     };
 
     useEffect(() => {
@@ -105,6 +128,13 @@ export function PracticePage() {
                 <p>
                     Notes appear here when you sing or play. Each row is one held pitch (after segmentation heuristics).
                 </p>
+
+                {/* Score picker — loads ExpectedNote[] into session state */}
+                <ScorePicker
+                    onScoreLoaded={handleScoreLoaded}
+                    onClearScore={handleClearScore}
+                    loadedScore={loadedScore?.source ?? null}
+                />
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '1rem 0' }}>
                     <label htmlFor="bpm-input">BPM:</label>
