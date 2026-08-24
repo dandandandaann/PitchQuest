@@ -13,6 +13,7 @@ import { runMusicXmlParserHarness, type MusicXmlResult } from '../score/MusicXml
 import { runMatcherHarness, type MatcherResult } from '../audio/Matcher.test-harness';
 import { runScorerHarness, type ScorerResult } from '../audio/Scorer.test-harness';
 import { ScorePicker } from '../components/ScorePicker';
+import { useScoreSession } from '../audio/hooks/useScoreSession';
 import '../App.css';
 
 const MAX_DETECTED_NOTES = 20; // Live log cap for segmented notes
@@ -26,6 +27,7 @@ export function PracticePage() {
     const [timingResult, setTimingResult] = useState<TimingResult | null>(null);
     const [musicXmlResult, setMusicXmlResult] = useState<MusicXmlResult | null>(null);
     const [matcherResult, setMatcherResult] = useState<MatcherResult | null>(null);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: dev-only harness runs once on mount
     const [scorerResult, setScorerResult] = useState<ScorerResult | null>(null);
 
     // Score picker state
@@ -37,6 +39,30 @@ export function PracticePage() {
     } | null>(null);
 
     const beatNotes: BeatNote[] = useMemo(() => annotateNotes(detectedNotes, bpm), [detectedNotes, bpm]);
+
+    // Stage 6 Task 4: wire useScoreSession (opt-in; NoteLane rendering comes in Task 5).
+    const session = useScoreSession({
+        audioRunning: isStarted,
+        audioStartPerfNow,
+        bpm,
+    });
+
+    // Sync loaded score into the session whenever ScorePicker lifts one.
+    // (Full wiring — consume → segmenter — is Task 5; this just verifies the
+    //  hook compiles and responds to score changes.)
+    // NOTE: we intentionally do NOT list session in deps here — session is stable
+    // (the hook returns a fixed object reference), adding it would never re-run the
+    // effect. The effect IS complete: it re-runs whenever loadedScore changes,
+    // which is the only trigger we need.
+    useEffect(() => {
+        if (loadedScore) {
+            session.setExpected(loadedScore.expected, loadedScore.bpm);
+        }
+        // Intentionally NOT resetting on score clear — leave the session state
+        // in place so the user can still review what was played.
+        // The "Clear" button calls session.reset() if we wire it in a later task.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [loadedScore]);
 
     const handleBpmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const raw = e.target.value;
@@ -128,6 +154,16 @@ export function PracticePage() {
                 <p>
                     Notes appear here when you sing or play. Each row is one held pitch (after segmentation heuristics).
                 </p>
+
+                {/* Dev debug: show session cursor while a score is loaded */}
+                {loadedScore && (
+                    <p style={{ fontSize: '0.8rem', opacity: 0.6, marginBottom: '0.25rem' }}>
+                        session.currentIndex: {session.currentIndex} / {loadedScore.expected.length}
+                        {session.activeTier !== null && (
+                            <span style={{ marginLeft: '0.75rem' }}>active tier: <strong>{session.activeTier}</strong></span>
+                        )}
+                    </p>
+                )}
 
                 {/* Score picker — loads ExpectedNote[] into session state */}
                 <ScorePicker
