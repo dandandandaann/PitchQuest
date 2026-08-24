@@ -229,6 +229,18 @@ export function useScoreSession(opts: {
         const tier = scoreMatch(match, scoringThresholdsRef.current);
         const scored: ScoredNote = { match, tier };
 
+        // In strict-wait mode, a 'miss' (wrong pitch or off-time) means the user
+        // attempted but failed. Don't advance the cursor — give them another try
+        // on the same expected note. Still record the miss in liveScored so the
+        // UI can show "you tried the wrong note" feedback if it wants to.
+        if (tier === 'miss' && playModeRef.current === 'strict-wait') {
+            matcher.rewind();
+            // Don't bump currentIndex, don't change activeTier — the active note
+            // is still whatever it was. Still append to liveScored for feedback.
+            setLiveScored(prev => [...prev, scored]);
+            return scored;
+        }
+
         setLiveScored(prev => [...prev, scored]);
         setCurrentIndex(matcher.consumedCount);
         // If all notes consumed, clear activeTier; otherwise keep the tier.

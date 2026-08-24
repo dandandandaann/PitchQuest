@@ -7,6 +7,12 @@
  *   - Each `push` checks one detected note against the active expected note only.
  *   - Out-of-window or wrong-pitch-class detections return null — the active
  *     note stays active and the user can keep trying.
+ *   - `rewind` undoes a `push` or `forceMissActive`, decrementing the cursor
+ *     by 1 so the same expected note becomes active again. Used by
+ *     `useScoreSession` in `'strict-wait'` mode: when a push returns a
+ *     `MatchedNote` that the scorer classifies as `'miss'` (wrong pitch or
+ *     off-time), the hook rewinds so the user gets another try at the same
+ *     note.
  *
  * This class is stateless by design on the REACT lifecycle — one instance
  * lives in a `useRef` and is reused across renders. All state is encapsulated
@@ -145,5 +151,25 @@ export class IncrementalMatcher {
 
     this.#cursor += 1;
     return result;
+  }
+
+  /**
+   * Undo the most recent `push()` or `forceMissActive()` call, decrementing
+   * the cursor by 1 so the same expected note becomes active again.
+   *
+   * Used by `useScoreSession` in `'strict-wait'` mode: when a push() returns
+   * a MatchedNote that the scorer classifies as `'miss'` (wrong pitch or
+   * off-time), the hook rewinds so the user gets another try at the same note.
+   *
+   * The MatchedNote that was created by the previous call is NOT recoverable
+   * (the caller must have captured it if needed for liveScored feedback).
+   *
+   * @throws `RangeError` if the cursor is already at 0 (nothing to rewind).
+   */
+  rewind(): void {
+    if (this.#cursor === 0) {
+      throw new RangeError('IncrementalMatcher.rewind: cursor already at 0');
+    }
+    this.#cursor -= 1;
   }
 }

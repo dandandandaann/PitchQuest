@@ -12,6 +12,7 @@
  *   5. Empty expected list — push always null, forceMissActive throws.
  *   6. Wrong-pitch detected note (correct time, wrong MIDI) — window matches, returns MatchedNote.
  *   7. consumedCount + remaining getters — reflect live cursor state.
+ *   8. rewind — undo a push so the same expected note is active again.
  */
 
 import { IncrementalMatcher } from './IncrementalMatcher';
@@ -291,6 +292,61 @@ const CASES: CaseFn[] = [
 
     const all = [init0, init1, mid0, mid1, mid2, end0, end1, end2, end3, end4];
     return { name: 'consumedCount + remaining getters reflect live cursor state', pass: all.every(x => x.pass), diff: all.find(x => !x.pass)?.diff };
+  },
+
+  // -------------------------------------------------------------------------
+  // Case 8 — rewind: undo a push so the same expected note is active again.
+  //   2 expected at beats 0 and 1.
+  //   Push a correct detection at beat 0 → cursor advances to 1, active = expected[1].
+  //   rewind → cursor back to 0, active = expected[0].
+  //   Push the same detection again → matches expected[0] again.
+  //   Sub-assert: rewind at cursor=0 throws RangeError.
+  // -------------------------------------------------------------------------
+  () => {
+    const notes = [
+      expectedNote('C4', 60, 0, 1),
+      expectedNote('D4', 62, 1, 1),
+    ];
+    const m = new IncrementalMatcher(notes);
+
+    // Initial push — C4@0 → cursor advances to 1, active = D4.
+    const first = m.push(beatNote('C4', 60, 0, 1, 0));
+
+    const a0 = assert('first push returned MatchedNote', first !== null, true);
+    const a1 = assert('after first push: consumedCount=1', m.consumedCount, 1);
+    const a2 = assert('after first push: active is D4', m.active?.noteName, 'D4');
+
+    // Rewind — cursor back to 0, active = C4 again.
+    m.rewind();
+
+    const a3 = assert('after rewind: consumedCount=0', m.consumedCount, 0);
+    const a4 = assert('after rewind: active is C4', m.active?.noteName, 'C4');
+    const a5 = assert('after rewind: remaining has 2 entries', m.remaining.length, 2);
+    const a6 = assert('after rewind: remaining[0] is C4', m.remaining[0].noteName, 'C4');
+
+    // Push the same detection again — should match expected[0] (C4) again.
+    const second = m.push(beatNote('C4', 60, 0, 1, 0));
+
+    const a7 = assert('second push returned MatchedNote', second !== null, true);
+    const a8 = assert('second push matched C4', second?.expected.noteName, 'C4');
+    const a9 = assert('after second push: consumedCount=1', m.consumedCount, 1);
+    const a10 = assert('after second push: active is D4', m.active?.noteName, 'D4');
+
+    // Sub-assertion: rewind at cursor=0 throws RangeError.
+    const freshMatcher = new IncrementalMatcher([expectedNote('C4', 60, 0, 1)]);
+    let threw = false;
+    let throwMsg = '';
+    try {
+      freshMatcher.rewind();
+    } catch (err) {
+      threw = true;
+      throwMsg = err instanceof Error ? err.message : String(err);
+    }
+    const a11 = assert('rewind at cursor=0 threw', threw, true);
+    const a12 = assert('rewind error message is correct', throwMsg, 'IncrementalMatcher.rewind: cursor already at 0');
+
+    const all = [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12];
+    return { name: 'rewind: undo a push so the same expected note is active again', pass: all.every(x => x.pass), diff: all.find(x => !x.pass)?.diff };
   },
 ];
 
