@@ -141,6 +141,19 @@ export function NoteLane({
     // Track whether the component is still mounted (StrictMode double-mount guard).
     const cancelledRef = useRef<boolean>(false);
 
+    // Mutable refs so the rAF loop sees up-to-date values without a closure re-bind.
+    const currentIndexRef = useRef<number>(currentIndex);
+    const audioStartPerfNowRef = useRef<number | null>(audioStartPerfNow);
+
+    // Keep the mutable refs in sync with their prop counterparts.
+    useEffect(() => {
+        currentIndexRef.current = currentIndex;
+    }, [currentIndex]);
+
+    useEffect(() => {
+        audioStartPerfNowRef.current = audioStartPerfNow;
+    }, [audioStartPerfNow]);
+
     // -------------------------------------------------------------------------
     // rAF animation loop
     // -------------------------------------------------------------------------
@@ -154,13 +167,18 @@ export function NoteLane({
         const tick = () => {
             if (cancelledRef.current) return;
 
+            // Self-terminate: score fully consumed or audio stopped mid-session.
+            if (currentIndexRef.current >= expected.length || audioStartPerfNowRef.current === null) {
+                return;
+            }
+
             const track = trackRef.current;
             if (!track) {
                 requestAnimationFrame(tick);
                 return;
             }
 
-            const currentBeat = (performance.now() - audioStartPerfNow) / msPerBeat(bpm);
+            const currentBeat = (performance.now() - audioStartPerfNowRef.current) / msPerBeat(bpm);
 
             // Translate the track so currentBeat aligns with NOW_LINE_OFFSET_PX.
             // As currentBeat increases, the track slides left.
@@ -190,9 +208,13 @@ export function NoteLane({
     const visibleNotes: ExpectedNote[] =
         expected.length > CULL_THRESHOLD
             ? expected.filter(
+                  // Generous +50 beat buffer: for long scores we want notes to appear
+                  // well before the now-line so the user sees them approaching, not popping
+                  // in suddenly. The tradeoff is that the DOM holds more nodes than strictly
+                  // needed; for <50-note scores we skip culling entirely and render everything.
                   n =>
                       n.startBeat + n.durationBeats >= -LANE_CONFIG.VISIBLE_BEATS_BEFORE &&
-                      n.startBeat <= LANE_CONFIG.VISIBLE_BEATS_AFTER + 50, // generous upper bound
+                      n.startBeat <= LANE_CONFIG.VISIBLE_BEATS_AFTER + 50,
               )
             : expected;
 

@@ -86,7 +86,6 @@ export function PracticePage() {
     useEffect(() => {
         if (isStarted && !lastIsStartedRef.current) {
             segmenterRef.current = new NoteSegmenter();
-            // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: reset log at session start
             setDetectedNotes([]);
         } else if (!isStarted && lastIsStartedRef.current) {
             const flushed = segmenterRef.current?.flush() ?? [];
