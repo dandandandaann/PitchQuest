@@ -333,7 +333,7 @@ export function PracticePage() {
                             {detectedNotes.length === 0 ? (
                                 <p style={{ opacity: 0.6 }}>Sing or play a note to start...</p>
                             ) : (
-                                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                                <ul style={{ listStyle: 'none', padding: 0, margin: 0, maxHeight: '300px', overflowX: 'auto' }}>
                                     {beatNotes.map((n, i) => (
                                         <li key={`${n.startMs}-${i}`} style={{ display: 'flex', gap: '1rem', padding: '0.25rem 0', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                                             <span style={{ fontSize: '1.5rem', fontWeight: 'bold', minWidth: '4rem' }}>{n.noteName}</span>
