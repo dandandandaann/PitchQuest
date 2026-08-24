@@ -1,0 +1,136 @@
+/**
+ * NoteLane — co-located styles.
+ *
+ * Design choices documented here so they can be tuned in one place:
+ *
+ * - Lane height: fixed 300px with hidden overflow. Compact but readable.
+ * - Block border-radius: 3px — soft but not pill-shaped.
+ * - Active block glow: blue box-shadow. Stands out without being garish.
+ * - "Now" line: 2px white, full height. Clean and unmistakable.
+ * - Completion overlay: dark semi-transparent backdrop, centered text.
+ *   Uses CSS variable fallbacks so it adapts to the page's dark theme.
+ */
+
+.lane-root {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    overflow: hidden;
+    background: #121212;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    /* Dark background ensures contrast for colored blocks */
+}
+
+.lane-root--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.5;
+    font-size: 0.85rem;
+}
+
+.lane-track {
+    position: absolute;
+    top: 0;
+    /* left is updated via transform translateX each frame — no JS layout */
+    /* rAF sets transform: translateX(...); no transition for instant response */
+    height: 100%;
+    will-change: transform;
+    /* GPU-composited transform: smooth at 60fps */
+}
+
+.lane-now-line {
+    position: absolute;
+    left: 80px; /* MUST match LANE_CONFIG.NOW_LINE_OFFSET_PX */
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: rgba(255, 255, 255, 0.9);
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* Note blocks */
+.lane-block {
+    position: absolute;
+    /* border-radius matches the rounded feel of the lane container */
+    border-radius: 3px;
+    /* Slight inner padding so the label text doesn't crowd the edges */
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: 0.7rem;
+    color: rgba(0, 0, 0, 0.75);
+    font-weight: 600;
+    /* Truncate note name if block is very short */
+    text-overflow: ellipsis;
+}
+
+/* Tier / state colours */
+.lane-block--perfect {
+    background-color: #4caf50; /* green */
+    color: #fff;
+}
+
+.lane-block--ok {
+    background-color: #ff9800; /* yellow/amber */
+    color: #000;
+}
+
+.lane-block--miss {
+    background-color: #f44336; /* red */
+    color: #fff;
+    opacity: 0.85;
+}
+
+/* Upcoming (not yet attempted) */
+.lane-block--upcoming {
+    background-color: #9e9e9e;
+    opacity: 0.5;
+    color: rgba(0, 0, 0, 0.5);
+}
+
+/* Active (currently-targeted note) */
+.lane-block--active {
+    background-color: #2196f3; /* bright blue */
+    opacity: 1;
+    color: #fff;
+    box-shadow: 0 0 10px rgba(33, 150, 243, 0.9);
+    border: 2px solid #64b5f6;
+}
+
+/* No audio yet */
+.lane-block--no-audio {
+    background-color: #9e9e9e;
+    opacity: 0.4;
+    color: rgba(0, 0, 0, 0.4);
+}
+
+/* Completion overlay */
+.lane-complete-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.78);
+    z-index: 10;
+    gap: 0.4rem;
+    border-radius: 8px;
+}
+
+.lane-complete-overlay h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: #fff;
+}
+
+.lane-complete-overlay p {
+    margin: 0;
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.8);
+}

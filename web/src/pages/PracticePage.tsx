@@ -7,13 +7,10 @@ import { DEFAULT_BPM, annotateNotes, msPerBeat } from '../audio/TimingEngine';
 import type { BeatNote } from '../audio/TimingEngine';
 import type { ExpectedNote } from '../score/types';
 import { formatCents, formatBeats } from '../audio/utils/format';
-import { runSegmenterHarness, type HarnessResult } from '../audio/NoteSegmenter.test-harness';
-import { runTimingEngineHarness, type TimingResult } from '../audio/TimingEngine.test-harness';
-import { runMusicXmlParserHarness, type MusicXmlResult } from '../score/MusicXmlParser.test-harness';
-import { runMatcherHarness, type MatcherResult } from '../audio/Matcher.test-harness';
-import { runScorerHarness, type ScorerResult } from '../audio/Scorer.test-harness';
 import { ScorePicker } from '../components/ScorePicker';
 import { useScoreSession } from '../audio/hooks/useScoreSession';
+import { useDevPanelHarnesses } from '../audio/hooks/useDevPanelHarnesses';
+import { NoteLane } from '../components/NoteLane';
 import '../App.css';
 
 const MAX_DETECTED_NOTES = 20; // Live log cap for segmented notes
@@ -23,12 +20,6 @@ export function PracticePage() {
     const [detectedNotes, setDetectedNotes] = useState<DetectedNote[]>([]);
     const segmenterRef = useRef<NoteSegmenter | null>(null);
     const [showDevPanel, setShowDevPanel] = useState(false);
-    const [harnessResult, setHarnessResult] = useState<HarnessResult | null>(null);
-    const [timingResult, setTimingResult] = useState<TimingResult | null>(null);
-    const [musicXmlResult, setMusicXmlResult] = useState<MusicXmlResult | null>(null);
-    const [matcherResult, setMatcherResult] = useState<MatcherResult | null>(null);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: dev-only harness runs once on mount
-    const [scorerResult, setScorerResult] = useState<ScorerResult | null>(null);
 
     // Score picker state
     const [bpm, setBpm] = useState<number>(DEFAULT_BPM);
@@ -40,7 +31,7 @@ export function PracticePage() {
 
     const beatNotes: BeatNote[] = useMemo(() => annotateNotes(detectedNotes, bpm), [detectedNotes, bpm]);
 
-    // Stage 6 Task 4: wire useScoreSession (opt-in; NoteLane rendering comes in Task 5).
+    // Stage 6 Task 4: wire useScoreSession.
     const session = useScoreSession({
         audioRunning: isStarted,
         audioStartPerfNow,
@@ -48,19 +39,12 @@ export function PracticePage() {
     });
 
     // Sync loaded score into the session whenever ScorePicker lifts one.
-    // (Full wiring — consume → segmenter — is Task 5; this just verifies the
-    //  hook compiles and responds to score changes.)
-    // NOTE: we intentionally do NOT list session in deps here — session is stable
-    // (the hook returns a fixed object reference), adding it would never re-run the
-    // effect. The effect IS complete: it re-runs whenever loadedScore changes,
-    // which is the only trigger we need.
     useEffect(() => {
         if (loadedScore) {
             session.setExpected(loadedScore.expected, loadedScore.bpm);
         }
         // Intentionally NOT resetting on score clear — leave the session state
         // in place so the user can still review what was played.
-        // The "Clear" button calls session.reset() if we wire it in a later task.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loadedScore]);
 
@@ -87,14 +71,8 @@ export function PracticePage() {
         // Keep the current BPM (user may have tuned it); don't force back to DEFAULT_BPM
     };
 
-    useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: dev-only harness runs once on mount
-        setHarnessResult(runSegmenterHarness());
-        setTimingResult(runTimingEngineHarness());
-        setMusicXmlResult(runMusicXmlParserHarness());
-        setMatcherResult(runMatcherHarness());
-        setScorerResult(runScorerHarness());
-    }, []);
+    // Stage 6 Task 6: extract dev panel harnesses into a dedicated hook.
+    const harnesses = useDevPanelHarnesses();
 
     const pitchData = usePitchDetection({
         audioContext,
@@ -121,14 +99,14 @@ export function PracticePage() {
     }, [isStarted]);
 
     // Feed raw pitchData into the segmenter.
+    // When a note is finalized, annotate it (incremental: single-element array) and
+    // pass to session.consume() so the matcher scores it against the active expected note.
     useEffect(() => {
         const segmenter = segmenterRef.current;
         if (segmenter === null) return;
 
-        // If we have an anchor and a real (non-null) frame, shift the timestamp
-        // so the segmenter's startMs is "ms since AudioContext start". Null frames
-        // are passed through unchanged — the segmenter's silence-gap branch uses
-        // wall-clock time, which is unaffected by the offset.
+        // Shift the timestamp relative to the beat-zero anchor so the segmenter
+        // works in performance.now() space (ms since session start).
         let frameToPush: PitchData | null = pitchData;
         if (frameToPush !== null && audioStartPerfNow !== null) {
             frameToPush = { ...frameToPush, timestamp: frameToPush.timestamp - audioStartPerfNow };
@@ -137,8 +115,17 @@ export function PracticePage() {
         const finalized = segmenter.push(frameToPush);
         if (finalized.length > 0) {
             setDetectedNotes(prev => [...prev, ...finalized].slice(-MAX_DETECTED_NOTES));
+
+            // Stage 6 Task 5: wire finalized notes into the session matcher.
+            // We annotate one note at a time (not the whole array) — the
+            // `annotateNotes([newNote], bpm)[0]` pattern is intentionally
+            // incremental so the lane cursor advances as each note is confirmed.
+            for (const note of finalized) {
+                const annotated = annotateNotes([note], bpm)[0] as BeatNote;
+                session.consume(annotated);
+            }
         }
-    }, [pitchData, audioStartPerfNow]);
+    }, [pitchData, audioStartPerfNow, bpm, session]);
 
     return (
         <div className="PracticePage">
@@ -189,6 +176,20 @@ export function PracticePage() {
                     </span>
                 </div>
 
+                {/* Stage 6 Task 5: Guitar Hero lane */}
+                {loadedScore && (
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <NoteLane
+                            expected={loadedScore.expected}
+                            currentIndex={session.currentIndex}
+                            activeTier={session.activeTier}
+                            liveScored={session.liveScored}
+                            audioStartPerfNow={audioStartPerfNow}
+                            bpm={bpm}
+                        />
+                    </div>
+                )}
+
                 {!isStarted ? (
                     <div style={{ textAlign: 'center', marginTop: '2rem' }}>
                         <button
@@ -231,80 +232,61 @@ export function PracticePage() {
                 <p>Buffer: 2048 | Algorithm: YIN | Library: pitchy</p>
             </footer>
 
+            {/* Stage 6 Task 6: dev panel powered by useDevPanelHarnesses */}
             <div style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem' }}>
                 <button onClick={() => setShowDevPanel(s => !s)} style={{ padding: '0.25rem 0.75rem' }}>
                     {showDevPanel ? 'Hide' : 'Show'} dev panel
                 </button>
                 {showDevPanel && (
-                    <div style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
-                        {harnessResult && (
-                            <div>
-                                <strong>Segmenter: {harnessResult.pass}/{harnessResult.pass + harnessResult.fail} pass</strong>
-                                <ul style={{ marginTop: '0.5rem', paddingLeft: '1.5rem' }}>
-                                    {harnessResult.details.map((d, i) => (
-                                        <li key={i} style={{ color: d.pass ? 'lightgreen' : 'salmon' }}>
-                                            {d.pass ? '✓' : '✗'} {d.name}
-                                            {d.diff && <div style={{ opacity: 0.7, fontSize: '0.8rem' }}>{d.diff}</div>}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-                        {timingResult && (
-                            <div style={{ marginTop: '0.75rem' }}>
-                                <strong>Timing Engine: {timingResult.pass}/{timingResult.pass + timingResult.fail} pass</strong>
-                                <ul style={{ marginTop: '0.5rem', paddingLeft: '1.5rem' }}>
-                                    {timingResult.details.map((d, i) => (
-                                        <li key={i} style={{ color: d.pass ? 'lightgreen' : 'salmon' }}>
-                                            {d.pass ? '✓' : '✗'} {d.name}
-                                            {d.diff && <div style={{ opacity: 0.7, fontSize: '0.8rem' }}>{d.diff}</div>}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-                        {musicXmlResult && (
-                            <div style={{ marginTop: '0.75rem' }}>
-                                <strong>Score Parser: {musicXmlResult.pass}/{musicXmlResult.pass + musicXmlResult.fail} pass</strong>
-                                <ul style={{ marginTop: '0.5rem', paddingLeft: '1.5rem' }}>
-                                    {musicXmlResult.details.map((d, i) => (
-                                        <li key={i} style={{ color: d.pass ? 'lightgreen' : 'salmon' }}>
-                                            {d.pass ? '✓' : '✗'} {d.name}
-                                            {d.diff && <div style={{ opacity: 0.7, fontSize: '0.8rem' }}>{d.diff}</div>}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-                        {matcherResult && (
-                            <div style={{ marginTop: '0.75rem' }}>
-                                <strong>Matcher: {matcherResult.pass}/{matcherResult.pass + matcherResult.fail} pass</strong>
-                                <ul style={{ marginTop: '0.5rem', paddingLeft: '1.5rem' }}>
-                                    {matcherResult.details.map((d, i) => (
-                                        <li key={i} style={{ color: d.pass ? 'lightgreen' : 'salmon' }}>
-                                            {d.pass ? '✓' : '✗'} {d.name}
-                                            {d.diff && <div style={{ opacity: 0.7, fontSize: '0.8rem' }}>{d.diff}</div>}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-                        {scorerResult && (
-                            <div style={{ marginTop: '0.75rem' }}>
-                                <strong>Scorer: {scorerResult.pass}/{scorerResult.pass + scorerResult.fail} pass</strong>
-                                <ul style={{ marginTop: '0.5rem', paddingLeft: '1.5rem' }}>
-                                    {scorerResult.details.map((d, i) => (
-                                        <li key={i} style={{ color: d.pass ? 'lightgreen' : 'salmon' }}>
-                                            {d.pass ? '✓' : '✗'} {d.name}
-                                            {d.diff && <div style={{ opacity: 0.7, fontSize: '0.8rem' }}>{d.diff}</div>}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-                    </div>
+                    <DevPanelContent harnesses={harnesses} />
                 )}
             </div>
+        </div>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Dev panel content (consumes harness results from useDevPanelHarnesses)
+// ---------------------------------------------------------------------------
+
+interface DevPanelContentProps {
+    harnesses: ReturnType<typeof useDevPanelHarnesses>;
+}
+
+function DevPanelContent({ harnesses }: DevPanelContentProps) {
+    const { segmenter, timing, musicXml, matcher, scorer, incrementalMatcher } = harnesses;
+
+    function renderSection(
+        label: string,
+        result: { pass: number; fail: number; details: { name: string; pass: boolean; diff?: string }[] } | null,
+    ) {
+        if (!result) return null;
+        const total = result.pass + result.fail;
+        return (
+            <div style={{ marginTop: '0.75rem' }}>
+                <strong>
+                    {label}: {result.pass}/{total} pass
+                </strong>
+                <ul style={{ marginTop: '0.5rem', paddingLeft: '1.5rem' }}>
+                    {result.details.map((d, i) => (
+                        <li key={i} style={{ color: d.pass ? 'lightgreen' : 'salmon' }}>
+                            {d.pass ? '✓' : '✗'} {d.name}
+                            {d.diff && <div style={{ opacity: 0.7, fontSize: '0.8rem' }}>{d.diff}</div>}
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        );
+    }
+
+    return (
+        <div style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
+            {renderSection('Segmenter', segmenter)}
+            {renderSection('Timing Engine', timing)}
+            {renderSection('Score Parser', musicXml)}
+            {renderSection('Matcher', matcher)}
+            {renderSection('Scorer', scorer)}
+            {renderSection('Incremental Matcher', incrementalMatcher)}
         </div>
     );
 }
