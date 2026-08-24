@@ -310,6 +310,7 @@ export function PracticePage() {
                             liveScored={session.liveScored}
                             audioStartPerfNow={audioStartPerfNow}
                             bpm={bpm}
+                            playMode={playMode}
                         />
                     </div>
                 )}

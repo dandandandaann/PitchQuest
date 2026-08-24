@@ -21,6 +21,7 @@ import React, { useRef, useEffect } from 'react';
 import type { ExpectedNote } from '../score/types';
 import type { ScoreTier, ScoreSummary } from '../audio/Scorer';
 import type { ScoredNote } from '../audio/Scorer';
+import type { PlayMode } from '../audio/hooks/useScoreSession';
 import { LANE_CONFIG } from '../audio/laneConfig';
 import { scoreMatches } from '../audio/Scorer';
 import { msPerBeat } from '../audio/TimingEngine';
@@ -79,6 +80,13 @@ export interface NoteLaneProps {
     bpm: number;
 
     /**
+     * Playback mode. In `'strict-wait'` the cursor only moves on a hit, so the
+     * visible lane is clamped to the active note's `startBeat` (the song
+     * "waits" visually for the user). In `'wait'` the lane scrolls freely.
+     */
+    playMode: PlayMode;
+
+    /**
      * Called when the score is fully consumed (all notes done).
      * Receives the final `ScoreSummary` recomputed from `liveScored`.
      */
@@ -133,6 +141,7 @@ export function NoteLane({
     liveScored,
     audioStartPerfNow,
     bpm,
+    playMode,
     onComplete,
 }: NoteLaneProps) {
     // Ref to the lane-track DOM node. Written by the rAF loop (not React).
@@ -144,6 +153,8 @@ export function NoteLane({
     // Mutable refs so the rAF loop sees up-to-date values without a closure re-bind.
     const currentIndexRef = useRef<number>(currentIndex);
     const audioStartPerfNowRef = useRef<number | null>(audioStartPerfNow);
+    const playModeRef = useRef<PlayMode>(playMode);
+    const expectedRef = useRef<ExpectedNote[]>(expected);
 
     // Keep the mutable refs in sync with their prop counterparts.
     useEffect(() => {
@@ -153,6 +164,14 @@ export function NoteLane({
     useEffect(() => {
         audioStartPerfNowRef.current = audioStartPerfNow;
     }, [audioStartPerfNow]);
+
+    useEffect(() => {
+        playModeRef.current = playMode;
+    }, [playMode]);
+
+    useEffect(() => {
+        expectedRef.current = expected;
+    }, [expected]);
 
     // -------------------------------------------------------------------------
     // rAF animation loop
@@ -178,7 +197,19 @@ export function NoteLane({
                 return;
             }
 
-            const currentBeat = (performance.now() - audioStartPerfNowRef.current) / msPerBeat(bpm);
+            const rawCurrentBeat = (performance.now() - audioStartPerfNowRef.current) / msPerBeat(bpm);
+
+            // In strict-wait mode, freeze the visible cursor at the active note's
+            // startBeat so the lane doesn't scroll past the active block. This
+            // visually communicates "the song is waiting for you to hit this note".
+            // `expectedAtCursor` is non-null here because the guard above ensures
+            // `currentIndexRef.current < expected.length`; the `?? Infinity` is a
+            // belt-and-braces default in case that invariant ever relaxes.
+            const expectedAtCursor = expectedRef.current[currentIndexRef.current];
+            const ceilingBeat = expectedAtCursor?.startBeat ?? Infinity;
+            const currentBeat = playModeRef.current === 'strict-wait'
+                ? Math.min(rawCurrentBeat, ceilingBeat)
+                : rawCurrentBeat;
 
             // Translate the track so currentBeat aligns with NOW_LINE_OFFSET_PX.
             // As currentBeat increases, the track slides left.
