@@ -1,0 +1,200 @@
+[
+  {
+    "id": "c-major-scale",
+    "title": "C Major Scale",
+    "composer": null,
+    "difficulty": "easy",
+    "file": null,
+    "bpm": 60,
+    "license": "public domain"
+  },
+  {
+    "id": "ode-to-joy",
+    "title": "Ode to Joy",
+    "composer": "Ludwig van Beethoven",
+    "difficulty": "easy",
+    "file": "ode-to-joy.musicxml",
+    "bpm": 90,
+    "license": "public domain — Beethoven (1824)"
+  },
+  {
+    "id": "twinkle-twinkle-little-star",
+    "title": "Twinkle, Twinkle, Little Star",
+    "composer": "Traditional",
+    "difficulty": "easy",
+    "file": "twinkle-twinkle-little-star.musicxml",
+    "bpm": 90,
+    "license": "public domain, traditional folk melody"
+  },
+  {
+    "id": "mary-had-a-little-lamb",
+    "title": "Mary Had a Little Lamb",
+    "composer": "Traditional",
+    "difficulty": "easy",
+    "file": "mary-had-a-little-lamb.musicxml",
+    "bpm": 100,
+    "license": "public domain, traditional folk melody"
+  },
+  {
+    "id": "happy-birthday",
+    "title": "Happy Birthday",
+    "composer": "Mildred J. Hill & Patty Smith Hill",
+    "difficulty": "easy",
+    "file": null,
+    "bpm": 110,
+    "license": "public domain — US copyright expired (1935)"
+  },
+  {
+    "id": "when-the-saints-go-marching-in",
+    "title": "When the Saints Go Marching In",
+    "composer": "Traditional",
+    "difficulty": "easy",
+    "file": null,
+    "bpm": 100,
+    "license": "public domain, traditional folk melody"
+  },
+  {
+    "id": "frere-jacques",
+    "title": "Frère Jacques",
+    "composer": "Traditional",
+    "difficulty": "easy",
+    "file": "frere-jacques.musicxml",
+    "bpm": 100,
+    "license": "public domain, traditional folk melody"
+  },
+  {
+    "id": "au-clair-de-la-lune",
+    "title": "Au Clair de la Lune",
+    "composer": "Traditional (18th-century French folk)",
+    "difficulty": "easy",
+    "file": null,
+    "bpm": 80,
+    "license": "public domain, traditional folk melody"
+  },
+  {
+    "id": "scarborough-fair",
+    "title": "Scarborough Fair",
+    "composer": "Traditional English",
+    "difficulty": "easy",
+    "file": null,
+    "bpm": 70,
+    "license": "public domain, traditional folk melody"
+  },
+  {
+    "id": "greensleeves",
+    "title": "Greensleeves",
+    "composer": "Traditional English",
+    "difficulty": "medium",
+    "file": null,
+    "bpm": 70,
+    "license": "public domain, traditional folk melody"
+  },
+  {
+    "id": "amazing-grace",
+    "title": "Amazing Grace",
+    "composer": "Traditional (lyrics John Newton, 1779)",
+    "difficulty": "medium",
+    "file": null,
+    "bpm": 80,
+    "license": "public domain, traditional hymn melody"
+  },
+  {
+    "id": "minuet-in-g",
+    "title": "Minuet in G (BWV Anh. 114)",
+    "composer": "Christian Petzold / attributed to J.S. Bach",
+    "difficulty": "medium",
+    "file": null,
+    "bpm": 100,
+    "license": "public domain — composed pre-1728"
+  },
+  {
+    "id": "prelude-in-c-bwv-846",
+    "title": "Prelude in C (BWV 846)",
+    "composer": "Johann Sebastian Bach",
+    "difficulty": "medium",
+    "file": null,
+    "bpm": 60,
+    "license": "public domain — composed 1722"
+  },
+  {
+    "id": "air-on-the-g-string",
+    "title": "Air on the G String (BWV 1068)",
+    "composer": "Johann Sebastian Bach",
+    "difficulty": "medium",
+    "file": null,
+    "bpm": 60,
+    "license": "public domain — composed 1731"
+  },
+  {
+    "id": "gymnopedie-no-1",
+    "title": "Gymnopédie No. 1",
+    "composer": "Erik Satie",
+    "difficulty": "medium",
+    "file": null,
+    "bpm": 70,
+    "license": "public domain — composed 1888"
+  },
+  {
+    "id": "can-can",
+    "title": "Can Can (Orpheus in the Underworld)",
+    "composer": "Jacques Offenbach",
+    "difficulty": "hard",
+    "file": null,
+    "bpm": 130,
+    "license": "public domain — composed 1858"
+  },
+  {
+    "id": "eine-kleine-nachtmusik-theme",
+    "title": "Eine kleine Nachtmusik (theme)",
+    "composer": "Wolfgang Amadeus Mozart",
+    "difficulty": "medium",
+    "file": null,
+    "bpm": 120,
+    "license": "public domain — composed 1787"
+  },
+  {
+    "id": "turkish-march",
+    "title": "Turkish March (Rondo Alla Turca)",
+    "composer": "Wolfgang Amadeus Mozart",
+    "difficulty": "hard",
+    "file": null,
+    "bpm": 130,
+    "license": "public domain — composed 1783"
+  },
+  {
+    "id": "fur-elise",
+    "title": "Für Elise",
+    "composer": "Ludwig van Beethoven",
+    "difficulty": "hard",
+    "file": null,
+    "bpm": 70,
+    "license": "public domain — composed 1810"
+  },
+  {
+    "id": "pachelbel-canon-in-d",
+    "title": "Pachelbel's Canon in D",
+    "composer": "Johann Pachelbel",
+    "difficulty": "hard",
+    "file": null,
+    "bpm": 70,
+    "license": "public domain — composed c. 1680"
+  },
+  {
+    "id": "jingle-bells",
+    "title": "Jingle Bells",
+    "composer": "James Lord Pierpont",
+    "difficulty": "easy",
+    "file": null,
+    "bpm": 120,
+    "license": "public domain — composed 1857"
+  },
+  {
+    "id": "silent-night",
+    "title": "Silent Night",
+    "composer": "Franz Xaver Gruber",
+    "difficulty": "easy",
+    "file": null,
+    "bpm": 70,
+    "license": "public domain — composed 1818"
+  }
+]
