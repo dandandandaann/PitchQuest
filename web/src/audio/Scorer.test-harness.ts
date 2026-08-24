@@ -127,37 +127,38 @@ export const SCORER_CASES: ScorerCase[] = [
     },
   },
 
-  // 2. All 8 notes uniformly +0.15 beats late, 0 cents. With defaults:
-  //      pitchPerfect = true  (|0| < 10)
-  //      timePerfect  = false (0.15 > 0.05)
-  //      timeOk       = true  (0.15 < 0.2)
-  //    → every tier is "ok". Accuracy = 8 × 0.5 / 8 × 100 = 50.
+  // 2. All 8 notes uniformly +0.14 beats late, 0 cents. With the relaxed
+  //    thresholds (timeBeatsPerfect=0.15), 0.14 beats is comfortably inside the
+  //    perfect window — every tier is "perfect". Accuracy = 100.
+  //    (Note: 0.15 cannot be used as the boundary value here because JS
+  //    floating-point makes 0.15 > 0.15 (0.15000000000000002).)
+  //    (Old thresholds would have given all "ok", accuracy 50.)
   {
-    name: 'slightly late, in tune → all ok (+0.15 beats, 0 cents)',
+    name: 'slightly late, in tune → all ok (+0.14 beats, 0 cents)',
     matches: SCALE_EXPECTED.map((exp) =>
       matched(
         exp,
-        beatNote(exp.noteName, exp.midi, exp.startBeat + 0.15, 1, 0),
+        beatNote(exp.noteName, exp.midi, exp.startBeat + 0.14, 1, 0),
         0,
-        0.15,
+        0.14,
       ),
     ),
     expectedResult: {
       perNote: SCALE_EXPECTED.map((exp) => ({
         match: {
           expected: exp,
-          detected: beatNote(exp.noteName, exp.midi, exp.startBeat + 0.15, 1, 0),
+          detected: beatNote(exp.noteName, exp.midi, exp.startBeat + 0.14, 1, 0),
           pitchErrorCents: 0,
-          timeErrorBeats: 0.15,
+          timeErrorBeats: 0.14,
         },
-        tier: 'ok',
+        tier: 'perfect',
       })),
-      summary: { total: 8, perfect: 0, ok: 8, miss: 0, accuracyPct: 50 },
+      summary: { total: 8, perfect: 8, ok: 0, miss: 0, accuracyPct: 100 },
     },
   },
 
   // 3. All 8 notes uniformly +0.5 beats late, 0 cents. |timeErr|=0.5
-  //    exceeds timeBeatsOk (0.2) → every tier is "miss". Accuracy = 0.
+  //    exceeds timeBeatsOk (0.4) → every tier is "miss". Accuracy = 0.
   {
     name: 'too late → all miss (+0.5 beats, 0 cents)',
     matches: SCALE_EXPECTED.map((exp) =>
@@ -246,9 +247,12 @@ export const SCORER_CASES: ScorerCase[] = [
 
   // 6. Mixed tiers in one run:
   //      0..2: perfect (exact beat, 0 cents)
-  //      3..5: ok (+0.15 beats late, 0 cents)
-  //      6..7: miss (+0.5 beats late AND +45 cents → fails both windows)
-  //    Weighted accuracy = (3×1.0 + 3×0.5 + 2×0.0) / 8 × 100 = 4.5/8 × 100 = 56.25.
+  //      3..5: perfect (relaxed thresholds: +0.14 beats is comfortably inside
+  //             the new timeBeatsPerfect=0.15 window; 0.15 can't be used
+  //             because JS floating-point makes 0.15 > 0.15)
+  //      6..7: miss (+0.5 beats AND +45 cents → fails both windows)
+  //    Weighted accuracy = (6×1.0 + 0×0.5 + 2×0.0) / 8 × 100 = 75.
+  //    (Old thresholds would have given 3 perfect + 3 ok + 2 miss, 56.25%.)
   {
     name: 'mixed tiers (3 perfect + 3 ok + 2 miss → 56.25%)',
     matches: [
@@ -256,10 +260,10 @@ export const SCORER_CASES: ScorerCase[] = [
       matched(SCALE_EXPECTED[0], beatNote('C4', 60, 0, 1, 0), 0, 0),
       matched(SCALE_EXPECTED[1], beatNote('D4', 62, 1, 1, 0), 0, 0),
       matched(SCALE_EXPECTED[2], beatNote('E4', 64, 2, 1, 0), 0, 0),
-      // 3..5: ok (slightly late, in tune)
-      matched(SCALE_EXPECTED[3], beatNote('F4', 65, 3.15, 1, 0), 0, 0.15),
-      matched(SCALE_EXPECTED[4], beatNote('G4', 67, 4.15, 1, 0), 0, 0.15),
-      matched(SCALE_EXPECTED[5], beatNote('A4', 69, 5.15, 1, 0), 0, 0.15),
+      // 3..5: perfect (relaxed thresholds: 0.14 beats passes timeBeatsPerfect)
+      matched(SCALE_EXPECTED[3], beatNote('F4', 65, 3.14, 1, 0), 0, 0.14),
+      matched(SCALE_EXPECTED[4], beatNote('G4', 67, 4.14, 1, 0), 0, 0.14),
+      matched(SCALE_EXPECTED[5], beatNote('A4', 69, 5.14, 1, 0), 0, 0.14),
       // 6..7: miss (too late AND off pitch)
       matched(SCALE_EXPECTED[6], beatNote('B4', 71, 6.5, 1, 45), 45, 0.5),
       matched(SCALE_EXPECTED[7], beatNote('C5', 72, 7.5, 1, 45), 45, 0.5),
@@ -269,13 +273,13 @@ export const SCORER_CASES: ScorerCase[] = [
         { match: { expected: SCALE_EXPECTED[0], detected: beatNote('C4', 60, 0, 1, 0), pitchErrorCents: 0, timeErrorBeats: 0 }, tier: 'perfect' },
         { match: { expected: SCALE_EXPECTED[1], detected: beatNote('D4', 62, 1, 1, 0), pitchErrorCents: 0, timeErrorBeats: 0 }, tier: 'perfect' },
         { match: { expected: SCALE_EXPECTED[2], detected: beatNote('E4', 64, 2, 1, 0), pitchErrorCents: 0, timeErrorBeats: 0 }, tier: 'perfect' },
-        { match: { expected: SCALE_EXPECTED[3], detected: beatNote('F4', 65, 3.15, 1, 0), pitchErrorCents: 0, timeErrorBeats: 0.15 }, tier: 'ok' },
-        { match: { expected: SCALE_EXPECTED[4], detected: beatNote('G4', 67, 4.15, 1, 0), pitchErrorCents: 0, timeErrorBeats: 0.15 }, tier: 'ok' },
-        { match: { expected: SCALE_EXPECTED[5], detected: beatNote('A4', 69, 5.15, 1, 0), pitchErrorCents: 0, timeErrorBeats: 0.15 }, tier: 'ok' },
+        { match: { expected: SCALE_EXPECTED[3], detected: beatNote('F4', 65, 3.14, 1, 0), pitchErrorCents: 0, timeErrorBeats: 0.14 }, tier: 'perfect' },
+        { match: { expected: SCALE_EXPECTED[4], detected: beatNote('G4', 67, 4.14, 1, 0), pitchErrorCents: 0, timeErrorBeats: 0.14 }, tier: 'perfect' },
+        { match: { expected: SCALE_EXPECTED[5], detected: beatNote('A4', 69, 5.14, 1, 0), pitchErrorCents: 0, timeErrorBeats: 0.14 }, tier: 'perfect' },
         { match: { expected: SCALE_EXPECTED[6], detected: beatNote('B4', 71, 6.5, 1, 45), pitchErrorCents: 45, timeErrorBeats: 0.5 }, tier: 'miss' },
         { match: { expected: SCALE_EXPECTED[7], detected: beatNote('C5', 72, 7.5, 1, 45), pitchErrorCents: 45, timeErrorBeats: 0.5 }, tier: 'miss' },
       ],
-      summary: { total: 8, perfect: 3, ok: 3, miss: 2, accuracyPct: 56.25 },
+      summary: { total: 8, perfect: 6, ok: 0, miss: 2, accuracyPct: 75 },
     },
   },
 ];

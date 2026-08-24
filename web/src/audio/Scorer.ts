@@ -5,22 +5,36 @@ export type ScoreTier = 'perfect' | 'ok' | 'miss';
 
 /** Configurable thresholds for the v1 scoring rubric. */
 export interface ScoringThresholds {
-  /** Maximum |pitchErrorCents| for a "perfect" pitch. Default 10. */
+  /** Maximum |pitchErrorCents| for a "perfect" pitch. Default 25. */
   pitchCentsPerfect: number;
-  /** Maximum |pitchErrorCents| for an "ok" pitch. Must be >= pitchCentsPerfect. Default 30. */
+  /** Maximum |pitchErrorCents| for an "ok" pitch. Must be >= pitchCentsPerfect. Default 60. */
   pitchCentsOk: number;
-  /** Maximum |timeErrorBeats| for a "perfect" time. Default 0.05. */
+  /** Maximum |timeErrorBeats| for a "perfect" time. Default 0.15. */
   timeBeatsPerfect: number;
-  /** Maximum |timeErrorBeats| for an "ok" time. Must be >= timeBeatsPerfect. Default 0.2. */
+  /** Maximum |timeErrorBeats| for an "ok" time. Must be >= timeBeatsPerfect. Default 0.4. */
   timeBeatsOk: number;
 }
 
-/** v1 starting-point thresholds. Real-world tuning required. */
+/**
+ * v1 starting-point thresholds. Tuned for casual singers/instrumentalists.
+ *
+ *  - ±25 cents perfect: roughly the limit of human pitch perception
+ *    ("just noticeably out of tune").
+ *  - ±60 cents ok: a full semitone — well beyond that perceptual limit
+ *    but still distinguishable from a wrong note.
+ *  - 0.15 beats perfect: about the smallest gap a person can reliably
+ *    hit when starting a note from silence (~36ms at 120bpm).
+ *  - 0.4 beats ok: ~96ms at 120bpm — the threshold where it starts to
+ *    feel "off-time" rather than "in time".
+ *
+ * These are user-configurable in a follow-up (Bug 4); for now the
+ * defaults are tuned to be playable by a non-professional.
+ */
 export const DEFAULT_SCORING_THRESHOLDS: ScoringThresholds = {
-  pitchCentsPerfect: 10,
-  pitchCentsOk: 30,
-  timeBeatsPerfect: 0.05,
-  timeBeatsOk: 0.2,
+  pitchCentsPerfect: 25,
+  pitchCentsOk: 60,
+  timeBeatsPerfect: 0.15,
+  timeBeatsOk: 0.4,
 };
 
 /** Per-note scoring result. */
@@ -57,8 +71,12 @@ export interface ScoreResult {
  *    (This is the gap the Matcher's pitchErrorCents can't detect.)
  *  - Octave equivalence is intentionally NOT supported. C4 vs C5 scores as
  *    "miss" even though they're the same pitch class. v2 candidate.
- *  - Default thresholds are an educated guess from the roadmap example.
- *    They will need real-world tuning once Stage 6 visualizes per-note tiers.
+ *  - Real-world tuning notes:
+ *    - These are starting points based on casual-singer tolerance. Users
+ *      who want tighter thresholds (e.g. for sight-reading practice) can
+ *      pass a custom ScoringThresholds to scoreMatch/scoreMatches.
+ *    - The octave-equivalence question (C4 vs C5) is a separate axis; see
+ *      the "Octave equivalence" limitation above.
  *  - Extras (detected notes that didn't match any expected) are inherited
  *    from matcher's "silently ignored" policy and don't affect scoring. Add
  *    an extrasPenalty field in v2 if user data shows extras matter.
