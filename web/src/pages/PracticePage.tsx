@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import type { PlayMode } from '../audio/hooks/useScoreSession';
 import { useAudioContext } from '../audio/hooks/useAudioContext';
 import { usePitchDetection, type PitchData } from '../audio/hooks/usePitchDetection';
 import { NoteSegmenter } from '../audio/NoteSegmenter';
@@ -23,6 +24,7 @@ export function PracticePage() {
 
     // Score picker state
     const [bpm, setBpm] = useState<number>(DEFAULT_BPM);
+    const [playMode, setPlayMode] = useState<PlayMode>('wait');
     const [loadedScore, setLoadedScore] = useState<{
         expected: ExpectedNote[];
         bpm: number;
@@ -36,6 +38,7 @@ export function PracticePage() {
         audioRunning: isStarted,
         audioStartPerfNow,
         bpm,
+        playMode,
     });
 
     // Sync loaded score into the session whenever ScorePicker lifts one.
@@ -173,6 +176,17 @@ export function PracticePage() {
                     <span style={{ opacity: 0.7, fontSize: '0.9rem' }}>
                         1 beat = {msPerBeat(bpm).toFixed(0)}ms
                     </span>
+                    <label style={{ marginLeft: '1rem' }}>
+                        Mode:{' '}
+                        <select
+                            value={playMode}
+                            onChange={e => setPlayMode(e.target.value as PlayMode)}
+                            style={{ padding: '0.25rem' }}
+                        >
+                            <option value="wait">Wait (auto-advance)</option>
+                            <option value="strict-wait">Strict wait (must hit each note)</option>
+                        </select>
+                    </label>
                 </div>
 
                 {/* Stage 6 Task 5: Guitar Hero lane */}

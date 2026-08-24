@@ -31,6 +31,17 @@ import type { ExpectedNote } from '../../score/types';
 import { LANE_CONFIG } from '../laneConfig';
 
 // ---------------------------------------------------------------------------
+// Types
+// ----------------------------------------------------------------------------
+
+/**
+ * Playback mode for the session:
+ * - 'wait'        — cursor auto-advances after GRACE_BEATS of silence (default, existing behaviour).
+ * - 'strict-wait' — cursor advances only on a successful consume() match; no auto-miss.
+ */
+export type PlayMode = 'wait' | 'strict-wait';
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
@@ -91,8 +102,14 @@ export function useScoreSession(opts: {
     audioStartPerfNow: number | null;
     /** Current BPM — used to convert performance.now() → beats in the rAF tick. */
     bpm: number;
+    /**
+     * 'wait'  (default)  — cursor advances on hit OR after grace-period auto-miss.
+     * 'strict-wait'       — cursor advances ONLY on consume() with an in-window detection.
+     *                       No auto-miss; song stalls if the user stays silent.
+     */
+    playMode?: PlayMode;
 }): ScoreSession {
-    const { audioRunning, audioStartPerfNow, bpm } = opts;
+    const { audioRunning, audioStartPerfNow, bpm, playMode = 'wait' } = opts;
 
     // -------------------------------------------------------------------------
     // State
@@ -124,6 +141,13 @@ export function useScoreSession(opts: {
     // -------------------------------------------------------------------------
 
     const rafRef = useRef<number | null>(null);
+
+    // Ref so the rAF tick (a closure created once in useEffect) always sees
+    // the current playMode without needing to be recreated on every prop change.
+    const playModeRef = useRef<PlayMode>(playMode);
+    useEffect(() => {
+        playModeRef.current = playMode;
+    }, [playMode]);
 
     // -------------------------------------------------------------------------
     // setExpected — loads a score and resets session state
@@ -234,15 +258,18 @@ export function useScoreSession(opts: {
             const deadline = active.startBeat + active.durationBeats + LANE_CONFIG.GRACE_BEATS;
 
             if (currentBeat > deadline) {
-                const match = matcher.forceMissActive();
-                const tier = scoreMatch(match); // 'miss'
-                const scored: ScoredNote = { match, tier };
+                if (playModeRef.current === 'wait') {
+                    const match = matcher.forceMissActive();
+                    const tier = scoreMatch(match); // 'miss'
+                    const scored: ScoredNote = { match, tier };
 
-                setLiveScored(prev => [...prev, scored]);
-                setCurrentIndex(matcher.consumedCount);
-                // activeTier goes to null when the session is fully consumed,
-                // otherwise stays 'miss' for any remaining notes.
-                setActiveTier(matcher.active === null ? null : 'miss');
+                    setLiveScored(prev => [...prev, scored]);
+                    setCurrentIndex(matcher.consumedCount);
+                    // activeTier goes to null when the session is fully consumed,
+                    // otherwise stays 'miss' for any remaining notes.
+                    setActiveTier(matcher.active === null ? null : 'miss');
+                }
+                // 'strict-wait': do nothing — song waits for the user to hit the note.
             }
 
             rafRef.current = requestAnimationFrame(tick);
@@ -257,7 +284,7 @@ export function useScoreSession(opts: {
                 rafRef.current = null;
             }
         };
-    }, [audioRunning, audioStartPerfNow, bpm]);
+    }, [audioRunning, audioStartPerfNow, bpm, playMode]);
 
     // -------------------------------------------------------------------------
     // Return public interface
