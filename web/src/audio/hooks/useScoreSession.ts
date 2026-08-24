@@ -23,8 +23,8 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { IncrementalMatcher } from '../IncrementalMatcher';
-import { scoreMatch } from '../Scorer';
-import type { ScoreTier, ScoredNote } from '../Scorer';
+import { scoreMatch, DEFAULT_SCORING_THRESHOLDS } from '../Scorer';
+import type { ScoreTier, ScoredNote, ScoringThresholds } from '../Scorer';
 import { msPerBeat } from '../TimingEngine';
 import type { BeatNote } from '../TimingEngine';
 import type { ExpectedNote } from '../../score/types';
@@ -108,8 +108,10 @@ export function useScoreSession(opts: {
      *                       No auto-miss; song stalls if the user stays silent.
      */
     playMode?: PlayMode;
+    /** Scoring thresholds for pitch/time tolerance. Defaults to DEFAULT_SCORING_THRESHOLDS. */
+    scoringThresholds?: ScoringThresholds;
 }): ScoreSession {
-    const { audioRunning, bpm, playMode = 'wait' } = opts;
+    const { audioRunning, bpm, playMode = 'wait', scoringThresholds } = opts;
 
     // -------------------------------------------------------------------------
     // State
@@ -157,6 +159,15 @@ export function useScoreSession(opts: {
      * Null when no score is loaded.
      */
     const scoreStartPerfNowRef = useRef<number | null>(null);
+    // Ref so the rAF tick and consume() always read the current thresholds
+    // without causing stale closures or restarting the rAF loop.
+    const scoringThresholdsRef = useRef<ScoringThresholds>(
+        scoringThresholds ?? DEFAULT_SCORING_THRESHOLDS,
+    );
+    useEffect(() => {
+        scoringThresholdsRef.current = scoringThresholds ?? DEFAULT_SCORING_THRESHOLDS;
+    }, [scoringThresholds]);
+
     useEffect(() => {
         playModeRef.current = playMode;
     }, [playMode]);
@@ -215,7 +226,7 @@ export function useScoreSession(opts: {
         if (match === null) return null; // out of window — user keeps trying
 
         // Score the single new match (scoreMatch is the per-note tier function).
-        const tier = scoreMatch(match);
+        const tier = scoreMatch(match, scoringThresholdsRef.current);
         const scored: ScoredNote = { match, tier };
 
         setLiveScored(prev => [...prev, scored]);
@@ -282,7 +293,7 @@ export function useScoreSession(opts: {
             if (currentBeat > deadline) {
                 if (playModeRef.current === 'wait') {
                     const match = matcher.forceMissActive();
-                    const tier = scoreMatch(match); // 'miss'
+                    const tier = scoreMatch(match, scoringThresholdsRef.current); // 'miss'
                     const scored: ScoredNote = { match, tier };
 
                     setLiveScored(prev => [...prev, scored]);

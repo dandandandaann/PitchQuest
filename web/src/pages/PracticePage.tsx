@@ -11,6 +11,7 @@ import { formatCents, formatBeats } from '../audio/utils/format';
 import { ScorePicker } from '../components/ScorePicker';
 import { useScoreSession } from '../audio/hooks/useScoreSession';
 import { useDevPanelHarnesses } from '../audio/hooks/useDevPanelHarnesses';
+import { DEFAULT_SCORING_THRESHOLDS, type ScoringThresholds } from '../audio/Scorer';
 import { NoteLane } from '../components/NoteLane';
 import '../App.css';
 
@@ -25,6 +26,7 @@ export function PracticePage() {
     // Score picker state
     const [bpm, setBpm] = useState<number>(DEFAULT_BPM);
     const [playMode, setPlayMode] = useState<PlayMode>('wait');
+    const [scoringThresholds, setScoringThresholds] = useState<ScoringThresholds>(DEFAULT_SCORING_THRESHOLDS);
     const [loadedScore, setLoadedScore] = useState<{
         expected: ExpectedNote[];
         bpm: number;
@@ -39,6 +41,7 @@ export function PracticePage() {
         audioStartPerfNow,
         bpm,
         playMode,
+        scoringThresholds,
     });
 
     // Sync loaded score into the session whenever ScorePicker lifts one.
@@ -188,6 +191,114 @@ export function PracticePage() {
                         </select>
                     </label>
                 </div>
+
+                {/* Bug 4: user-configurable scoring thresholds */}
+                <details style={{ margin: '0.5rem 0' }}>
+                    <summary style={{ cursor: 'pointer', opacity: 0.8 }}>
+                        Scoring thresholds (advanced)
+                    </summary>
+                    <div
+                        style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'auto 1fr auto',
+                            gap: '0.5rem 1rem',
+                            alignItems: 'center',
+                            marginTop: '0.5rem',
+                            fontSize: '0.85rem',
+                        }}
+                    >
+                        <label htmlFor="th-pitch-perf">Pitch perfect (cents):</label>
+                        <input
+                            id="th-pitch-perf"
+                            type="number"
+                            min={1}
+                            max={100}
+                            step={1}
+                            value={scoringThresholds.pitchCentsPerfect}
+                            onChange={e =>
+                                setScoringThresholds(t => {
+                                    const v = Math.max(0, Number(e.target.value) || 0);
+                                    return {
+                                        ...t,
+                                        pitchCentsPerfect: v,
+                                        // Ensure ok >= perfect when perfect is lowered.
+                                        pitchCentsOk: Math.max(v, t.pitchCentsOk),
+                                    };
+                                })
+                            }
+                        />
+                        <span style={{ opacity: 0.6 }}>≤ abs pitch error → perfect</span>
+
+                        <label htmlFor="th-pitch-ok">Pitch ok (cents):</label>
+                        <input
+                            id="th-pitch-ok"
+                            type="number"
+                            min={1}
+                            max={200}
+                            step={1}
+                            value={scoringThresholds.pitchCentsOk}
+                            onChange={e =>
+                                setScoringThresholds(t => {
+                                    const v = Math.max(0, Number(e.target.value) || 0);
+                                    return {
+                                        ...t,
+                                        pitchCentsOk: Math.max(v, t.pitchCentsPerfect),
+                                    };
+                                })
+                            }
+                        />
+                        <span style={{ opacity: 0.6 }}>≤ abs pitch error → ok (else miss)</span>
+
+                        <label htmlFor="th-time-perf">Time perfect (beats):</label>
+                        <input
+                            id="th-time-perf"
+                            type="number"
+                            min={0.01}
+                            max={2}
+                            step={0.05}
+                            value={scoringThresholds.timeBeatsPerfect}
+                            onChange={e =>
+                                setScoringThresholds(t => {
+                                    const v = Math.max(0, Number(e.target.value) || 0);
+                                    return {
+                                        ...t,
+                                        timeBeatsPerfect: v,
+                                        // Ensure ok >= perfect when perfect is lowered.
+                                        timeBeatsOk: Math.max(v, t.timeBeatsOk),
+                                    };
+                                })
+                            }
+                        />
+                        <span style={{ opacity: 0.6 }}>≤ abs time error → perfect</span>
+
+                        <label htmlFor="th-time-ok">Time ok (beats):</label>
+                        <input
+                            id="th-time-ok"
+                            type="number"
+                            min={0.01}
+                            max={4}
+                            step={0.05}
+                            value={scoringThresholds.timeBeatsOk}
+                            onChange={e =>
+                                setScoringThresholds(t => {
+                                    const v = Math.max(0, Number(e.target.value) || 0);
+                                    return {
+                                        ...t,
+                                        timeBeatsOk: Math.max(v, t.timeBeatsPerfect),
+                                    };
+                                })
+                            }
+                        />
+                        <span style={{ opacity: 0.6 }}>≤ abs time error → ok (else miss)</span>
+
+                        <button
+                            onClick={() => setScoringThresholds(DEFAULT_SCORING_THRESHOLDS)}
+                            style={{ gridColumn: '1 / -1', padding: '0.25rem 0.5rem', marginTop: '0.5rem' }}
+                        >
+                            Reset to defaults
+                        </button>
+                    </div>
+                </details>
 
                 {/* Stage 6 Task 5: Guitar Hero lane */}
                 {loadedScore && (
