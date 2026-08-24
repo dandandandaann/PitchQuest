@@ -1,13 +1,13 @@
 # PitchQuest — Status & Handoff
 
-**Last updated:** end of Stage 5 (commit `31cbea0`).
+**Last updated:** end of Stage 6 (commit `a7b86d4`).
 **Audience:** the next manager agent (or human) picking up this project.
 
 ---
 
 ## What is this project?
 
-PitchQuest is a React 19 + TypeScript + Vite app at `/Users/daniel/repo/PitchQuest/web/`. The original app was a basic microphone pitch tuner (Tuner page); the work documented here evolved it into a Guitar-Hero-style practice tool that takes a MusicXML score, segments the user's live mic input, matches expected vs detected notes, scores the result, and (eventually) animates it.
+PitchQuest is a React 19 + TypeScript + Vite app at `/Users/daniel/repo/PitchQuest/web/`. The original app was a basic microphone pitch tuner (Tuner page); the work documented here evolved it into a Guitar-Hero-style practice tool that takes a MusicXML score, segments the user's live mic input, matches expected vs detected notes, scores the result, and animates it in a scrolling lane.
 
 ## Where things live
 
@@ -16,33 +16,48 @@ web/src/
 ├── audio/                   # Pitch domain — audio in, performance data out
 │   ├── hooks/
 │   │   ├── useAudioContext.ts        # AudioContext lifecycle + audioStartPerfNow (beat-zero anchor)
-│   │   └── usePitchDetection.ts      # Mic → worklet → pitchy → PitchData
-│   ├── NoteSegmenter.ts              # Pitch stream → DetectedNote[]
-│   ├── TimingEngine.ts               # ms � beats; BeatNote annotation
-│   ├── Matcher.ts                    # ExpectedNote[] + BeatNote[] → MatchedNote[]
-│   ├── Scorer.ts                     # MatchedNote[] → ScoreResult { perNote, summary }
+│   │   ├── usePitchDetection.ts      # Mic → worklet → pitchy → PitchData
+│   │   ├── useScoreSession.ts       # Stage 6: per-session state machine (IncrementalMatcher, rAF ticker, liveScored[])
+│   │   └── useDevPanelHarnesses.ts   # Stage 6: mounts all 6 harness results for the dev panel
+│   ├── IncrementalMatcher.ts         # Stage 6: stateful wait-mode matcher (cursor over ExpectedNote[])
+│   ├── laneConfig.ts                 # Stage 6: pure lane constants (PX_PER_BEAT, GRACE_BEATS, etc.)
+│   ├── NoteSegmenter.ts              # Stage 1: PitchData[] → DetectedNote[]
+│   ├── TimingEngine.ts               # Stage 2: ms ↔ beats; BeatNote annotation
+│   ├── Matcher.ts                    # Stage 4: ExpectedNote[] + BeatNote[] → MatchedNote[]
+│   ├── Scorer.ts                     # Stage 5: MatchedNote[] → ScoreResult { perNote, summary }
 │   ├── types.ts                      # DetectedNote
 │   ├── utils/
 │   │   ├── pitch-math.ts             # frequencyToNote (flats-style: "C4", "Db5")
 │   │   ├── smoothing.ts              # MedianFilter, MovingAverage
 │   │   └── format.ts                 # formatCents, formatBeats
-│   └── *.test-harness.ts             # 5 pure-function harnesses (see "Test harnesses" below)
+│   └── *.test-harness.ts             # 6 pure-function harnesses (see "Test harnesses" below)
 ├── score/                   # Score domain — sheet music in
 │   ├── types.ts                      # ExpectedNote
 │   ├── MusicXmlParser.ts             # XML string → ExpectedNote[]
 │   └── MusicXmlParser.test-harness.ts
-├── components/              # Shared UI (CentsMeter, PitchDisplay, SidebarLayout, NoteHistory)
+├── components/              # Shared UI
+│   ├── CentsMeter.tsx, PitchDisplay.tsx, SidebarLayout.tsx, NoteHistory.tsx
+│   ├── ScorePicker.tsx               # Stage 6: library picker + file upload
+│   └── NoteLane.tsx, NoteLane.css   # Stage 6: rAF-driven scrolling lane
 ├── pages/
 │   ├── HomePage.tsx
 │   ├── TunerPage.tsx                 # Real-time needle + cents meter
-│   └── PracticePage.tsx              # Segmented notes + BPM + dev panel (5 sections)
-├── audio/hooks/useAudioContext.ts    # ⚠️ Has 2 PRE-EXISTING lint errors (refs during render). Out of scope.
+│   └── PracticePage.tsx              # Score practice + lane + dev panel
 └── App.tsx                           # HashRouter with / /tuner /practice routes
+
+web/public/
+├── pitch-processor.js                # AudioWorklet (pitch detection)
+└── scores/
+    ├── manifest.json                  # Stage 6: 22-entry score catalog
+    ├── twinkle-twinkle-little-star.musicxml
+    ├── mary-had-a-little-lamb.musicxml
+    ├── ode-to-joy.musicxml
+    └── frere-jacques.musicxml
 ```
 
 ## What's done (roadmap stages)
 
-Stages 1–5 of `web/docs/roadmap.md` are complete:
+Stages 1–6 of `web/docs/roadmap.md` are complete:
 
 | Stage | Description | Commits |
 |---|---|---|
@@ -51,6 +66,7 @@ Stages 1–5 of `web/docs/roadmap.md` are complete:
 | 3 | MusicXML ingestion | `916f73c` (beat-zero anchor) → `0651825` (parser) → `a1aa346` (harness + rest-advances-currentBeat bugfix) |
 | 4 | Matching engine | `0a0591b` (Matcher) → `765b7fa` (harness + MatchedNote.detected widening) |
 | 5 | Scoring system | `85cd824` (Scorer) → `31cbea0` (harness) |
+| 6 | Visual feedback (Mode A: wait-mode) | `5538097` (plan) → `1560ea2` (score library + manifest) → `bd1e6ce` (IncrementalMatcher + 7-case harness) → `8d6369a` (ScorePicker) → `66bf7b3` (useScoreSession + laneConfig) → `6771906` (NoteLane + integration) → `a7b86d4` (self-terminating rAF follow-ups) |
 | — | Housekeeping | `20a2f57` (.gitattributes LF), `e02bf9e` (.gitignore .tmp/) |
 
 ### End-to-end data flow (live and complete)
@@ -64,22 +80,25 @@ Mic ──→ usePitchDetection           (Stage 1)
         ↓ DetectedNote[]
    TimingEngine.annotateNotes        (Stage 2)
         ↓ BeatNote[]
-   Matcher.matchNotes                (Stage 4)
+   IncrementalMatcher.push            (Stage 6, wait-mode; stateful cursor)
         ↓ MatchedNote[]
-   Scorer.scoreMatches               (Stage 5)
-        ↓ ScoreResult { perNote, summary }
-   [Stage 6: visualize]
-   [Stage 7: session stats]
+   Scorer.scoreMatch (per-note via session.consume)
+        ↓ ScoredNote { tier }
+   ScoreSession.consume → liveScored[] + activeTier + currentIndex
+        ↓
+   <NoteLane> rAF-driven transform (Mode A: wait-mode)
+        ↓
+   Completion overlay (scoreMatches on liveScored)
 ```
 
-### Test harnesses (34 cases total, all passing)
+### Test harnesses (41 cases total, all passing)
 
 Run any of them at runtime via `npx tsx`:
 
 ```bash
 cd web
 npx tsx -e "import { runSegmenterHarness } from './src/audio/NoteSegmenter.test-harness'; console.log(runSegmenterHarness());"
-# same pattern for: TimingEngine, MusicXmlParser, Matcher, Scorer
+# same pattern for: TimingEngine, MusicXmlParser, Matcher, Scorer, IncrementalMatcher
 ```
 
 | Harness | Cases | Notes |
@@ -88,53 +107,22 @@ npx tsx -e "import { runSegmenterHarness } from './src/audio/NoteSegmenter.test-
 | TimingEngine | 8 | Includes a `bpm=0` throw case |
 | MusicXmlParser | 7 | Includes rest-advances-currentBeat regression test |
 | Matcher | 7 | Includes cross-window-steal artifact |
-| Scorer | 6 | Includes wrong-pitch-class-mismatch case (the matcher gap) |
+| Scorer | 7 | Includes wrong-pitch-class-mismatch case (the matcher gap); case 7 locks `scoreOne` passthrough contract |
+| IncrementalMatcher | 6 | Wait-mode cursor; cases: perfect run, out-of-window ignored, dropped note + forceMissActive, out-of-order ignored, empty list, wrong-pitch window match |
 
-All harnesses are pure functions (no React/DOM/I/O). They're also wired into the **dev panel on PracticePage** (5 sections, "Show dev panel" button at the bottom). When you open the page, you can see all 34 cases running live in the browser.
+All harnesses are pure functions (no React/DOM/I/O). They're also wired into the **dev panel on PracticePage** (6 sections, "Show dev panel" button at the bottom). When you open the page, you can see all 41 cases running live in the browser.
 
 ## What's next
 
-Per `web/docs/roadmap.md`, the remaining stages are:
+Per `web/docs/roadmap.md`, only Stage 7 remains:
 
-### Stage 6 — Visual feedback (next, big)
+### Stage 7 — Mode B (continuous scrolling) + session results screen
 
-Roadmap:
-> Start minimal:
-> - Scrolling staff (or even just blocks)
-> - Notes colored:
->   - 🟢 correct
->   - 🟡 off timing
->   - 🔴 wrong pitch
-> 👉 This is where it becomes "Guitar Hero"
-
-**Real complexity:** Stage 6 introduces UI that consumes the LIVE `ScoreResult`. This needs:
-
-1. A "Load score" button on PracticePage that parses a MusicXML string → `ExpectedNote[]` (the parser exists; just needs a UI affordance to paste/upload).
-2. A "Start session" control that aligns the AudioContext clock with beat 0 of the score.
-3. A scrolling lane / staff that shows expected notes moving toward a "now" line, colored by the live tier as the user plays.
-4. **Real-time scoring** — currently `Scorer.scoreMatches` takes a complete `MatchedNote[]`. Stage 6 needs a way to score incrementally as detected notes come in (extend `Matcher.matchNotes` to handle streaming input, OR add a per-frame `matchOneNote` variant).
-
-**Architectural questions for Stage 6 (not yet decided — surface them up front):**
-
-- **Lane vs staff visualization:** scrolling blocks are simpler; staff notation requires a music-rendering library (VexFlow is the standard but is a real dependency). Recommend blocks for v1.
-- **Score ingestion:** paste text, upload file, or both? Paste is simpler; upload needs an `<input type="file">` + `FileReader`.
-- **Incremental scoring:** does `Matcher` need to become stateful (accumulating detected notes over time)? Or does Stage 6 maintain its own expected-vs-played-so-far state?
-- **Pre-loaded sample scores:** ship a "C-major scale" button that hard-codes a tiny MusicXML so the user can try the feature without finding a file?
-
-**Recommended Stage 6 task breakdown (planning not yet done):**
-
-1. Add "Load score" UI + button on PracticePage, store parsed `ExpectedNote[]` in state.
-2. Extend `Matcher` (or add a sibling) to support incremental matching — `pushMatch(expected, newDetected) → newMatches + remainingExpected`.
-3. Add `<NoteLane>` component that renders expected notes scrolling past, colored by live tier.
-4. Wire everything to the existing `ScoreResult` for live feedback.
-
-### Stage 7 — Session loop (after Stage 6)
-
-Roadmap:
-> * Play → feedback → retry
-> * Track: accuracy %, problem notes
-
-The data is already there (`ScoreSummary.accuracyPct`, `ScoredNote` per-note). Stage 7 is mostly UI: a "results screen" after a take, plus per-note history.
+The `IncrementalMatcher` + `<NoteLane>` + `useScoreSession` stack is Stage 7-ready. The changes to go from Mode A (wait-mode) to Mode B (continuous scrolling) are small:
+- **Mode B:** remove the wait-mode cursor logic. The `rAF` loop already reads `performance.now()` and computes `currentBeat`; Mode B just lets `currentBeat` flow continuously without waiting for `consume()` to match the active note. The lane scrolls smoothly at all times.
+- **Session results screen:** `ScoreSummary` is already computed live as notes complete. Stage 7 adds a "results overlay" that appears when `consumedCount === expected.length`, showing accuracy %, problem notes, and a "retry / next piece" action.
+- **Library expansion:** `manifest.json` already lists all 22 pieces (Twinkle, Mary Had a Little Lamb, Ode to Joy, Frère Jacques are bundled; the rest have `"file": null` placeholders).
+- **Octave equivalence flag:** `STATUS.md` gotcha #9 — add `pitchClassOnly: boolean` to `ScoringThresholds` in a follow-on task.
 
 ## Operational gotchas (read these before doing anything)
 
@@ -170,18 +158,13 @@ This file has 2 `react-hooks/refs` errors (accessing `audioContextRef.current` d
 
 **Mitigation:** every lint task says "0 errors, pre-existing warnings acceptable". DO NOT fix as part of unrelated work — open a dedicated housekeeping task if you want to address it.
 
-### 4. PracticePage has accumulated state
+### 4. PracticePage is split across hooks now
 
-After Stages 1–5, `PracticePage.tsx` has:
-- 6 `useState` hooks (audioStartPerfNow-derived state, segmenter state, harness state)
-- 5+ `useEffect` hooks (segmenter lifecycle, push effect, 5 mount-effect setState calls)
-- A growing dev panel
-
-**Before Stage 6**, consider whether to refactor this into smaller hooks (`useNoteSegmenterLog`, `useDevPanelHarnesses`, `useScoreSession`). The current state works but is approaching "too much in one component".
+After Stage 6, `PracticePage.tsx` is slimmed down; session state lives in `useScoreSession` and harness results live in `useDevPanelHarnesses`. The original "too much in one component" risk is mitigated. The dev panel wiring is in `useDevPanelHarnesses`.
 
 ### 5. No automated test suite
 
-`AGENTS.md` says: "No test suite". All testing is via the dev-only pure-function harnesses in `web/src/**/test-harness.ts`. This is intentional — adding `vitest`/`jest` would be a meta-task; the harnesses work and have 34 cases passing.
+`AGENTS.md` says: "No test suite". All testing is via the dev-only pure-function harnesses in `web/src/**/test-harness.ts`. This is intentional — adding `vitest`/`jest` would be a meta-task; the harnesses work and have 41 cases passing.
 
 ### 6. The `performance.now()` zero-origin problem (resolved)
 
@@ -197,25 +180,31 @@ Documented in `Matcher.test-harness.ts` case 6: when expected notes are close to
 
 ### 9. Pitch class match is strict (C4 ≠ C5)
 
-The scorer reports C4 vs C5 as "miss" even though they share the same pitch class. Documented as a v2 candidate in `Scorer.ts` JSDoc. If user testing shows this is a common error mode, switch to pitch-class-only comparison.
+The scorer reports C4 vs C5 as "miss" even though they share the same pitch class. Documented as a v2 candidate in `Scorer.ts` JSDoc. If user testing shows this is a common error mode, switch to pitch-class-only comparison. See also Stage 7 backlog item for `pitchClassOnly: boolean` flag.
+
+### 10. The "Guitar Hero" wait-mode UX
+
+- Mode A advances note-by-note. The user must hit each note before the next becomes active.
+- Auto-advance grace period: 2 beats past `startBeat + durationBeats` (configurable in `laneConfig.ts`).
+- The lane uses CSS `transform: translateX(...)` driven by `requestAnimationFrame` reading `performance.now()` (NOT `audioContext.currentTime`).
+- `audioContextRef.current` reactivity quirk in `useAudioContext`: the hook returns `audioContextRef.current` (ref value at render time), not the ref itself. `useScoreSession` and `NoteLane` deliberately avoid depending on `audioContext` in rAF loops — they use `performance.now()` exclusively.
+- Stage 7 will reuse `IncrementalMatcher`, `useScoreSession`, and `<NoteLane>` verbatim; only the wait-mode cursor logic is replaced with continuous scrolling.
 
 ## Tasks currently in the backlog
 
-The task tracker has one outstanding task:
-
 - `eb19ec46` — Follow-up: add 6/8 case without `<duration>` to exercise type+beat-type math (low priority)
-
-This was flagged in the Stage 3 Task C review — the existing 6/8 test case uses `<duration>2</duration>`, which bypasses the `<type>`+`<beat-type>` math branch. Adding a case with only `<type>quarter</type>` in 6/8 time would catch future regressions in that formula.
+- Stage 7 backlog: Mode B (continuous scrolling), session results screen, library expansion to 22 pieces, `pitchClassOnly` flag in `ScoringThresholds`, pre-existing `useAudioContext.ts` lint errors
 
 ## How to continue (for the next manager agent)
 
 1. **Read this file and `web/docs/roadmap.md`** to understand state and direction.
-2. **Pick up Stage 6** (visual feedback) — it's the next big thing and where the project becomes user-visible as "Guitar Hero". Before delegating:
-   - Decide the architectural questions in "What's next → Stage 6" above.
-   - Use the planner agent to produce a concrete task breakdown (same pattern used for Stages 1–5).
+2. **Pick up Stage 7** — Mode B + session results screen are the planned next steps. The `IncrementalMatcher` + `<NoteLane>` + `useScoreSession` architecture is already in place and Stage 7-ready. Before delegating:
+   - Decide on the results screen UX (modal overlay vs. separate route).
+   - Confirm the Mode B scroll approach (remove wait-mode cursor, let rAF flow continuously).
 3. **Consider housekeeping**:
    - Pre-existing `useAudioContext.ts` lint errors (small, dedicated task).
    - Stage 3 6/8 follow-up (already in backlog).
+   - Library expansion (Tasks 1b/1c from Stage 6 plan — fill in remaining 18 MusicXML files).
 4. **Don't push to remote** — the user said they'll push after testing locally.
 
 ## Commands cheat sheet
