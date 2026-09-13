@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { Renderer, Stave, StaveNote, Accidental, Voice, Formatter } from 'vexflow';
 import {
   KEY_TO_PISTON,
@@ -8,9 +8,24 @@ import {
   pistonsMatch,
   getRequiredPistons,
   randomNote,
+  type NoteFilter,
 } from '../trumpet/fingerings';
 
 const ADVANCE_DELAY_MS = 200;
+
+const FILTER_STORAGE_KEY = 'pq.trumpetDrill.filter';
+const VALID_FILTERS: readonly NoteFilter[] = ['all', 'sharps', 'flats', 'naturals'];
+
+function loadFilter(): NoteFilter {
+  if (typeof window === 'undefined') return 'all';
+  const stored = window.localStorage.getItem(FILTER_STORAGE_KEY);
+  return VALID_FILTERS.includes(stored as NoteFilter) ? (stored as NoteFilter) : 'all';
+}
+
+function saveFilter(filter: NoteFilter): void {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(FILTER_STORAGE_KEY, filter);
+}
 
 /**
  * Convert a written note name like "F#3" or "Bb4" or "C5" into a VexFlow key
@@ -132,7 +147,15 @@ function PistonIndicator({ keyHint, pressed }: PistonIndicatorProps) {
 }
 
 export function TrumpetDrillPage() {
-  const [currentNote, setCurrentNote] = useState<string>(() => randomNote().note);
+  const [noteFilter, setNoteFilter] = useState<NoteFilter>(loadFilter);
+  const filterRef = useRef(noteFilter);
+
+  useEffect(() => {
+    filterRef.current = noteFilter;
+    saveFilter(noteFilter);
+  }, [noteFilter]);
+
+  const [currentNote, setCurrentNote] = useState<string>(() => randomNote(noteFilter).note);
   const [held, setHeld] = useState<ReadonlySet<PistonKey>>(() => new Set());
 
   // Latest-value refs so the key handlers below (mounted once, empty deps) never
@@ -181,7 +204,7 @@ export function TrumpetDrillPage() {
           // Already an advance pending? Ignore rapid manual SPACE re-presses.
           if (pendingAdvanceRef.current !== null) return;
 
-          const nextNote = randomNote().note; // repeats allowed
+          const nextNote = randomNote(filterRef.current).note; // repeats allowed
           pendingRequiredRef.current = required;
           pendingAdvanceRef.current = window.setTimeout(() => {
             pendingAdvanceRef.current = null;
@@ -247,6 +270,38 @@ export function TrumpetDrillPage() {
       <Typography color="text.secondary">
         Hold the correct pistons (J=1, K=2, L=3), then press SPACE to advance.
       </Typography>
+
+      <Box
+        role="group"
+        aria-label="Note filter"
+        sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}
+      >
+        <ToggleButtonGroup
+          value={noteFilter}
+          exclusive
+          onChange={(_event, next: NoteFilter | null) => {
+            // MUI's exclusive group calls onChange with null if the user clicks the active button.
+            // Ignore that — never go back to "no filter".
+            if (next !== null) setNoteFilter(next);
+          }}
+          size="small"
+          color="primary"
+          aria-label="Note filter"
+        >
+          <ToggleButton value="all" tabIndex={-1}>
+            All
+          </ToggleButton>
+          <ToggleButton value="sharps" tabIndex={-1} aria-label="Sharps only">
+            # Sharps
+          </ToggleButton>
+          <ToggleButton value="flats" tabIndex={-1} aria-label="Flats only">
+            b Flats
+          </ToggleButton>
+          <ToggleButton value="naturals" tabIndex={-1} aria-label="Naturals only">
+            Naturals
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Box>
 
       <Box sx={{ my: 6 }}>
         <NoteStaff note={currentNote} />
