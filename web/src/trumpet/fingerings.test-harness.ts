@@ -16,6 +16,8 @@ import {
   getRequiredPistons,
   pistonsMatch,
   randomNote,
+  filterFingerings,
+  isNatural,
 } from './fingerings';
 import type { PistonKey } from './fingerings';
 
@@ -157,6 +159,78 @@ export function runFingeringsHarness(): HarnessCase[] {
       detail: invalid.size === 0
         ? `${runs} random draws, all members of FINGERINGS`
         : `${runs} random draws produced non-members: ${[...invalid].join(', ')}`,
+    });
+  }
+
+  // 10. filterFingerings('all') sanity
+  {
+    const got = filterFingerings('all');
+    const pass = got.length === 33;
+    cases.push({
+      name: "filterFingerings('all') length = 33",
+      pass,
+      detail: pass
+        ? "filterFingerings('all').length=33"
+        : `filterFingerings('all').length=${got.length} (expected 33)`,
+    });
+  }
+
+  // 11. filterFingerings('sharps') is exactly the 6 sharp notes
+  {
+    const expected = new Set(['F#3', 'C#4', 'F#4', 'C#5', 'F#5', 'C#6']);
+    const got = new Set(filterFingerings('sharps').map(f => f.note));
+    const pass = got.size === expected.size && [...expected].every(n => got.has(n));
+    cases.push({
+      name: "filterFingerings('sharps') is exactly the 6 expected sharp notes",
+      pass,
+      detail: pass
+        ? 'sharps = {F#3, C#4, F#4, C#5, F#5, C#6}'
+        : `sharps = {${[...got].join(', ')}} (expected {${[...expected].join(', ')}})`,
+    });
+  }
+
+  // 12. filterFingerings('flats') is exactly the 8 flat notes
+  {
+    const expected = new Set(['Ab3', 'Bb3', 'Eb4', 'Ab4', 'Bb4', 'Eb5', 'Ab5', 'Bb5']);
+    const got = new Set(filterFingerings('flats').map(f => f.note));
+    const pass = got.size === expected.size && [...expected].every(n => got.has(n));
+    cases.push({
+      name: "filterFingerings('flats') is exactly the 8 expected flat notes",
+      pass,
+      detail: pass
+        ? 'flats = {Ab3, Bb3, Eb4, Ab4, Bb4, Eb5, Ab5, Bb5}'
+        : `flats = {${[...got].join(', ')}} (expected {${[...expected].join(', ')}})`,
+    });
+  }
+
+  // 13. filterFingerings('naturals') count = 19, all pass isNatural
+  {
+    const got = filterFingerings('naturals');
+    const nonNatural = got.filter(f => !isNatural(f.note)).map(f => f.note);
+    const pass = got.length === 19 && nonNatural.length === 0;
+    cases.push({
+      name: "filterFingerings('naturals') count = 19 and all pass isNatural",
+      pass,
+      detail: pass
+        ? "filterFingerings('naturals').length=19, all natural"
+        : `filterFingerings('naturals').length=${got.length} (expected 19)${nonNatural.length > 0 ? `, non-natural: ${nonNatural.join(', ')}` : ''}`,
+    });
+  }
+
+  // 14. randomNote('sharps') over 200 draws always yields a sharp note
+  {
+    const runs = 200;
+    const invalid = new Set<string>();
+    for (let i = 0; i < runs; i++) {
+      const n = randomNote('sharps');
+      if (!n.note.includes('#')) invalid.add(n.note);
+    }
+    cases.push({
+      name: "randomNote('sharps') over 200 draws always yields a sharp note",
+      pass: invalid.size === 0,
+      detail: invalid.size === 0
+        ? `${runs} draws from 'sharps', all contain #`
+        : `${runs} draws from 'sharps' produced non-sharps: ${[...invalid].join(', ')}`,
     });
   }
 

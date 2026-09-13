@@ -49,15 +49,42 @@ export const FINGERINGS: readonly Fingering[] = [
   { note: 'D6',  pistons: [1] },
 ];
 
+export type NoteFilter = 'all' | 'sharps' | 'flats' | 'naturals';
+
+/** Returns true iff the note name contains no sharp (#) and no flat (b). Safe because the letter is always A–G. */
+export function isNatural(note: string): boolean {
+  return !note.includes('#') && !note.includes('b');
+}
+
+/**
+ * Returns the subset of FINGERINGS matching the filter:
+ *   'all'      → full FINGERINGS (same reference)
+ *   'sharps'   → notes containing '#'
+ *   'flats'    → notes containing 'b'
+ *   'naturals' → notes containing neither (see isNatural)
+ */
+export function filterFingerings(filter: NoteFilter): readonly Fingering[] {
+  if (filter === 'all') return FINGERINGS;
+  if (filter === 'sharps') return FINGERINGS.filter(f => f.note.includes('#'));
+  if (filter === 'flats') return FINGERINGS.filter(f => f.note.includes('b'));
+  // 'naturals'
+  return FINGERINGS.filter(f => isNatural(f.note));
+}
+
 /** Returns the required pistons for a written note, or null if not found. */
 export function getRequiredPistons(note: string): readonly PistonId[] | null {
   const f = FINGERINGS.find(f => f.note === note);
   return f ? f.pistons : null;
 }
 
-/** Uniformly random entry from FINGERINGS. */
-export function randomNote(): Fingering {
-  return FINGERINGS[Math.floor(Math.random() * FINGERINGS.length)];
+/** Uniformly random entry from FINGERINGS, optionally constrained by filter. Falls back to the full set if the filter matches zero notes (defensive — shouldn't happen with current data, but logs a warning). */
+export function randomNote(filter: NoteFilter = 'all'): Fingering {
+  const pool = filterFingerings(filter);
+  const source = pool.length > 0 ? pool : FINGERINGS;
+  if (pool.length === 0 && filter !== 'all') {
+    console.warn(`randomNote: filter '${filter}' matched zero notes; falling back to full FINGERINGS`);
+  }
+  return source[Math.floor(Math.random() * source.length)];
 }
 
 /**
