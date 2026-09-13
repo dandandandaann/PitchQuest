@@ -285,7 +285,7 @@ export function TrumpetDrillPage() {
       <TrumpetDisplay held={heldPistonIds} maxHeight={360} />
 
       <Typography variant="caption" color="text.disabled" sx={{ mt: 2 }}>
-        Photo: Eusebius, CC BY 3.0, via Wikimedia Commons
+        Trumpet illustration — license/attribution pending
       </Typography>
     </Box>
   );
