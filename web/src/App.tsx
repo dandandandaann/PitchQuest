@@ -3,6 +3,7 @@ import { SidebarLayout } from './components/SidebarLayout';
 import { HomePage } from './pages/HomePage';
 import { TunerPage } from './pages/TunerPage';
 import { PracticePage } from './pages/PracticePage';
+import { TrumpetDrillPage } from './pages/TrumpetDrillPage';
 import './App.css';
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/practice" element={<PracticePage />} />
           <Route path="/tuner" element={<TunerPage />} />
+          <Route path="/trumpet-drill" element={<TrumpetDrillPage />} />
           {/* Redirect any other path to Home */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
