@@ -109,8 +109,8 @@ function PistonIndicator({ keyHint, pressed }: PistonIndicatorProps) {
   // (which is "/PitchQuest/" in production and "/" in dev) so the path is correct in both.
   const base = import.meta.env.BASE_URL;
   const src = pressed
-    ? `${base}trumpet/piston-pressed.svg`
-    : `${base}trumpet/piston-released.svg`;
+    ? `${base}trumpet/piston-pressed.png`
+    : `${base}trumpet/piston-released.png`;
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
@@ -257,6 +257,10 @@ export function TrumpetDrillPage() {
           <PistonIndicator key={id} keyHint={k} pressed={held.has(k)} />
         ))}
       </Box>
+
+      <Typography variant="caption" color="text.disabled" sx={{ mt: 2 }}>
+        Photo: Eusebius, CC BY 3.0, via Wikimedia Commons
+      </Typography>
     </Box>
   );
 }
