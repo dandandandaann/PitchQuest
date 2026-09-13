@@ -99,42 +99,47 @@ function NoteStaff({ note }: NoteStaffProps) {
 }
 
 interface PistonIndicatorProps {
-  id: 1 | 2 | 3;
   keyHint: PistonKey;
   pressed: boolean;
 }
 
-function PistonIndicator({ id, keyHint, pressed }: PistonIndicatorProps) {
+function PistonIndicator({ keyHint, pressed }: PistonIndicatorProps) {
   return (
-    <Box
-      sx={{
-        width: 72,
-        height: 96,
-        borderRadius: 2,
-        border: '2px solid',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        transition: 'all 0.1s ease',
-        ...(pressed
-          ? {
-              bgcolor: 'primary.main',
-              color: 'primary.contrastText',
-              transform: 'translateY(6px)',
-              boxShadow: 'none',
-            }
-          : {
-              bgcolor: 'background.paper',
-              color: 'text.primary',
-              boxShadow: 3,
-            }),
-      }}
-    >
-      <Typography variant="h4" component="div">
-        {id}
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+      {/* Stacked button + casing */}
+      <Box sx={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        {/* Finger button — domed disc that depresses into the casing when pressed */}
+        <Box
+          sx={{
+            width: 44,
+            height: 18,
+            borderRadius: '50%',
+            background:
+              'linear-gradient(180deg, #b0b0b0 0%, #e8e8e8 40%, #f8f8f8 60%, #c8c8c8 100%)',
+            border: '1px solid rgba(0,0,0,0.35)',
+            boxShadow: pressed ? '0 1px 2px rgba(0,0,0,0.2)' : '0 2px 4px rgba(0,0,0,0.3)',
+            transform: pressed ? 'translateY(8px)' : 'translateY(0)',
+            transition: 'transform 0.08s ease, box-shadow 0.08s ease',
+            mb: '-2px', // slight overlap onto casing to read as one unit
+          }}
+        />
+        {/* Casing — vertical metal cylinder (does not animate) */}
+        <Box
+          sx={{
+            width: 60,
+            height: 70,
+            borderRadius: 2,
+            background:
+              'linear-gradient(180deg, #9a9a9a 0%, #d4d4d4 30%, #ededed 50%, #d4d4d4 70%, #8a8a8a 100%)',
+            border: '1px solid rgba(0,0,0,0.25)',
+            boxShadow:
+              'inset 2px 0 4px rgba(0,0,0,0.15), inset -2px 0 4px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.3)',
+          }}
+        />
+      </Box>
+      <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+        {keyHint}
       </Typography>
-      <Typography variant="caption">{keyHint}</Typography>
     </Box>
   );
 }
@@ -260,9 +265,9 @@ export function TrumpetDrillPage() {
         <NoteStaff note={currentNote} />
       </Box>
 
-      <Box sx={{ display: 'flex', gap: 2 }}>
+      <Box sx={{ display: 'flex', gap: 4 }}>
         {(Object.entries(KEY_TO_PISTON) as [PistonKey, 1 | 2 | 3][]).map(([k, id]) => (
-          <PistonIndicator key={id} id={id} keyHint={k} pressed={held.has(k)} />
+          <PistonIndicator key={id} keyHint={k} pressed={held.has(k)} />
         ))}
       </Box>
     </Box>
