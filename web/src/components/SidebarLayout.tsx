@@ -14,6 +14,7 @@ import {
 import HomeIcon from '@mui/icons-material/Home';
 import MicIcon from '@mui/icons-material/Mic';
 import SchoolIcon from '@mui/icons-material/School';
+import MusicNoteIcon from '@mui/icons-material/MusicNote';
 
 const drawerWidth = 240;
 
@@ -31,6 +32,10 @@ export function SidebarLayout() {
 
   const practiceItems = [
     { text: 'Practice', icon: <SchoolIcon />, path: '/practice' },
+  ];
+
+  const drillItems = [
+    { text: 'Trumpet Fingering', icon: <MusicNoteIcon />, path: '/trumpet-drill' },
   ];
 
   return (
@@ -95,6 +100,26 @@ export function SidebarLayout() {
           }
         >
           {practiceItems.map((item) => (
+            <ListItem key={item.text} disablePadding>
+              <ListItemButton
+                onClick={() => navigate(item.path)}
+                selected={location.pathname === item.path}
+              >
+                <ListItemIcon>{item.icon}</ListItemIcon>
+                <ListItemText primary={item.text} />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+        <Divider />
+        <List
+          subheader={
+            <ListSubheader component="div" id="nested-list-drills-subheader">
+              Drills
+            </ListSubheader>
+          }
+        >
+          {drillItems.map((item) => (
             <ListItem key={item.text} disablePadding>
               <ListItemButton
                 onClick={() => navigate(item.path)}
