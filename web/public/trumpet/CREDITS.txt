@@ -7,3 +7,17 @@ Modifications: cropped to the assembled valve (left panel of the montage) and th
 white studio background was made transparent; piston-released.png shows the button
 raised. piston-pressed.png is derived from the same crop with the button region
 (top 205 px) shifted down 30 px behind the valve cap to simulate the pressed state.
+
+
+Golden trumpet photograph
+=========================
+Source: /home/daniel/Downloads/trumpet-design-golden-trumpet.jpg
+      (user-provided; license/attribution to be confirmed with the original
+      photographer/source before public deployment)
+Modifications:
+  - White background made transparent (RGB > 230 → alpha 0)
+  - Cropped to tight non-transparent bounding box with 8 px padding
+  - 8 PNG variants generated for the fingering drill: trumpet-released.png
+    and trumpet-press-{1,2,3,1-2,1-3,2-3,1-2-3}.png. The pressed variants
+    simulate a depressed piston by shifting the button region ~30 px down
+    behind the valve cap.
