@@ -2,11 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import {
   KEY_TO_PISTON,
+  type PistonId,
   type PistonKey,
   pistonsMatch,
   getRequiredPistons,
   randomNote,
 } from '../trumpet/fingerings';
+
+const ADVANCE_DELAY_MS = 200;
 
 interface PistonIndicatorProps {
   id: 1 | 2 | 3;
@@ -58,6 +61,11 @@ export function TrumpetDrillPage() {
   const currentNoteRef = useRef(currentNote);
   const heldRef = useRef(held);
 
+  // Pending deferred note advance: timeout id + the required piston set captured
+  // at SPACE press. Both are cleared if the held pistons stop matching mid-delay.
+  const pendingAdvanceRef = useRef<number | null>(null);
+  const pendingRequiredRef = useRef<readonly PistonId[] | null>(null);
+
   useEffect(() => {
     const isEditableTarget = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
@@ -91,9 +99,17 @@ export function TrumpetDrillPage() {
         event.preventDefault(); // Space scrolls the page
         const required = getRequiredPistons(currentNoteRef.current);
         if (required && pistonsMatch(heldRef.current, required)) {
+          // Already an advance pending? Ignore rapid manual SPACE re-presses.
+          if (pendingAdvanceRef.current !== null) return;
+
           const nextNote = randomNote().note; // repeats allowed
-          currentNoteRef.current = nextNote;
-          setCurrentNote(nextNote);
+          pendingRequiredRef.current = required;
+          pendingAdvanceRef.current = window.setTimeout(() => {
+            pendingAdvanceRef.current = null;
+            pendingRequiredRef.current = null;
+            currentNoteRef.current = nextNote;
+            setCurrentNote(nextNote);
+          }, ADVANCE_DELAY_MS);
         }
         // else: do nothing — no feedback, no state change
       }
@@ -107,6 +123,19 @@ export function TrumpetDrillPage() {
         const next = new Set(heldRef.current);
         next.delete(k);
         setHeldKeys(next);
+
+        // If a deferred advance is pending and releasing this piston breaks the
+        // required combination, cancel it — the note stays on screen.
+        const pendingRequired = pendingRequiredRef.current;
+        if (
+          pendingAdvanceRef.current !== null &&
+          pendingRequired &&
+          !pistonsMatch(next, pendingRequired)
+        ) {
+          window.clearTimeout(pendingAdvanceRef.current);
+          pendingAdvanceRef.current = null;
+          pendingRequiredRef.current = null;
+        }
       }
       // No action for SPACE keyup.
     };
@@ -116,6 +145,11 @@ export function TrumpetDrillPage() {
     return () => {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      if (pendingAdvanceRef.current !== null) {
+        window.clearTimeout(pendingAdvanceRef.current);
+        pendingAdvanceRef.current = null;
+        pendingRequiredRef.current = null;
+      }
     };
   }, []);
 
