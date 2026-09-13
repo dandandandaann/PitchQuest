@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Box, Typography } from '@mui/material';
+import { Renderer, Stave, StaveNote, Accidental, Voice, Formatter } from 'vexflow';
 import {
   KEY_TO_PISTON,
   type PistonId,
@@ -10,6 +11,92 @@ import {
 } from '../trumpet/fingerings';
 
 const ADVANCE_DELAY_MS = 200;
+
+/**
+ * Convert a written note name like "F#3" or "Bb4" or "C5" into a VexFlow key
+ * string like "f#/3" or "bb/4" or "c/5".
+ * VexFlow uses lowercase letters with # for sharp, b for flat, no suffix for natural.
+ */
+function noteToVexFlowKey(note: string): string {
+  // Match: letter (A-G, possibly already uppercase), optional accidental (# or b), octave digit(s)
+  const m = /^([A-G])(#|b)?(-?\d+)$/.exec(note);
+  if (!m) throw new Error(`Unexpected note name: ${note}`);
+  const [, letter, accidental, octave] = m;
+  return `${letter.toLowerCase()}${accidental ?? ''}/${octave}`;
+}
+
+/** Map of accidentals for the explicit Accidental modifier (undefined = natural, no glyph needed). */
+function accidentalFor(note: string): '#' | 'b' | undefined {
+  if (note.includes('#')) return '#';
+  if (note.includes('b')) return 'b';
+  return undefined;
+}
+
+interface NoteStaffProps {
+  note: string;
+}
+
+function NoteStaff({ note }: NoteStaffProps) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // Clear any prior SVG (re-renders on note change).
+    container.innerHTML = '';
+
+    const WIDTH = 240;
+    const HEIGHT = 140;
+
+    const renderer = new Renderer(container, Renderer.Backends.SVG);
+    renderer.resize(WIDTH, HEIGHT);
+    const context = renderer.getContext();
+    // Use a generic system font for any non-glyph text (VexFlow renders noteheads from its own font).
+    context.setFont('Arial', 10);
+
+    // Stave placed at x=10 y=30 (leaves room for the staff vertically in the container).
+    const stave = new Stave(10, 30, WIDTH - 20);
+    stave.addClef('treble');
+    stave.setContext(context).draw();
+
+    // Whole note, no stem/flag clutter — single note, "one note at a time" semantics.
+    const staveNote = new StaveNote({
+      keys: [noteToVexFlowKey(note)],
+      duration: 'w',
+      clef: 'treble',
+    });
+    const acc = accidentalFor(note);
+    if (acc) {
+      staveNote.addModifier(new Accidental(acc), 0);
+    }
+
+    const voice = new Voice({ numBeats: 4, beatValue: 4 });
+    voice.setStrict(false); // tolerate the single whole note
+    voice.addTickables([staveNote]);
+
+    new Formatter().joinVoices([voice]).format([voice], WIDTH - 80);
+    voice.draw(context, stave);
+
+    return () => {
+      // Defensive: clear on cleanup so React 19 strict-mode double-invoke doesn't leak SVGs.
+      if (container) container.innerHTML = '';
+    };
+  }, [note]);
+
+  return (
+    <Box
+      ref={containerRef}
+      sx={{
+        width: 240,
+        height: 140,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    />
+  );
+}
 
 interface PistonIndicatorProps {
   id: 1 | 2 | 3;
@@ -169,9 +256,9 @@ export function TrumpetDrillPage() {
         Hold the correct pistons (J=1, K=2, L=3), then press SPACE to advance.
       </Typography>
 
-      <Typography variant="h1" component="div" sx={{ fontWeight: 'bold', my: 6 }}>
-        {currentNote}
-      </Typography>
+      <Box sx={{ my: 6 }}>
+        <NoteStaff note={currentNote} />
+      </Box>
 
       <Box sx={{ display: 'flex', gap: 2 }}>
         {(Object.entries(KEY_TO_PISTON) as [PistonKey, 1 | 2 | 3][]).map(([k, id]) => (
