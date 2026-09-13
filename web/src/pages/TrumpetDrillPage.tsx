@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { Renderer, Stave, StaveNote, Accidental, Voice, Formatter } from 'vexflow';
 import {
@@ -10,6 +10,7 @@ import {
   randomNote,
   type NoteFilter,
 } from '../trumpet/fingerings';
+import { TrumpetDisplay } from '../components/TrumpetDisplay';
 
 const ADVANCE_DELAY_MS = 200;
 
@@ -113,39 +114,6 @@ function NoteStaff({ note }: NoteStaffProps) {
   );
 }
 
-interface PistonIndicatorProps {
-  keyHint: PistonKey;
-  pressed: boolean;
-}
-
-function PistonIndicator({ keyHint, pressed }: PistonIndicatorProps) {
-  // Vite serves /public/* at the base path. Since the app is hosted at /PitchQuest/,
-  // the absolute path is `/PitchQuest/trumpet/piston-*.svg`. Use `import.meta.env.BASE_URL`
-  // (which is "/PitchQuest/" in production and "/" in dev) so the path is correct in both.
-  const base = import.meta.env.BASE_URL;
-  const src = pressed
-    ? `${base}trumpet/piston-pressed.png`
-    : `${base}trumpet/piston-released.png`;
-
-  return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-      <Box
-        component="img"
-        src={src}
-        alt={`Piston ${keyHint}${pressed ? ' (pressed)' : ''}`}
-        sx={{
-          width: 80,
-          height: 120,
-          display: 'block',
-        }}
-      />
-      <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-        {keyHint}
-      </Typography>
-    </Box>
-  );
-}
-
 export function TrumpetDrillPage() {
   const [noteFilter, setNoteFilter] = useState<NoteFilter>(loadFilter);
   const filterRef = useRef(noteFilter);
@@ -157,6 +125,13 @@ export function TrumpetDrillPage() {
 
   const [currentNote, setCurrentNote] = useState<string>(() => randomNote(noteFilter).note);
   const [held, setHeld] = useState<ReadonlySet<PistonKey>>(() => new Set());
+
+  // The display layer works in PistonId land (1/2/3) while keyboard logic stays in
+  // PistonKey land (J/K/L) — convert only here, memoized on the held set.
+  const heldPistonIds = useMemo(
+    () => new Set([...held].map((k) => KEY_TO_PISTON[k])),
+    [held],
+  );
 
   // Latest-value refs so the key handlers below (mounted once, empty deps) never
   // read stale state when checking SPACE against the current note + held pistons.
@@ -307,11 +282,7 @@ export function TrumpetDrillPage() {
         <NoteStaff note={currentNote} />
       </Box>
 
-      <Box sx={{ display: 'flex', gap: 4 }}>
-        {(Object.entries(KEY_TO_PISTON) as [PistonKey, 1 | 2 | 3][]).map(([k, id]) => (
-          <PistonIndicator key={id} keyHint={k} pressed={held.has(k)} />
-        ))}
-      </Box>
+      <TrumpetDisplay held={heldPistonIds} maxHeight={360} />
 
       <Typography variant="caption" color="text.disabled" sx={{ mt: 2 }}>
         Photo: Eusebius, CC BY 3.0, via Wikimedia Commons

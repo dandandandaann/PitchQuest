@@ -4,9 +4,9 @@ Source: https://commons.wikimedia.org/wiki/File:Trompette_-_premier_piston_-_mon
 Author: Eusebius (https://commons.wikimedia.org/wiki/User:Eusebius)
 License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
 Modifications: cropped to the assembled valve (left panel of the montage) and the
-white studio background was made transparent; piston-released.png shows the button
-raised. piston-pressed.png is derived from the same crop with the button region
-(top 205 px) shifted down 30 px behind the valve cap to simulate the pressed state.
+white studio background was made transparent. (The piston-released.png /
+piston-pressed.png variants derived from this crop were removed when the drill
+switched to full-trumpet imagery; the source photo is retained in git history.)
 
 
 Golden trumpet photograph
