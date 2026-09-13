@@ -104,39 +104,26 @@ interface PistonIndicatorProps {
 }
 
 function PistonIndicator({ keyHint, pressed }: PistonIndicatorProps) {
+  // Vite serves /public/* at the base path. Since the app is hosted at /PitchQuest/,
+  // the absolute path is `/PitchQuest/trumpet/piston-*.svg`. Use `import.meta.env.BASE_URL`
+  // (which is "/PitchQuest/" in production and "/" in dev) so the path is correct in both.
+  const base = import.meta.env.BASE_URL;
+  const src = pressed
+    ? `${base}trumpet/piston-pressed.svg`
+    : `${base}trumpet/piston-released.svg`;
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-      {/* Stacked button + casing */}
-      <Box sx={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        {/* Finger button — domed disc that depresses into the casing when pressed */}
-        <Box
-          sx={{
-            width: 44,
-            height: 18,
-            borderRadius: '50%',
-            background:
-              'linear-gradient(180deg, #b0b0b0 0%, #e8e8e8 40%, #f8f8f8 60%, #c8c8c8 100%)',
-            border: '1px solid rgba(0,0,0,0.35)',
-            boxShadow: pressed ? '0 1px 2px rgba(0,0,0,0.2)' : '0 2px 4px rgba(0,0,0,0.3)',
-            transform: pressed ? 'translateY(8px)' : 'translateY(0)',
-            transition: 'transform 0.08s ease, box-shadow 0.08s ease',
-            mb: '-2px', // slight overlap onto casing to read as one unit
-          }}
-        />
-        {/* Casing — vertical metal cylinder (does not animate) */}
-        <Box
-          sx={{
-            width: 60,
-            height: 70,
-            borderRadius: 2,
-            background:
-              'linear-gradient(180deg, #9a9a9a 0%, #d4d4d4 30%, #ededed 50%, #d4d4d4 70%, #8a8a8a 100%)',
-            border: '1px solid rgba(0,0,0,0.25)',
-            boxShadow:
-              'inset 2px 0 4px rgba(0,0,0,0.15), inset -2px 0 4px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.3)',
-          }}
-        />
-      </Box>
+      <Box
+        component="img"
+        src={src}
+        alt={`Piston ${keyHint}${pressed ? ' (pressed)' : ''}`}
+        sx={{
+          width: 80,
+          height: 120,
+          display: 'block',
+        }}
+      />
       <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
         {keyHint}
       </Typography>
