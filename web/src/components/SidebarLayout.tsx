@@ -1,143 +1,303 @@
+import { useState, type ReactElement } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Box, 
-  Drawer, 
-  List, 
-  ListItem, 
-  ListItemButton, 
-  ListItemIcon, 
-  ListItemText, 
-  Divider, 
+import {
+  AppBar,
+  Box,
+  Drawer,
+  IconButton,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
   ListSubheader,
-  Typography
+  Toolbar,
+  Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
-import HomeIcon from '@mui/icons-material/Home';
-import MicIcon from '@mui/icons-material/Mic';
-import SchoolIcon from '@mui/icons-material/School';
-import MusicNoteIcon from '@mui/icons-material/MusicNote';
+import HomeRounded from '@mui/icons-material/HomeRounded';
+import GraphicEqRounded from '@mui/icons-material/GraphicEqRounded';
+import SchoolRounded from '@mui/icons-material/SchoolRounded';
+import MusicNoteRounded from '@mui/icons-material/MusicNoteRounded';
+import MenuRounded from '@mui/icons-material/MenuRounded';
+import CloseRounded from '@mui/icons-material/CloseRounded';
+import AutoAwesomeRounded from '@mui/icons-material/AutoAwesomeRounded';
 
-const drawerWidth = 240;
+const DRAWER_WIDTH = 264;
+
+interface NavItem {
+  text: string;
+  icon: ReactElement;
+  path: string;
+}
+
+interface NavSection {
+  label: string | null;
+  items: NavItem[];
+}
+
+const NAV_SECTIONS: NavSection[] = [
+  { label: null, items: [{ text: 'Home', icon: <HomeRounded />, path: '/' }] },
+  {
+    label: 'Ear training',
+    items: [{ text: 'Tuner', icon: <GraphicEqRounded />, path: '/tuner' }],
+  },
+  {
+    label: 'Practice',
+    items: [{ text: 'Score practice', icon: <SchoolRounded />, path: '/practice' }],
+  },
+  {
+    label: 'Drills',
+    items: [{ text: 'Trumpet fingering', icon: <MusicNoteRounded />, path: '/trumpet-drill' }],
+  },
+];
+
+/** Brand block — a clay tile with a music-note glyph. */
+function Brand({ compact = false }: { compact?: boolean }) {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1.5,
+        px: 2,
+        py: compact ? 0 : 3,
+      }}
+    >
+      <Box
+        aria-hidden="true"
+        sx={{
+          width: 44,
+          height: 44,
+          flex: '0 0 auto',
+          display: 'grid',
+          placeItems: 'center',
+          color: 'var(--ink)',
+          background: 'var(--clay-peach)',
+          borderRadius: '16px',
+          boxShadow: 'var(--clay-surface), var(--clay-rim-strong)',
+        }}
+      >
+        <AutoAwesomeRounded fontSize="small" />
+      </Box>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography
+          component="span"
+          sx={{
+            display: 'block',
+            fontFamily: 'var(--font-display)',
+            fontWeight: 900,
+            fontSize: '1.35rem',
+            lineHeight: 1.1,
+            letterSpacing: '-0.02em',
+            color: 'var(--ink)',
+          }}
+        >
+          PitchQuest
+        </Typography>
+        <Typography
+          component="span"
+          sx={{
+            display: 'block',
+            fontSize: '0.6875rem',
+            fontWeight: 800,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-faint)',
+          }}
+        >
+          Play · Listen · Improve
+        </Typography>
+      </Box>
+    </Box>
+  );
+}
+
+/** Sidebar nav body — shared by the permanent and temporary drawers. */
+function NavBody({ onNavigate }: { onNavigate: (path: string) => void }) {
+  const location = useLocation();
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <Brand />
+
+      <Box component="nav" aria-label="Primary" sx={{ flex: '1 1 auto', overflowY: 'auto', pt: 1 }}>
+        {NAV_SECTIONS.map((section, i) => (
+          <List
+            key={section.label ?? `section-${i}`}
+            dense
+            disablePadding
+            sx={{ mb: 1 }}
+            subheader={
+              section.label ? (
+                <ListSubheader component="div" disableSticky>
+                  {section.label}
+                </ListSubheader>
+              ) : undefined
+            }
+          >
+            {section.items.map(item => (
+              <ListItem key={item.text} disablePadding>
+                <ListItemButton
+                  onClick={() => onNavigate(item.path)}
+                  selected={location.pathname === item.path}
+                  aria-current={location.pathname === item.path ? 'page' : undefined}
+                >
+                  <ListItemIcon>{item.icon}</ListItemIcon>
+                  <ListItemText
+                    primary={item.text}
+                    slotProps={{
+                      primary: {
+                        sx: { fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '0.95rem' },
+                      },
+                    }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+        ))}
+      </Box>
+
+      <Box sx={{ p: 2 }}>
+        <Box
+          sx={{
+            p: 2,
+            borderRadius: '18px',
+            background: 'var(--blue-100)',
+            boxShadow: 'var(--clay-inner-soft), inset 0 0 0 2px var(--blue-300)',
+          }}
+        >
+          <Typography
+            sx={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: '0.8125rem',
+              color: 'var(--ink)',
+              mb: 0.5,
+            }}
+          >
+            Mic stays on-device
+          </Typography>
+          <Typography sx={{ fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--ink-soft)' }}>
+            Pitch is analysed locally with YIN. Nothing is uploaded.
+          </Typography>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
 
 export function SidebarLayout() {
   const navigate = useNavigate();
-  const location = useLocation();
+  const theme = useTheme();
+  const isCompact = useMediaQuery(theme.breakpoints.down('md'));
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  const menuItems = [
-    { text: 'Home', icon: <HomeIcon />, path: '/' },
-  ];
-
-  const tunerItems = [
-    { text: 'Tuner', icon: <MicIcon />, path: '/tuner' },
-  ];
-
-  const practiceItems = [
-    { text: 'Practice', icon: <SchoolIcon />, path: '/practice' },
-  ];
-
-  const drillItems = [
-    { text: 'Trumpet Fingering', icon: <MusicNoteIcon />, path: '/trumpet-drill' },
-  ];
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    setMobileOpen(false);
+  };
 
   return (
-    <Box sx={{ display: 'flex' }}>
-      <Drawer
-        sx={{
-          width: drawerWidth,
-          flexShrink: 0,
-          '& .MuiDrawer-paper': {
-            width: drawerWidth,
-            boxSizing: 'border-box',
-          },
-        }}
-        variant="permanent"
-        anchor="left"
-      >
-        <Box sx={{ p: 2 }}>
-          <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
-            PitchQuest
-          </Typography>
+    <>
+      {/* Decorative clay background — purely presentational. */}
+      <div className="pq-bg" aria-hidden="true">
+        <div className="pq-bg-blocks" />
+      </div>
+
+      <a className="clay-visually-hidden" href="#main-content">
+        Skip to main content
+      </a>
+
+      <div className="pq-shell">
+        {/* ─ Mobile top bar ────────────────────────────────────────────── */}
+        {isCompact && (
+          <AppBar
+            className="pq-topbar"
+            position="fixed"
+            sx={{
+              backdropFilter: 'blur(10px)',
+              backgroundColor: 'rgba(255,250,248,0.86)',
+              borderBottom: '2px solid var(--peach-100)',
+            }}
+          >
+            <Toolbar sx={{ minHeight: '68px !important', gap: 1 }}>
+              <IconButton
+                edge="start"
+                aria-label="Open navigation menu"
+                aria-expanded={mobileOpen}
+                aria-controls="pq-nav-drawer"
+                onClick={() => setMobileOpen(true)}
+              >
+                <MenuRounded />
+              </IconButton>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Brand compact />
+              </Box>
+            </Toolbar>
+          </AppBar>
+        )}
+
+        {/* ── Desktop permanent sidebar ──────────────────────────────────── */}
+        {!isCompact && (
+          <Drawer
+            className="pq-sidebar"
+            variant="permanent"
+            anchor="left"
+            sx={{
+              width: DRAWER_WIDTH,
+              flexShrink: 0,
+              '& .MuiDrawer-paper': {
+                width: DRAWER_WIDTH,
+                boxSizing: 'border-box',
+                borderRight: '3px solid var(--peach-100)',
+              },
+            }}
+          >
+            <NavBody onNavigate={handleNavigate} />
+          </Drawer>
+        )}
+
+        {/* ── Mobile slide-over sidebar ──────────────────────────────────── */}
+        {isCompact && (
+          <Drawer
+            id="pq-nav-drawer"
+            className="pq-sidebar"
+            variant="temporary"
+            anchor="left"
+            open={mobileOpen}
+            onClose={() => setMobileOpen(false)}
+            ModalProps={{ keepMounted: true }}
+            sx={{
+              '& .MuiDrawer-paper': {
+                width: Math.min(DRAWER_WIDTH, 300),
+                boxSizing: 'border-box',
+                borderRadius: '0 28px 28px 0',
+              },
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 1, px: 1 }}>
+              <IconButton aria-label="Close navigation menu" onClick={() => setMobileOpen(false)}>
+                <CloseRounded />
+              </IconButton>
+            </Box>
+            <NavBody onNavigate={handleNavigate} />
+          </Drawer>
+        )}
+
+        {/* ── Content ──────────────────────────────────────────────────── */}
+        <Box
+          component="main"
+          id="main-content"
+          tabIndex={-1}
+          className="pq-content"
+          sx={isCompact ? { pt: 'calc(68px + 20px)' } : undefined}
+        >
+          <Outlet />
         </Box>
-        <Divider />
-        <List>
-          {menuItems.map((item) => (
-            <ListItem key={item.text} disablePadding>
-              <ListItemButton 
-                onClick={() => navigate(item.path)}
-                selected={location.pathname === item.path}
-              >
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.text} />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-        <Divider />
-        <List
-          subheader={
-            <ListSubheader component="div" id="nested-list-subheader">
-              Tuner
-            </ListSubheader>
-          }
-        >
-          {tunerItems.map((item) => (
-            <ListItem key={item.text} disablePadding>
-              <ListItemButton
-                onClick={() => navigate(item.path)}
-                selected={location.pathname === item.path}
-              >
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.text} />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-        <Divider />
-        <List
-          subheader={
-            <ListSubheader component="div" id="nested-list-practice-subheader">
-              Practice
-            </ListSubheader>
-          }
-        >
-          {practiceItems.map((item) => (
-            <ListItem key={item.text} disablePadding>
-              <ListItemButton
-                onClick={() => navigate(item.path)}
-                selected={location.pathname === item.path}
-              >
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.text} />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-        <Divider />
-        <List
-          subheader={
-            <ListSubheader component="div" id="nested-list-drills-subheader">
-              Drills
-            </ListSubheader>
-          }
-        >
-          {drillItems.map((item) => (
-            <ListItem key={item.text} disablePadding>
-              <ListItemButton
-                onClick={() => navigate(item.path)}
-                selected={location.pathname === item.path}
-              >
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.text} />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-      </Drawer>
-      <Box
-        component="main"
-        sx={{ flexGrow: 1, bgcolor: 'background.default', p: 3, minHeight: '100vh', minWidth: 0 }}
-      >
-        <Outlet />
-      </Box>
-    </Box>
+      </div>
+    </>
   );
 }

@@ -13,7 +13,18 @@ import { useScoreSession } from '../audio/hooks/useScoreSession';
 import { useDevPanelHarnesses } from '../audio/hooks/useDevPanelHarnesses';
 import { DEFAULT_SCORING_THRESHOLDS, type ScoringThresholds } from '../audio/Scorer';
 import { NoteLane } from '../components/NoteLane';
-import '../App.css';
+
+import MicRounded from '@mui/icons-material/MicRounded';
+import MicOffRounded from '@mui/icons-material/MicOffRounded';
+import SchoolRounded from '@mui/icons-material/SchoolRounded';
+import TuneRounded from '@mui/icons-material/TuneRounded';
+import SpeedRounded from '@mui/icons-material/SpeedRounded';
+import TimerRounded from '@mui/icons-material/TimerRounded';
+import InsightsRounded from '@mui/icons-material/InsightsRounded';
+import ReplayRounded from '@mui/icons-material/ReplayRounded';
+import CheckCircleRounded from '@mui/icons-material/CheckCircleRounded';
+import ErrorOutlineRounded from '@mui/icons-material/ErrorOutlineRounded';
+import GraphicEqRounded from '@mui/icons-material/GraphicEqRounded';
 
 const MAX_DETECTED_NOTES = 20; // Live log cap for segmented notes
 
@@ -132,240 +143,335 @@ export function PracticePage() {
         }
     }, [pitchData, audioStartPerfNow, bpm, session]);
 
+    const doneCount = session.currentIndex;
+    const totalCount = loadedScore?.expected.length ?? 0;
+
     return (
-        <div className="PracticePage">
-            <header>
-                <h1>Practice</h1>
-                <p>Real-time note segmentation</p>
+        <div className="pq-page">
+            {/* ═ HEADER BLOCK ════════════════════════════════════════════════ */}
+            <header className="pq-header">
+                <div className="pq-header__text">
+                    <span className="clay-eyebrow">Practice</span>
+                    <h1 className="clay-title clay-title--h1">Score practice</h1>
+                    <p className="clay-lede">
+                        Load a piece, start the mic, and play. Every note is matched against the score and coloured
+                        as it lands — green for perfect, blue for close, grey for missed.
+                    </p>
+                </div>
+                <span className={`clay-badge ${isStarted ? 'clay-badge--green' : 'clay-badge--white'}`}>
+                    <GraphicEqRounded sx={{ fontSize: 15 }} />
+                    {isStarted ? 'Listening' : 'Mic off'}
+                </span>
             </header>
 
-            <main>
-                <p style={{ opacity: 0.7 }}>
-                    Stage 1: Note Segmentation (live)
-                </p>
-                <p>
-                    Notes appear here when you sing or play. Each row is one held pitch (after segmentation heuristics).
-                </p>
+            {/* ═ SCORE PICKER ════════════════════════════════════════════════ */}
+            <ScorePicker
+                onScoreLoaded={handleScoreLoaded}
+                onClearScore={handleClearScore}
+                loadedScore={loadedScore?.source ?? null}
+            />
 
-                {/* Dev debug: show session cursor while a score is loaded */}
-                {loadedScore && (
-                    <p style={{ fontSize: '0.8rem', opacity: 0.6, marginBottom: '0.25rem' }}>
-                        session.currentIndex: {session.currentIndex} / {loadedScore.expected.length}
-                        {session.activeTier !== null && (
-                            <span style={{ marginLeft: '0.75rem' }}>active tier: <strong>{session.activeTier}</strong></span>
-                        )}
-                    </p>
-                )}
-
-                {/* Score picker — loads ExpectedNote[] into session state */}
-                <ScorePicker
-                    onScoreLoaded={handleScoreLoaded}
-                    onClearScore={handleClearScore}
-                    loadedScore={loadedScore?.source ?? null}
-                />
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '1rem 0' }}>
-                    <label htmlFor="bpm-input">BPM:</label>
-                    <input
-                        id="bpm-input"
-                        type="number"
-                        min={30}
-                        max={300}
-                        step={1}
-                        value={bpm}
-                        onChange={handleBpmChange}
-                        style={{ width: '5rem', padding: '0.25rem' }}
-                    />
-                    <span style={{ opacity: 0.7, fontSize: '0.9rem' }}>
-                        1 beat = {msPerBeat(bpm).toFixed(0)}ms
+            {/* ══ SESSION SETTINGS ═══════════════════════════════════════════ */}
+            <section className="clay-card practice-settings" aria-labelledby="practice-settings-title">
+                <header className="practice-settings__head">
+                    <span className="clay-iconplate clay-iconplate--peach">
+                        <TuneRounded />
                     </span>
-                    <label style={{ marginLeft: '1rem' }}>
-                        Mode:{' '}
+                    <div>
+                        <h2 id="practice-settings-title" className="clay-title clay-title--h2">
+                            Session settings
+                        </h2>
+                        <p className="clay-text">Tempo and how strictly the lane waits for you.</p>
+                    </div>
+                </header>
+
+                <div className="practice-settings__grid">
+                    <div className="practice-field">
+                        <label className="clay-label" htmlFor="bpm-input">
+                            <SpeedRounded sx={{ fontSize: 16, verticalAlign: '-3px', marginRight: '6px' }} />
+                            Tempo (BPM)
+                        </label>
+                        <input
+                            id="bpm-input"
+                            className="clay-field"
+                            type="number"
+                            min={30}
+                            max={300}
+                            step={1}
+                            value={bpm}
+                            onChange={handleBpmChange}
+                        />
+                        <p className="clay-text practice-field__help">
+                            <TimerRounded sx={{ fontSize: 14, verticalAlign: '-2px', marginRight: '4px' }} />1 beat ≈{' '}
+                            {msPerBeat(bpm).toFixed(0)} ms
+                        </p>
+                    </div>
+
+                    <div className="practice-field">
+                        <label className="clay-label" htmlFor="mode-select">
+                            Advance mode
+                        </label>
                         <select
+                            id="mode-select"
+                            className="clay-field"
                             value={playMode}
                             onChange={e => setPlayMode(e.target.value as PlayMode)}
-                            style={{ padding: '0.25rem' }}
                         >
-                            <option value="wait">Wait (auto-advance)</option>
-                            <option value="strict-wait">Strict wait (must hit each note)</option>
+                            <option value="wait">Wait — auto-advance after the grace window</option>
+                            <option value="strict-wait">Strict — hold until you hit the note</option>
                         </select>
-                    </label>
+                        <p className="clay-text practice-field__help">
+                            {playMode === 'wait'
+                                ? 'The lane moves on by itself, marking missed notes.'
+                                : 'The lane freezes on the active note until you play it correctly.'}
+                        </p>
+                    </div>
                 </div>
 
-                {/* Bug 4: user-configurable scoring thresholds */}
-                <details style={{ margin: '0.5rem 0' }}>
-                    <summary style={{ cursor: 'pointer', opacity: 0.8 }}>
-                        Scoring thresholds (advanced)
+                {/* ── Advanced thresholds ──────────────────────────────────── */}
+                <details className="practice-advanced">
+                    <summary className="practice-advanced__summary">
+                        <InsightsRounded sx={{ fontSize: 18 }} />
+                        Scoring thresholds
+                        <span className="practice-advanced__hint">pitch ±{scoringThresholds.pitchCentsPerfect}¢ perfect</span>
                     </summary>
-                    <div
-                        style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'auto 1fr auto',
-                            gap: '0.5rem 1rem',
-                            alignItems: 'center',
-                            marginTop: '0.5rem',
-                            fontSize: '0.85rem',
-                        }}
-                    >
-                        <label htmlFor="th-pitch-perf">Pitch perfect (cents):</label>
-                        <input
-                            id="th-pitch-perf"
-                            type="number"
-                            min={1}
-                            max={100}
-                            step={1}
-                            value={scoringThresholds.pitchCentsPerfect}
-                            onChange={e =>
-                                setScoringThresholds(t => {
-                                    const v = Math.max(0, Number(e.target.value) || 0);
-                                    return {
-                                        ...t,
-                                        pitchCentsPerfect: v,
-                                        // Ensure ok >= perfect when perfect is lowered.
-                                        pitchCentsOk: Math.max(v, t.pitchCentsOk),
-                                    };
-                                })
-                            }
-                        />
-                        <span style={{ opacity: 0.6 }}>≤ abs pitch error → perfect</span>
 
-                        <label htmlFor="th-pitch-ok">Pitch ok (cents):</label>
-                        <input
-                            id="th-pitch-ok"
-                            type="number"
-                            min={1}
-                            max={200}
-                            step={1}
-                            value={scoringThresholds.pitchCentsOk}
-                            onChange={e =>
-                                setScoringThresholds(t => {
-                                    const v = Math.max(0, Number(e.target.value) || 0);
-                                    return {
-                                        ...t,
-                                        pitchCentsOk: Math.max(v, t.pitchCentsPerfect),
-                                    };
-                                })
-                            }
-                        />
-                        <span style={{ opacity: 0.6 }}>≤ abs pitch error → ok (else miss)</span>
+                    <div className="practice-advanced__body">
+                        <div className="practice-advanced__grid">
+                            <label htmlFor="th-pitch-perf">Pitch — perfect (cents)</label>
+                            <input
+                                id="th-pitch-perf"
+                                className="clay-field"
+                                type="number"
+                                min={1}
+                                max={100}
+                                step={1}
+                                value={scoringThresholds.pitchCentsPerfect}
+                                onChange={e =>
+                                    setScoringThresholds(t => {
+                                        const v = Math.max(0, Number(e.target.value) || 0);
+                                        return {
+                                            ...t,
+                                            pitchCentsPerfect: v,
+                                            // Ensure ok >= perfect when perfect is lowered.
+                                            pitchCentsOk: Math.max(v, t.pitchCentsOk),
+                                        };
+                                    })
+                                }
+                            />
+                            <p className="practice-advanced__desc">within this error → perfect</p>
 
-                        <label htmlFor="th-time-perf">Time perfect (beats):</label>
-                        <input
-                            id="th-time-perf"
-                            type="number"
-                            min={0.01}
-                            max={2}
-                            step={0.05}
-                            value={scoringThresholds.timeBeatsPerfect}
-                            onChange={e =>
-                                setScoringThresholds(t => {
-                                    const v = Math.max(0, Number(e.target.value) || 0);
-                                    return {
-                                        ...t,
-                                        timeBeatsPerfect: v,
-                                        // Ensure ok >= perfect when perfect is lowered.
-                                        timeBeatsOk: Math.max(v, t.timeBeatsOk),
-                                    };
-                                })
-                            }
-                        />
-                        <span style={{ opacity: 0.6 }}>≤ abs time error → perfect</span>
+                            <label htmlFor="th-pitch-ok">Pitch — ok (cents)</label>
+                            <input
+                                id="th-pitch-ok"
+                                className="clay-field"
+                                type="number"
+                                min={1}
+                                max={200}
+                                step={1}
+                                value={scoringThresholds.pitchCentsOk}
+                                onChange={e =>
+                                    setScoringThresholds(t => {
+                                        const v = Math.max(0, Number(e.target.value) || 0);
+                                        return {
+                                            ...t,
+                                            pitchCentsOk: Math.max(v, t.pitchCentsPerfect),
+                                        };
+                                    })
+                                }
+                            />
+                            <p className="practice-advanced__desc">within this error → ok, beyond → miss</p>
 
-                        <label htmlFor="th-time-ok">Time ok (beats):</label>
-                        <input
-                            id="th-time-ok"
-                            type="number"
-                            min={0.01}
-                            max={4}
-                            step={0.05}
-                            value={scoringThresholds.timeBeatsOk}
-                            onChange={e =>
-                                setScoringThresholds(t => {
-                                    const v = Math.max(0, Number(e.target.value) || 0);
-                                    return {
-                                        ...t,
-                                        timeBeatsOk: Math.max(v, t.timeBeatsPerfect),
-                                    };
-                                })
-                            }
-                        />
-                        <span style={{ opacity: 0.6 }}>≤ abs time error → ok (else miss)</span>
+                            <label htmlFor="th-time-perf">Timing — perfect (beats)</label>
+                            <input
+                                id="th-time-perf"
+                                className="clay-field"
+                                type="number"
+                                min={0.01}
+                                max={2}
+                                step={0.05}
+                                value={scoringThresholds.timeBeatsPerfect}
+                                onChange={e =>
+                                    setScoringThresholds(t => {
+                                        const v = Math.max(0, Number(e.target.value) || 0);
+                                        return {
+                                            ...t,
+                                            timeBeatsPerfect: v,
+                                            // Ensure ok >= perfect when perfect is lowered.
+                                            timeBeatsOk: Math.max(v, t.timeBeatsOk),
+                                        };
+                                    })
+                                }
+                            />
+                            <p className="practice-advanced__desc">within this error → perfect</p>
+
+                            <label htmlFor="th-time-ok">Timing — ok (beats)</label>
+                            <input
+                                id="th-time-ok"
+                                className="clay-field"
+                                type="number"
+                                min={0.01}
+                                max={4}
+                                step={0.05}
+                                value={scoringThresholds.timeBeatsOk}
+                                onChange={e =>
+                                    setScoringThresholds(t => {
+                                        const v = Math.max(0, Number(e.target.value) || 0);
+                                        return {
+                                            ...t,
+                                            timeBeatsOk: Math.max(v, t.timeBeatsPerfect),
+                                        };
+                                    })
+                                }
+                            />
+                            <p className="practice-advanced__desc">within this error → ok, beyond → miss</p>
+                        </div>
 
                         <button
+                            type="button"
+                            className="clay-btn clay-btn--sm clay-btn--ghost"
                             onClick={() => setScoringThresholds(DEFAULT_SCORING_THRESHOLDS)}
-                            style={{ gridColumn: '1 / -1', padding: '0.25rem 0.5rem', marginTop: '0.5rem' }}
                         >
+                            <ReplayRounded sx={{ fontSize: 18 }} />
                             Reset to defaults
                         </button>
                     </div>
                 </details>
+            </section>
 
-                {/* Stage 6 Task 5: Guitar Hero lane */}
-                {loadedScore && (
-                    <div style={{ marginBottom: '1.5rem' }}>
-                        <NoteLane
-                            expected={loadedScore.expected}
-                            currentIndex={session.currentIndex}
-                            activeTier={session.activeTier}
-                            liveScored={session.liveScored}
-                            audioStartPerfNow={audioStartPerfNow}
-                            bpm={bpm}
-                            playMode={playMode}
-                        />
-                    </div>
-                )}
-
-                {!isStarted ? (
-                    <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-                        <button
-                            onClick={startAudio}
-                            style={{ padding: '1rem 2rem', fontSize: '1.2rem', cursor: 'pointer' }}
-                        >
-                            Start Microphone
-                        </button>
-                    </div>
-                ) : (
-                    <div>
-                        <section className="detected-notes">
-                            <h3>Detected Notes (live)</h3>
-                            <p style={{ opacity: 0.7, fontSize: '0.85rem', margin: '0 0 0.5rem 0' }}>
-                                BPM: {bpm}  •  1 beat = {msPerBeat(bpm).toFixed(0)}ms
+            {/* ══ LANE ════════════════════════════════════════════════════════ */}
+            {loadedScore && (
+                <section className="clay-card clay-card--feature practice-lane" aria-labelledby="practice-lane-title">
+                    <header className="practice-lane__head">
+                        <span className="clay-iconplate clay-iconplate--green">
+                            <SchoolRounded />
+                        </span>
+                        <div className="practice-lane__title-wrap">
+                            <h2 id="practice-lane-title" className="clay-title clay-title--h2">
+                                {loadedScore.source.title}
+                            </h2>
+                            <p className="clay-text">
+                                {loadedScore.source.composer} · {bpm} BPM ·{' '}
+                                {playMode === 'wait' ? 'auto-advance' : 'strict wait'}
                             </p>
-                            {detectedNotes.length === 0 ? (
-                                <p style={{ opacity: 0.6 }}>Sing or play a note to start...</p>
-                            ) : (
-                                <ul style={{ listStyle: 'none', padding: 0, margin: 0, maxHeight: '300px', overflowX: 'auto' }}>
-                                    {beatNotes.map((n, i) => (
-                                        <li key={`${n.startMs}-${i}`} style={{ display: 'flex', gap: '1rem', padding: '0.25rem 0', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                                            <span style={{ fontSize: '1.5rem', fontWeight: 'bold', minWidth: '4rem' }}>{n.noteName}</span>
-                                            <span style={{ minWidth: '8rem' }}>{n.durationMs}ms ({formatBeats(n.durationBeats)})</span>
-                                            <span style={{ minWidth: '4rem' }}>{formatCents(n.avgCents)}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </section>
-
-                        <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-                            <button onClick={stopAudio}>Stop Microphone</button>
                         </div>
+                        <div className="practice-lane__score">
+                            <span className="clay-badge clay-badge--white">
+                                {doneCount} / {totalCount} notes
+                            </span>
+                            {session.activeTier !== null && (
+                                <span className={`clay-badge clay-badge--${session.activeTier}`}>
+                                    last: {session.activeTier}
+                                </span>
+                            )}
+                        </div>
+                    </header>
+
+                    <NoteLane
+                        expected={loadedScore.expected}
+                        currentIndex={session.currentIndex}
+                        activeTier={session.activeTier}
+                        liveScored={session.liveScored}
+                        audioStartPerfNow={audioStartPerfNow}
+                        bpm={bpm}
+                        playMode={playMode}
+                    />
+
+                    {!isStarted && (
+                        <p className="clay-text practice-lane__note">
+                            Start the microphone below to begin the run — the lane waits at the first note.
+                        </p>
+                    )}
+                </section>
+            )}
+
+            {/* ══ MIC + LIVE NOTES ════════════════════════════════════════════ */}
+            {!isStarted ? (
+                <section className="clay-card clay-card--feature practice-gate" aria-labelledby="practice-gate-title">
+                    <span className="clay-iconplate clay-iconplate--peach">
+                        <MicRounded />
+                    </span>
+                    <h2 id="practice-gate-title" className="clay-title clay-title--h2">
+                        Start the microphone
+                    </h2>
+                    <p className="clay-lede" style={{ textAlign: 'center' }}>
+                        PitchQuest listens for single held notes. Play one note at a time and hold it — chords and
+                        fast runs are out of scope for now.
+                    </p>
+                    <button type="button" className="clay-btn clay-btn--primary clay-btn--lg" onClick={startAudio}>
+                        <MicRounded sx={{ fontSize: 22 }} />
+                        Start microphone
+                    </button>
+                </section>
+            ) : (
+                <section className="clay-card practice-detected" aria-labelledby="practice-detected-title">
+                    <header className="practice-detected__head">
+                        <div>
+                            <h2 id="practice-detected-title" className="clay-title clay-title--h2">
+                                Detected notes
+                            </h2>
+                            <p className="clay-text">
+                                Each row is one held pitch after segmentation · 1 beat ≈ {msPerBeat(bpm).toFixed(0)} ms
+                            </p>
+                        </div>
+                        <button type="button" className="clay-btn clay-btn--ghost" onClick={stopAudio}>
+                            <MicOffRounded sx={{ fontSize: 20 }} />
+                            Stop microphone
+                        </button>
+                    </header>
+
+                    {detectedNotes.length === 0 ? (
+                        <p className="clay-notice" role="status">
+                            <GraphicEqRounded sx={{ fontSize: 20, flex: '0 0 auto' }} />
+                            <span>Listening… sing or play a note to start.</span>
+                        </p>
+                    ) : (
+                        <ul className="detected-list">
+                            {beatNotes.map((n, i) => (
+                                <li key={`${n.startMs}-${i}`} className="detected-row">
+                                    <span className="detected-row__note">{n.noteName}</span>
+                                    <span className="detected-row__dur">
+                                        {n.durationMs} ms
+                                        <span className="detected-row__beats">({formatBeats(n.durationBeats)})</span>
+                                    </span>
+                                    <span
+                                        className={`clay-badge ${
+                                            Math.abs(n.avgCents) <= 25 ? 'clay-badge--green' : 'clay-badge--blue'
+                                        } detected-row__cents`}
+                                    >
+                                        {formatCents(n.avgCents)}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </section>
+            )}
+
+            {/* ══ DEV PANEL ═══════════════════════════════════════════════════ */}
+            <section className="clay-card clay-card--sunk dev-panel" aria-labelledby="dev-panel-title">
+                <h2 id="dev-panel-title" className="clay-eyebrow">
+                    Developer
+                </h2>
+                <p className="clay-text dev-panel__lede">
+                    Pure-function test harnesses (segmenter, timing, parser, matcher, scorer) run live in the browser.
+                </p>
+                <button
+                    type="button"
+                    className="clay-btn clay-btn--sm clay-btn--ghost"
+                    onClick={() => setShowDevPanel(s => !s)}
+                    aria-expanded={showDevPanel}
+                    aria-controls="dev-panel-content"
+                >
+                    {showDevPanel ? 'Hide' : 'Show'} test harnesses
+                </button>
+
+                {showDevPanel && (
+                    <div id="dev-panel-content">
+                        <DevPanelContent harnesses={harnesses} />
                     </div>
                 )}
-            </main>
-
-            <footer style={{ marginTop: '3rem', fontSize: '0.8rem', opacity: 0.6 }}>
-                <p>Buffer: 2048 | Algorithm: YIN | Library: pitchy</p>
-            </footer>
-
-            {/* Stage 6 Task 6: dev panel powered by useDevPanelHarnesses */}
-            <div style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem' }}>
-                <button onClick={() => setShowDevPanel(s => !s)} style={{ padding: '0.25rem 0.75rem' }}>
-                    {showDevPanel ? 'Hide' : 'Show'} dev panel
-                </button>
-                {showDevPanel && (
-                    <DevPanelContent harnesses={harnesses} />
-                )}
-            </div>
+            </section>
         </div>
     );
 }
@@ -387,16 +493,21 @@ function DevPanelContent({ harnesses }: DevPanelContentProps) {
     ) {
         if (!result) return null;
         const total = result.pass + result.fail;
+        const allPass = result.fail === 0;
         return (
-            <div style={{ marginTop: '0.75rem' }}>
-                <strong>
-                    {label}: {result.pass}/{total} pass
-                </strong>
-                <ul style={{ marginTop: '0.5rem', paddingLeft: '1.5rem' }}>
+            <div className="dev-section">
+                <p className="dev-section__head">
+                    <span className={`clay-badge ${allPass ? 'clay-badge--green' : 'clay-badge--peach'}`}>
+                        {allPass ? <CheckCircleRounded sx={{ fontSize: 14 }} /> : <ErrorOutlineRounded sx={{ fontSize: 14 }} />}
+                        {result.pass}/{total} pass
+                    </span>
+                    <span className="dev-section__label">{label}</span>
+                </p>
+                <ul className="dev-section__list">
                     {result.details.map((d, i) => (
-                        <li key={i} style={{ color: d.pass ? 'lightgreen' : 'salmon' }}>
-                            {d.pass ? '✓' : '✗'} {d.name}
-                            {d.diff && <div style={{ opacity: 0.7, fontSize: '0.8rem' }}>{d.diff}</div>}
+                        <li key={i} className={`dev-case${d.pass ? '' : ' dev-case--fail'}`}>
+                            <span className="dev-case__name">{d.name}</span>
+                            {d.diff && <span className="dev-case__diff">{d.diff}</span>}
                         </li>
                     ))}
                 </ul>
@@ -405,13 +516,13 @@ function DevPanelContent({ harnesses }: DevPanelContentProps) {
     }
 
     return (
-        <div style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
+        <div className="dev-grid">
             {renderSection('Segmenter', segmenter)}
-            {renderSection('Timing Engine', timing)}
-            {renderSection('Score Parser', musicXml)}
+            {renderSection('Timing engine', timing)}
+            {renderSection('Score parser', musicXml)}
             {renderSection('Matcher', matcher)}
             {renderSection('Scorer', scorer)}
-            {renderSection('Incremental Matcher', incrementalMatcher)}
+            {renderSection('Incremental matcher', incrementalMatcher)}
         </div>
     );
 }

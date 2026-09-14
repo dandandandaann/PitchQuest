@@ -1,100 +1,262 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+/**
+ * index.css — base layer + global element styling.
+ *
+ * Load order (must stay in this order):
+ *   1. styles/tokens.css  — CSS custom properties (palette, clay shadows, type)
+ *   2. styles/clay.css    — reusable .clay-* primitives
+ *   3. styles/pages.css   — page- and component-specific styles
+ *   4. this file          — resets, global element defaults, app-shell helpers
+ *
+ * Font loading happens in index.html via <link rel="preconnect"> + a single
+ * Google Fonts request. Do NOT add an @import here — it serialises the load.
+ */
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+@import './styles/tokens.css';
+@import './styles/clay.css';
+@import './styles/pages.css';
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESET
+   ════════════════════════════════════════════════════════════════════════ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  /* Light-only: the Claymorphism palette is calibrated for a light surface.
+     Declaring this stops form controls/scrollbars from flipping OS-dark and
+     fighting the pastel clay. */
+  color-scheme: light;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  /* Keep anchored content clear of the sticky mobile top bar (UX: focus-not-obscured). */
+  scroll-padding-top: calc(var(--topbar-h) + 12px);
+}
+
+body {
+  min-height: 100dvh;
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--ink);
   background: var(--bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+  /* Stops iOS Safari rubber-banding the fixed background layer. */
+  overflow-x: hidden;
 }
 
 #root {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  box-sizing: border-box;
-}
-main {
-  text-align: center;
+  isolation: isolate;
 }
 
-body {
-  margin: 0;
-}
+/* ══════════════════════════════════════════════════════════════════════════
+   TYPOGRAPHY DEFAULTS
+   ═══════════════════════════════════════════════════════════════════════ */
 
 h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  text-wrap: balance;
 }
 
 h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
+  font-size: var(--fs-h1);
+  font-weight: 900;
 }
+
+h2 {
+  font-size: var(--fs-h2);
+}
+
+h3 {
+  font-size: var(--fs-h3);
+}
+
 p {
-  margin: 0;
+  text-wrap: pretty;
+}
+
+a {
+  color: var(--green-700);
+  font-weight: 600;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: var(--ink);
+}
+
+strong {
+  font-weight: 700;
+  color: var(--ink);
 }
 
 code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+kbd,
+samp {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  padding: 2px 6px;
+  color: var(--ink);
+  background: var(--surface-sunk);
+  border-radius: var(--r-xs);
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+hr {
+  border: 0;
+  height: 3px;
+  background: var(--line-soft);
+  border-radius: var(--r-pill);
+}
+
+img,
+svg,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FOCUS — always visible, never removed. Ink ring reads on every pastel.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+  border-radius: var(--r-xs);
+}
+
+/* Mouse/touch users don't get the ring; keyboard users always do. */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   APP SHELL
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.pq-shell {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-height: 100dvh;
+  width: 100%;
+}
+
+.pq-content {
+  flex: 1 1 auto;
+  min-width: 0; /* allows children with grids to shrink instead of overflowing */
+  padding: var(--sp-6) var(--sp-6) var(--sp-8);
+}
+
+@media (max-width: 1024px) {
+  .pq-content {
+    padding: var(--sp-5) var(--sp-4) var(--sp-7);
+  }
+}
+
+@media (max-width: 640px) {
+  .pq-content {
+    padding: var(--sp-4) var(--sp-3) var(--sp-7);
+  }
+}
+
+/* Page header block that pages compose into their .pq-page. */
+.pq-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+
+.pq-header__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GLOBAL SCROLLBAR — clay-styled
+   ════════════════════════════════════════════════════════════════════════ */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--peach-400) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--peach-300);
+  border-radius: var(--r-pill);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--peach-400);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   REDUCED MOTION — global kill switch for decorative motion
+   ════════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PRINT — keep it legible, drop the decoration
+   ════════════════════════════════════════════════════════════════════════ */
+
+@media print {
+  .pq-bg,
+  .pq-sidebar,
+  .pq-topbar {
+    display: none !important;
+  }
+
+  .clay-card,
+  .clay-card--feature,
+  .clay-card--hero {
+    box-shadow: none;
+    border: 1px solid var(--line);
+  }
 }

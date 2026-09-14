@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
+import MicRounded from '@mui/icons-material/MicRounded';
+import MicOffRounded from '@mui/icons-material/MicOffRounded';
+import GraphicEqRounded from '@mui/icons-material/GraphicEqRounded';
 import { useAudioContext } from '../audio/hooks/useAudioContext';
 import { usePitchDetection } from '../audio/hooks/usePitchDetection';
 import type { PitchData } from '../audio/hooks/usePitchDetection';
 import { PitchDisplay } from '../components/PitchDisplay';
 import { CentsMeter } from '../components/CentsMeter';
-import '../App.css';
+import { NoteHistory } from '../components/NoteHistory';
 
 // Note to semitone offset mapping for transposition
 const NOTE_OFFSETS: Record<string, number> = {
@@ -46,6 +49,10 @@ export function TunerPage() {
     const [displayedPitchData, setDisplayedPitchData] = useState<PitchData | null>(null);
     const holdTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    // Rolling history of the last few stable note names (for the clay chip strip).
+    const [history, setHistory] = useState<string[]>([]);
+    const lastLoggedNoteRef = useRef<string | null>(null);
+
     useEffect(() => {
         if (pitchData) {
             if (holdTimeoutRef.current) {
@@ -54,6 +61,12 @@ export function TunerPage() {
             }
             // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: mirror hook output into display state with a hold timer
             setDisplayedPitchData(pitchData);
+
+            // Log a note only when it *changes* — avoids one chip per frame.
+            if (pitchData.noteName !== lastLoggedNoteRef.current) {
+                lastLoggedNoteRef.current = pitchData.noteName;
+                setHistory(prev => [...prev, pitchData.noteName].slice(-16));
+            }
         } else {
             if (holdTimeoutRef.current) {
                 clearTimeout(holdTimeoutRef.current);
@@ -71,54 +84,100 @@ export function TunerPage() {
         };
     }, [pitchData]);
 
+    const handleStop = () => {
+        stopAudio();
+        lastLoggedNoteRef.current = null;
+    };
+
     return (
-        <div className="TunerPage">
-            <header>
-                <h1>Tuner</h1>
-                <p>Turn on your microphone</p>
+        <div className="pq-page">
+            {/* ═ HEADER BLOCK ════════════════════════════════════════════════ */}
+            <header className="pq-header">
+                <div className="pq-header__text">
+                    <span className="clay-eyebrow">Ear training</span>
+                    <h1 className="clay-title clay-title--h1">Tuner</h1>
+                    <p className="clay-lede">
+                        Hold a note and watch the needle. Stay inside the green band and you are within ±25 cents.
+                    </p>
+                </div>
+                <span className={`clay-badge ${isStarted ? 'clay-badge--green' : 'clay-badge--white'}`}>
+                    <GraphicEqRounded sx={{ fontSize: 15 }} />
+                    {isStarted ? 'Listening' : 'Mic off'}
+                </span>
             </header>
 
-            <main>
-                {!isStarted ? (
-                    <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-                        <button
-                            onClick={startAudio}
-                            style={{ padding: '1rem 2rem', fontSize: '1.2rem', cursor: 'pointer' }}
-                        >
-                            Start Microphone
-                        </button>
-                    </div>
-                ) : (
-                    <div>
-                        <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-                            <label htmlFor="transpose-select" style={{ marginRight: '0.5rem' }}>Instrument Key:</label>
+            {/* ══ MIC GATE ════════════════════════════════════════════════════ */}
+            {!isStarted ? (
+                <section className="clay-card clay-card--feature tuner-gate" aria-labelledby="tuner-gate-title">
+                    <span className="clay-iconplate clay-iconplate--peach">
+                        <MicRounded />
+                    </span>
+                    <h2 id="tuner-gate-title" className="clay-title clay-title--h2">
+                        Turn on your microphone
+                    </h2>
+                    <p className="clay-lede" style={{ textAlign: 'center' }}>
+                        Your browser will ask for permission. Audio is analysed on this device with the YIN
+                        algorithm — nothing is recorded or uploaded.
+                    </p>
+                    <button type="button" className="clay-btn clay-btn--primary clay-btn--lg" onClick={startAudio}>
+                        <MicRounded sx={{ fontSize: 22 }} />
+                        Start microphone
+                    </button>
+                    <p className="clay-text tuner-gate__hint">
+                        Playing a transposing instrument? Pick its key after you start.
+                    </p>
+                </section>
+            ) : (
+                <>
+                    {/* ═ CONTROLS ═══════════════════════════════════════════ */}
+                    <section className="clay-card tuner-controls" aria-label="Tuner controls">
+                        <div className="tuner-controls__field">
+                            <label className="clay-label" htmlFor="transpose-select">
+                                Instrument key
+                            </label>
                             <select
                                 id="transpose-select"
+                                className="clay-field"
                                 value={transposeNote}
                                 onChange={(e) => setTransposeNote(e.target.value)}
-                                style={{ padding: '0.5rem', fontSize: '1rem' }}
                             >
                                 {TRANSPOSITION_NOTES.map(note => (
                                     <option key={note} value={note}>{note}</option>
                                 ))}
                             </select>
+                            <p className="clay-text tuner-controls__help">
+                                Shifts the readout for transposing instruments — leave on <strong>C</strong> for
+                                concert pitch.
+                            </p>
                         </div>
 
+                        <button type="button" className="clay-btn clay-btn--ghost" onClick={handleStop}>
+                            <MicOffRounded sx={{ fontSize: 20 }} />
+                            Stop microphone
+                        </button>
+                    </section>
+
+                    {/* ═ READOUT ════════════════════════════════════════════ */}
+                    <section className="clay-card clay-card--feature tuner-readout" aria-label="Live pitch readout">
                         <PitchDisplay
                             noteName={displayedPitchData?.noteName || null}
                             frequency={displayedPitchData?.frequency || null}
                         />
                         <CentsMeter cents={displayedPitchData?.cents ?? null} />
+                    </section>
 
-                        <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-                            <button onClick={stopAudio}>Stop Microphone</button>
-                        </div>
-                    </div>
-                )}
-            </main>
+                    {/* ══ HISTORY ════════════════════════════════════════════ */}
+                    <NoteHistory history={history} />
+                </>
+            )}
 
-            <footer style={{ marginTop: '3rem', fontSize: '0.8rem', opacity: 0.6 }}>
-                <p>Buffer: 2048 | Algorithm: YIN | Library: pitchy</p>
+            {/* ═ TECH NOTE ═══════════════════════════════════════════════════ */}
+            <footer className="clay-card clay-card--sunk tuner-foot">
+                <span className="clay-eyebrow">Under the hood</span>
+                <p className="clay-text">
+                    AudioWorklet → <strong>pitchy</strong> (YIN) → median filter (5) on frequency →
+                    moving average (3) on cents. Analysis window 2048 samples, accepted range 80–1500 Hz.
+                </p>
             </footer>
         </div>
     );

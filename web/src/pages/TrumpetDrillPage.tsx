@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Box, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import { ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { Renderer, Stave, StaveNote, Accidental, Voice, Formatter } from 'vexflow';
 import {
   KEY_TO_PISTON,
@@ -11,8 +11,15 @@ import {
 } from '../trumpet/fingerings';
 import { TrumpetDisplay } from '../components/TrumpetDisplay';
 
+import KeyboardRounded from '@mui/icons-material/KeyboardRounded';
+import MusicNoteRounded from '@mui/icons-material/MusicNoteRounded';
+import GraphicEqRounded from '@mui/icons-material/GraphicEqRounded';
+
 const FILTER_STORAGE_KEY = 'pq.trumpetDrill.filter';
 const VALID_FILTERS: readonly NoteFilter[] = ['all', 'sharps', 'flats', 'naturals'];
+
+/** Ink colour, mirrored from styles/tokens.css (VexFlow needs a literal). */
+const INK = '#33272A';
 
 function loadFilter(): NoteFilter {
   if (typeof window === 'undefined') return 'all';
@@ -59,19 +66,23 @@ function NoteStaff({ note }: NoteStaffProps) {
     // Clear any prior SVG (re-renders on note change).
     container.innerHTML = '';
 
-    const WIDTH = 240;
-    const HEIGHT = 160;
+    const WIDTH = 260;
+    const HEIGHT = 170;
 
     const renderer = new Renderer(container, Renderer.Backends.SVG);
     renderer.resize(WIDTH, HEIGHT);
     const context = renderer.getContext();
     // Use a generic system font for any non-glyph text (VexFlow renders noteheads from its own font).
     context.setFont('Arial', 10);
+    // Ink strokes/glyphs so the staff sits on the clay surface without a hard black.
+    context.setStrokeStyle(INK);
+    context.setFillStyle(INK);
 
     // Stave placed at x=10 y=30 (leaves room for the staff vertically in the container).
     const stave = new Stave(10, 30, WIDTH - 20);
     stave.addClef('treble');
     stave.setContext(context).draw();
+    stave.setStyle({ strokeStyle: INK, fillStyle: INK });
 
     // Whole note, no stem/flag clutter — single note, "one note at a time" semantics.
     const staveNote = new StaveNote({
@@ -97,18 +108,7 @@ function NoteStaff({ note }: NoteStaffProps) {
     };
   }, [note]);
 
-  return (
-    <Box
-      ref={containerRef}
-      sx={{
-        width: 240,
-        height: 140,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    />
-  );
+  return <div ref={containerRef} className="drill-staff__svg" aria-hidden="true" />;
 }
 
 export function TrumpetDrillPage() {
@@ -134,9 +134,6 @@ export function TrumpetDrillPage() {
   // read stale state when checking SPACE against the current note + held pistons.
   const currentNoteRef = useRef(currentNote);
   const heldRef = useRef(held);
-
-  // Pending deferred note advance: timeout id + the required piston set captured
-  // at SPACE press. Both are cleared if the held pistons stop matching mid-delay.
 
   useEffect(() => {
     const isEditableTarget = (event: KeyboardEvent) => {
@@ -200,26 +197,29 @@ export function TrumpetDrillPage() {
   }, []);
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '80vh',
-        gap: 4,
-      }}
-    >
-      <Typography variant="h5">Trumpet Fingering Drill</Typography>
-      <Typography color="text.secondary">
-        Hold the correct pistons (J=1, K=2, L=3), then press SPACE to advance.
-      </Typography>
+    <div className="pq-page">
+      {/* ═ HEADER BLOCK ════════════════════════════════════════════════════ */}
+      <header className="pq-header">
+        <div className="pq-header__text">
+          <span className="clay-eyebrow">Drills</span>
+          <h1 className="clay-title clay-title--h1">Trumpet fingering</h1>
+          <p className="clay-lede">
+            A note appears on the staff. Hold its valves with <strong>J</strong>, <strong>K</strong> and{' '}
+            <strong>L</strong>, then tap <strong>Space</strong> to advance. Correct fingering only — the drill
+            ignores anything else.
+          </p>
+        </div>
+        <span className="clay-badge clay-badge--white">
+          <KeyboardRounded sx={{ fontSize: 15 }} />
+          Keyboard drill
+        </span>
+      </header>
 
-      <Box
-        role="group"
-        aria-label="Note filter"
-        sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}
-      >
+      {/* ═ NOTE FILTER ════════════════════════════════════════════════════ */}
+      <section className="clay-card drill-filter" aria-labelledby="drill-filter-title">
+        <h2 id="drill-filter-title" className="clay-title clay-title--h3">
+          Which accidentals?
+        </h2>
         <ToggleButtonGroup
           value={noteFilter}
           exclusive
@@ -229,30 +229,93 @@ export function TrumpetDrillPage() {
             if (next !== null) setNoteFilter(next);
           }}
           size="small"
-          color="primary"
           aria-label="Note filter"
         >
-          <ToggleButton value="all" tabIndex={-1}>
+          <ToggleButton value="all" aria-label="All accidentals">
             All
           </ToggleButton>
-          <ToggleButton value="sharps" tabIndex={-1} aria-label="Sharps only">
-            # Sharps
+          <ToggleButton value="sharps" aria-label="Sharps only">
+            ♯ Sharps
           </ToggleButton>
-          <ToggleButton value="flats" tabIndex={-1} aria-label="Flats only">
-            b Flats
+          <ToggleButton value="flats" aria-label="Flats only">
+            ♭ Flats
           </ToggleButton>
-          <ToggleButton value="naturals" tabIndex={-1} aria-label="Naturals only">
-            Naturals
+          <ToggleButton value="naturals" aria-label="Naturals only">
+            ♮ Naturals
           </ToggleButton>
         </ToggleButtonGroup>
-      </Box>
+      </section>
 
-      <Box sx={{ my: 6 }}>
-        <NoteStaff note={currentNote} />
-      </Box>
+      {/* ═ THE DRILL ══════════════════════════════════════════════════════ */}
+      <section className="clay-card clay-card--feature drill-stage" aria-labelledby="drill-stage-title">
+        <h2 id="drill-stage-title" className="clay-visually-hidden">
+          Current drill note
+        </h2>
 
-      <TrumpetDisplay held={heldPistonIds} maxHeight={360} />
+        <div className="drill-stage__grid">
+          {/* Staff + note name */}
+          <div className="drill-staff clay-well">
+            <span className="clay-eyebrow">
+              <MusicNoteRounded sx={{ fontSize: 15 }} />
+              Play this note
+            </span>
+            <NoteStaff note={currentNote} />
+            <p className="drill-staff__name" aria-live="polite">
+              {currentNote}
+            </p>
+          </div>
 
-    </Box>
+          {/* Trumpet + held valves */}
+          <div className="drill-side">
+            <div className="clay-well drill-side__trumpet">
+              <TrumpetDisplay held={heldPistonIds} maxHeight={240} />
+            </div>
+
+            <div className="drill-valves" aria-label="Valve state">
+              {([1, 2, 3] as const).map(id => {
+                const down = heldPistonIds.has(id);
+                return (
+                  <span
+                    key={id}
+                    className={`clay-chip drill-valve${down ? ' drill-valve--down' : ''}`}
+                    aria-label={`Valve ${id} ${down ? 'held' : 'released'}`}
+                  >
+                    {id}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Keyboard legend */}
+        <div className="drill-legend">
+          <span className="drill-legend__item">
+            <kbd className="kbd">J</kbd> valve 1
+          </span>
+          <span className="drill-legend__item">
+            <kbd className="kbd">K</kbd> valve 2
+          </span>
+          <span className="drill-legend__item">
+            <kbd className="kbd">L</kbd> valve 3
+          </span>
+          <span className="drill-legend__item">
+            <kbd className="kbd">Space</kbd> check &amp; advance
+          </span>
+        </div>
+      </section>
+
+      {/* ══ TIP ════════════════════════════════════════════════════════════ */}
+      <footer className="clay-card clay-card--sunk drill-foot">
+        <span className="clay-eyebrow">
+          <GraphicEqRounded sx={{ fontSize: 15 }} />
+          Tip
+        </span>
+        <p className="clay-text">
+          Nothing moves if the fingering is wrong — that silence is the feedback. Release a valve and try again: the
+          same note stays on the staff.
+        </p>
+      </footer>
+    </div>
   );
 }

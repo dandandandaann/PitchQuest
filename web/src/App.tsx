@@ -1,36 +1,57 @@
 import { Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
 import { SidebarLayout } from './components/SidebarLayout';
 import { HomePage } from './pages/HomePage';
 import { TunerPage } from './pages/TunerPage';
 import { PracticePage } from './pages/PracticePage';
+import { muiTheme } from './theme/muiTheme';
+import './styles/tokens.css';
 
+// VexFlow is ~500 kB — keep the drill route out of the initial bundle.
 const TrumpetDrillPage = lazy(() =>
   import('./pages/TrumpetDrillPage').then(m => ({ default: m.TrumpetDrillPage })),
 );
-import './App.css';
+
+/** Clay skeleton shown while a lazy route chunk downloads. */
+function RouteFallback() {
+  return (
+    <div className="pq-page">
+      <div className="clay-card" role="status" aria-live="polite">
+        <span className="clay-eyebrow">Loading</span>
+        <p className="clay-text" style={{ marginTop: 'var(--sp-2)' }}>
+          Warming up the practice room…
+        </p>
+      </div>
+    </div>
+  );
+}
 
 function App() {
   return (
-    <HashRouter>
-      <Routes>
-        <Route element={<SidebarLayout />}>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/practice" element={<PracticePage />} />
-          <Route path="/tuner" element={<TunerPage />} />
-          <Route
-            path="/trumpet-drill"
-            element={
-              <Suspense fallback={<div>Loading…</div>}>
-                <TrumpetDrillPage />
-              </Suspense>
-            }
-          />
-          {/* Redirect any other path to Home */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
-    </HashRouter>
+    <ThemeProvider theme={muiTheme}>
+      <CssBaseline />
+      <HashRouter>
+        <Routes>
+          <Route element={<SidebarLayout />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/practice" element={<PracticePage />} />
+            <Route path="/tuner" element={<TunerPage />} />
+            <Route
+              path="/trumpet-drill"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <TrumpetDrillPage />
+                </Suspense>
+              }
+            />
+            {/* Redirect any other path to Home */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
+      </HashRouter>
+    </ThemeProvider>
   );
 }
 

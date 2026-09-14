@@ -1,19 +1,29 @@
-import React from 'react';
-
 interface PitchDisplayProps {
-  noteName: string | null;
-  frequency: number | null;
+    noteName: string | null;
+    frequency: number | null;
 }
 
-export const PitchDisplay: React.FC<PitchDisplayProps> = ({ noteName, frequency }) => {
-  return (
-    <div style={{ textAlign: 'center', margin: '2rem' }}>
-      <h1 style={{ fontSize: '6rem', margin: 0, minHeight: '.6em' }}>
-        {noteName || '--'}
-      </h1>
-      <p style={{ fontSize: '1.5rem', color: '#666' }}>
-        {frequency ? `${frequency.toFixed(1)} Hz` : 'No sound detected'}
-      </p>
-    </div>
-  );
-};
+/**
+ * PitchDisplay — the big note readout above the cent meter.
+ *
+ * Deliberately NOT an aria-live region: it updates many times per second while
+ * a note is held, and a live region would flood a screen reader with noise.
+ * The CentsMeter below carries the same information in a slower, labelled form.
+ */
+export function PitchDisplay({ noteName, frequency }: PitchDisplayProps) {
+    const isLive = noteName !== null;
+
+    return (
+        <div className={`pitch-display${isLive ? ' is-live' : ''}`}>
+            <span className="clay-eyebrow">Detected note</span>
+
+            <div className="pitch-display__note" aria-hidden={!isLive}>
+                <span className="pitch-display__glyph">{noteName ?? '–'}</span>
+            </div>
+
+            <p className="pitch-display__freq">
+                {frequency ? `${frequency.toFixed(1)} Hz` : 'No sound detected'}
+            </p>
+        </div>
+    );
+}

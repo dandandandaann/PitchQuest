@@ -1,0 +1,1207 @@
+/**
+ * pages.css — page- and component-specific styles.
+ *
+ * Loaded by index.css AFTER tokens.css and clay.css. Everything here consumes
+ * the tokens; no raw hex should appear below this line.
+ *
+ * Section map:
+ *   1. Home page (hero, lane preview, features, steps, CTA)
+ *   2. Tuner (gate, controls, readout, pitch display, cents meter)
+ *   3. Note history chips
+ *   4. Score picker
+ *   5. Practice page (settings, lane wrapper, detected notes, dev panel)
+ *   6. Trumpet drill
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   1. HOME PAGE
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.pq-hero {
+  background:
+    radial-gradient(120% 140% at 8% 0%, var(--peach-100) 0%, transparent 58%),
+    radial-gradient(120% 140% at 100% 100%, var(--blue-100) 0%, transparent 55%),
+    var(--clay-white);
+}
+
+.pq-hero__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: var(--sp-7);
+  align-items: center;
+}
+
+@media (max-width: 980px) {
+  .pq-hero__grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--sp-6);
+  }
+}
+
+.pq-hero__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-4);
+}
+
+.pq-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-top: var(--sp-2);
+}
+
+/* ── Stat row ─────────────────────────────────────────────────────────── */
+
+.pq-statrow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-4);
+  margin: var(--sp-5) 0 0;
+  padding-top: var(--sp-5);
+  border-top: 3px solid var(--peach-100);
+  width: 100%;
+}
+
+.pq-stat dt {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.pq-stat dd {
+  margin: 4px 0 0;
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 560px) {
+  .pq-statrow {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--sp-3);
+  }
+}
+
+/* ── Hero art: a miniature practice lane ──────────────────────────────── */
+
+.pq-art {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-5);
+  background: var(--clay-white);
+  border-radius: var(--r-xl);
+  box-shadow: var(--clay-surface-raised), var(--clay-rim-strong);
+}
+
+.pq-art__topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.pq-art__lane {
+  position: relative;
+  height: 176px;
+  padding: var(--sp-4);
+  background: var(--peach-50);
+  border-radius: var(--r-lg);
+  box-shadow: var(--clay-inner-deep);
+  overflow: hidden;
+}
+
+/* Row offsets are PERCENTAGES and the blocks are percentage-width, so the
+   "now" line always lands in the same place relative to the notes at every
+   viewport width. Row 1 = already played (ends left of the line), row 2 =
+   the active note (straddles the line), row 3 = upcoming (starts right of it). */
+.pq-art__row {
+  display: flex;
+  gap: 2%;
+}
+
+.pq-art__row--1 {
+  margin-top: 6px;
+  padding-left: 2%;
+}
+.pq-art__row--2 {
+  margin-top: 18px;
+  padding-left: 30%;
+}
+.pq-art__row--3 {
+  margin-top: 18px;
+  padding-left: 50%;
+}
+
+.pq-art__block {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13.5%;
+  flex: 0 0 auto;
+  height: 32px;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: clamp(0.6rem, 1.5vw, 0.78rem);
+  font-weight: 900;
+  color: var(--ink);
+  border-radius: var(--r-sm);
+  box-shadow: var(--clay-rim), 0 3px 6px -3px rgb(51 39 42 / 0.3);
+}
+
+.pq-art__block--perfect {
+  background: var(--clay-green);
+}
+.pq-art__block--ok {
+  background: var(--clay-blue);
+}
+.pq-art__block--miss {
+  background: var(--ink-ghost);
+  background-image: repeating-linear-gradient(45deg, rgb(255 255 255 / 0.65) 0 5px, transparent 5px 10px);
+  color: var(--ink-soft);
+}
+.pq-art__block--active {
+  background: var(--clay-peach);
+  box-shadow: var(--clay-rim-strong), 0 0 0 4px rgb(253 188 180 / 0.55);
+  animation: lane-pulse 1.1s ease-in-out infinite;
+}
+.pq-art__block--upcoming {
+  background: var(--clay-white);
+  color: var(--ink-faint);
+  box-shadow: none;
+  outline: 2px dashed var(--peach-300);
+  outline-offset: -2px;
+}
+
+/* Active-block pulse. Declared here (not in NoteLane.css) because the home
+   page hero art reuses it, and pages.css is always loaded while NoteLane.css
+   only loads with the lane route. */
+@keyframes lane-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.045);
+  }
+}
+
+.pq-art__nowline {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 48%;
+  width: 5px;
+  margin-left: -2.5px;
+  border-radius: var(--r-pill);
+  background: var(--ink);
+  box-shadow: 0 0 0 3px rgb(255 255 255 / 0.9);
+  pointer-events: none;
+}
+
+.pq-art__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+}
+
+.pq-art__key {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.pq-art__dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 5px;
+  box-shadow: var(--clay-rim);
+}
+.pq-art__dot--perfect {
+  background: var(--clay-green);
+}
+.pq-art__dot--ok {
+  background: var(--clay-blue);
+}
+.pq-art__dot--miss {
+  background: var(--ink-ghost);
+}
+
+/* ── Section headings ─────────────────────────────────────────────────── */
+
+.pq-section-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-5);
+}
+
+/* ── Feature tiles ────────────────────────────────────────────────────── */
+
+.pq-feature {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  text-decoration: none;
+  color: var(--ink);
+  height: 100%;
+}
+
+.pq-feature__icon {
+  margin-bottom: var(--sp-1);
+}
+
+.pq-feature__title {
+  margin: 0;
+}
+
+.pq-feature__body {
+  flex: 1 1 auto;
+}
+
+.pq-feature__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--sp-2);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: 900;
+  color: var(--green-700);
+  transition: gap var(--dur) var(--ease-out);
+}
+
+.pq-feature:hover .pq-feature__cta {
+  gap: 12px;
+}
+
+.pq-feature--blue {
+  background: linear-gradient(160deg, var(--blue-50), var(--clay-white) 62%);
+}
+.pq-feature--peach {
+  background: linear-gradient(160deg, var(--peach-50), var(--clay-white) 62%);
+}
+.pq-feature--green {
+  background: linear-gradient(160deg, var(--green-50), var(--clay-white) 62%);
+}
+
+/* ── How-it-works steps ───────────────────────────────────────────────── */
+
+.pq-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: var(--block-gap);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.pq-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+/* ── Closing CTA ──────────────────────────────────────────────────────── */
+
+.pq-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-5);
+  background: linear-gradient(120deg, var(--clay-green) 0%, var(--green-300) 100%);
+}
+
+.pq-cta__copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  max-width: 58ch;
+}
+
+.pq-cta__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2. TUNER
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.tuner-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.tuner-gate .clay-lede {
+  margin: 0 auto;
+}
+
+.tuner-gate__hint {
+  font-size: var(--fs-sm);
+  color: var(--ink-faint);
+}
+
+.tuner-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-5);
+}
+
+.tuner-controls__field {
+  flex: 1 1 260px;
+  min-width: 0;
+  max-width: 380px;
+}
+
+.tuner-controls__help {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-sm);
+  color: var(--ink-faint);
+}
+
+.tuner-readout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-5);
+}
+
+.tuner-foot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+/* ── Pitch display ────────────────────────────────────────────────────── */
+
+.pitch-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+}
+
+.pitch-display__note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  /* Reserve the full height up front — the readout must never cause CLS. */
+  min-height: 1.05em;
+  font-size: var(--fs-mega);
+  line-height: 1.05;
+}
+
+.pitch-display__glyph {
+  font-family: var(--font-display);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: var(--ink);
+  transition: color var(--dur) var(--ease-out);
+}
+
+/* Idle: the em-dash placeholder reads as "nothing yet". */
+.pitch-display:not(.is-live) .pitch-display__glyph {
+  color: var(--ink-ghost);
+}
+
+.pitch-display__freq {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Cents meter ──────────────────────────────────────────────────────── */
+
+.cents-meter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0;
+  width: 100%;
+  max-width: 400px;
+}
+
+.cents-meter__gauge {
+  width: 100%;
+  max-width: 340px;
+  height: auto;
+  overflow: visible;
+}
+
+.cents-meter__arc {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.cents-meter__arc--track {
+  stroke: var(--peach-100);
+}
+.cents-meter__arc--flat,
+.cents-meter__arc--sharp {
+  stroke: var(--clay-peach);
+}
+.cents-meter__arc--intune {
+  stroke: var(--clay-green);
+}
+
+.cents-meter__tick {
+  stroke: var(--ink-ghost);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.cents-meter__tick--major {
+  stroke: var(--ink);
+  stroke-width: 3;
+}
+
+/* The needle is INK, so it stays legible over both the peach and green zones. */
+.cents-meter__needle-bar {
+  fill: var(--ink);
+}
+
+.cents-meter__needle {
+  transition: transform 90ms ease-out;
+}
+
+.cents-meter__needle:not(.is-live) {
+  opacity: 0.3;
+}
+
+.cents-meter__hub {
+  fill: var(--ink);
+}
+
+.cents-meter__hub-dot {
+  fill: var(--clay-white);
+}
+
+.cents-meter__legend {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  width: 100%;
+  max-width: 340px;
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.cents-meter__legend-mid {
+  color: var(--green-700);
+}
+
+.cents-meter__readout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.cents-meter__verdict {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: var(--ink-soft);
+}
+
+.cents-meter--good .cents-meter__verdict {
+  color: var(--green-700);
+}
+.cents-meter--close .cents-meter__verdict {
+  color: var(--blue-700);
+}
+.cents-meter--off .cents-meter__verdict {
+  color: var(--error);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3. NOTE HISTORY
+   ════════════════════════════════════════════════════════════════════════ */
+
+.note-history {
+  background: var(--surface-sunk);
+  border-radius: var(--r-lg);
+  box-shadow: var(--clay-inner-soft);
+  padding: var(--sp-4) var(--sp-5);
+  min-width: 0;
+}
+
+.note-history__title {
+  margin: 0 0 var(--sp-3);
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.note-history__scroll {
+  padding-bottom: var(--sp-2);
+}
+
+/* Chips cycle through the palette; the note name is always rendered as text. */
+.note-chip--peach {
+  background: var(--clay-peach);
+}
+.note-chip--blue {
+  background: var(--clay-blue);
+}
+.note-chip--green {
+  background: var(--clay-green);
+}
+.note-chip--white {
+  background: var(--clay-white);
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   4. SCORE PICKER
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.scores {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+.scores__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.scores__loaded {
+  align-items: center;
+}
+
+.scores__loaded-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.scores__loaded-by {
+  font-size: var(--fs-sm);
+  color: var(--green-800);
+}
+
+.scores__upload {
+  display: flex;
+  flex-direction: column;
+}
+
+.scores__help {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-sm);
+  color: var(--ink-faint);
+}
+
+.scores__err-detail {
+  opacity: 0.7;
+  font-size: var(--fs-xs);
+}
+
+.scores__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  gap: var(--block-gap);
+}
+
+.score-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+}
+
+.score-tile__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.score-tile__title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1.3;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.score-tile__composer {
+  font-size: var(--fs-sm);
+  color: var(--ink-soft);
+}
+
+.score-tile__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  margin-top: var(--sp-1);
+}
+
+.score-tile__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--green-700);
+}
+
+.score-tile__loading {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--ink-faint);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   5. PRACTICE PAGE
+   ════════════════════════════════════════════════════════════════════════ */
+
+.practice-settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+.practice-settings__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+/* The text block must absorb the free space, otherwise `justify-content:
+   space-between` on the shared rule below flings it to the far right. */
+.practice-settings__head > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.practice-detected__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.practice-settings__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: var(--block-gap);
+}
+
+.practice-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.practice-field__help {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-sm);
+  color: var(--ink-faint);
+}
+
+/* ── Advanced thresholds ──────────────────────────────────────────────── */
+
+.practice-advanced {
+  border-radius: var(--r-md);
+  background: var(--surface-sunk);
+  box-shadow: var(--clay-inner-soft);
+  overflow: hidden;
+}
+
+.practice-advanced__summary {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: 900;
+  color: var(--ink);
+  cursor: pointer;
+  list-style: none;
+  transition: background-color var(--dur) var(--ease-out);
+}
+
+.practice-advanced__summary::-webkit-details-marker {
+  display: none;
+}
+
+.practice-advanced__summary:hover {
+  background: var(--peach-100);
+}
+
+/* Custom disclosure caret. */
+.practice-advanced__summary::after {
+  content: '';
+  margin-left: auto;
+  width: 10px;
+  height: 10px;
+  border-right: 3px solid var(--ink-soft);
+  border-bottom: 3px solid var(--ink-soft);
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform var(--dur) var(--ease-out);
+}
+
+.practice-advanced[open] .practice-advanced__summary::after {
+  transform: rotate(225deg) translate(-2px, -2px);
+}
+
+.practice-advanced__hint {
+  padding: 3px 10px;
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  color: var(--ink);
+  background: var(--clay-white);
+  border-radius: var(--r-pill);
+  box-shadow: var(--clay-inner-soft);
+}
+
+.practice-advanced__body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-4);
+  padding: 0 var(--sp-4) var(--sp-4);
+}
+
+.practice-advanced__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px;
+  align-items: center;
+  gap: var(--sp-3) var(--sp-4);
+  width: 100%;
+}
+
+.practice-advanced__grid label {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.practice-advanced__desc {
+  grid-column: 1 / -1;
+  margin: calc(-1 * var(--sp-2)) 0 var(--sp-2);
+  font-size: var(--fs-xs);
+  color: var(--ink-faint);
+}
+
+@media (max-width: 560px) {
+  .practice-advanced__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .practice-advanced__desc {
+    margin-top: 0;
+  }
+}
+
+/* ── Lane wrapper ─────────────────────────────────────────────────────── */
+
+.practice-lane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.practice-lane__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.practice-lane__title-wrap {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.practice-lane__score {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.practice-lane__note {
+  font-size: var(--fs-sm);
+  color: var(--ink-faint);
+}
+
+@media (max-width: 560px) {
+  .practice-lane__score {
+    align-items: flex-start;
+  }
+}
+
+/* ── Mic gate ────────────────────────────────────────────────────────── */
+
+.practice-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
+  text-align: center;
+}
+
+.practice-gate .clay-lede {
+  margin: 0 auto;
+}
+
+/* ── Detected notes ───────────────────────────────────────────────────── */
+
+.practice-detected {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.detected-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.detected-row {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface-sunk);
+  border-radius: var(--r-md);
+  box-shadow: var(--clay-inner-soft);
+}
+
+.detected-row__note {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+
+.detected-row__dur {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.detected-row__beats {
+  margin-left: 8px;
+  color: var(--ink-faint);
+}
+
+.detected-row__cents {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 560px) {
+  .detected-row {
+    grid-template-columns: 70px minmax(0, 1fr);
+  }
+  .detected-row__cents {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}
+
+/* ── Dev panel ────────────────────────────────────────────────────────── */
+
+.dev-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-3);
+}
+
+.dev-panel__lede {
+  font-size: var(--fs-sm);
+  color: var(--ink-faint);
+  max-width: 70ch;
+}
+
+.dev-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: var(--block-gap);
+  width: 100%;
+  margin-top: var(--sp-3);
+}
+
+.dev-section {
+  padding: var(--sp-4);
+  background: var(--clay-white);
+  border-radius: var(--r-md);
+  box-shadow: var(--clay-surface);
+}
+
+.dev-section__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.dev-section__label {
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: 900;
+  color: var(--ink);
+}
+
+.dev-section__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dev-case {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+  color: var(--ink-soft);
+  padding-left: 18px;
+  position: relative;
+}
+
+/* Non-colour pass/fail signal: a ✓/✗ glyph, not just a hue. */
+.dev-case::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  font-weight: 900;
+  color: var(--green-600);
+}
+
+.dev-case--fail {
+  color: var(--error);
+  font-weight: 600;
+}
+
+.dev-case--fail::before {
+  content: '✗';
+  color: var(--error);
+}
+
+.dev-case__diff {
+  display: block;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   6. TRUMPET DRILL
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.drill-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.drill-stage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+.drill-stage__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: var(--block-gap-lg);
+  align-items: center;
+}
+
+.drill-staff {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-5);
+}
+
+.drill-staff__svg {
+  display: flex;
+  justify-content: center;
+  width: 260px;
+  max-width: 100%;
+  height: 170px;
+}
+
+.drill-staff__name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 2.75rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.drill-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  align-items: center;
+}
+
+.drill-side__trumpet {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: var(--sp-3);
+}
+
+.trumpet-display {
+  display: block;
+  width: auto;
+  height: auto;
+}
+
+.drill-valves {
+  display: flex;
+  gap: var(--sp-3);
+}
+
+.drill-valve {
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  font-size: 1.25rem;
+  color: var(--ink-soft);
+  background: var(--clay-white);
+  box-shadow: var(--clay-inner-soft), inset 0 0 0 2px var(--peach-300);
+  transition:
+    transform var(--dur) var(--ease-clay),
+    background-color var(--dur) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out);
+}
+
+/* Held = pressed INTO the surface (inverted shadow), plus a colour shift. */
+.drill-valve--down {
+  color: var(--ink);
+  background: var(--clay-green);
+  transform: translateY(2px);
+  box-shadow: var(--clay-pressed), inset 0 0 0 2px var(--green-700);
+}
+
+.drill-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-5);
+  padding-top: var(--sp-4);
+  border-top: 3px solid var(--peach-100);
+}
+
+.drill-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 30px;
+  padding: 0 9px;
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  font-weight: 900;
+  color: var(--ink);
+  background: var(--clay-white);
+  border-radius: var(--r-xs);
+  box-shadow: var(--clay-surface), inset 0 0 0 2px var(--peach-300);
+}
+
+.drill-foot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   7. RESPONSIVE SWEEP
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 640px) {
+  .pq-art__lane {
+    height: 148px;
+  }
+
+  .pq-cta {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pq-cta__actions {
+    width: 100%;
+  }
+
+  .pq-cta__actions .clay-btn {
+    flex: 1 1 100%;
+  }
+
+  .drill-staff__name {
+    font-size: 2.25rem;
+  }
+}

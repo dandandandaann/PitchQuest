@@ -1,14 +1,22 @@
 /**
- * ScorePicker — Stage 6 Task 3.
+ * ScorePicker — loads a score from the bundled library or a local upload.
  *
- * Two load paths:
- *  3a Upload   — <input type="file"> → FileReader → parseMusicXml → onScoreLoaded
- *  3b Library  — fetch manifest.json → render cards → click → fetch XML → onScoreLoaded
+ *  3a Upload  — <input type="file"> → FileReader → parseMusicXml → onScoreLoaded
+ *  3b Library — fetch manifest.json → render clay tiles → fetch XML → onScoreLoaded
  *
- * Uses inline styles to match PracticePage.tsx patterns.
+ * Visual language: clay tiles (rounded, double-shadowed, lift on hover) with
+ * palette-only badges. Difficulty maps to the palette:
+ *   easy → green · medium → blue · hard → peach
+ * Each badge also carries its label as text, so difficulty is never conveyed
+ * by colour alone.
  */
 
 import { useState, useEffect, useRef, type ChangeEvent } from 'react';
+import UploadFileRounded from '@mui/icons-material/UploadFileRounded';
+import LibraryMusicRounded from '@mui/icons-material/LibraryMusicRounded';
+import CheckCircleRounded from '@mui/icons-material/CheckCircleRounded';
+import ErrorOutlineRounded from '@mui/icons-material/ErrorOutlineRounded';
+import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import { parseMusicXml } from '../score/MusicXmlParser';
 import { DEFAULT_BPM } from '../audio/TimingEngine';
 import type { ExpectedNote } from '../score/types';
@@ -39,7 +47,7 @@ export interface ScorePickerProps {
 interface ManifestEntry {
     id: string;
     title: string;
-    composer: string;
+    composer: string | null;
     difficulty: string;
     file: string | null;
     bpm: number;
@@ -53,13 +61,17 @@ function formatDifficulty(d: string): string {
     return d.charAt(0).toUpperCase() + d.slice(1);
 }
 
-/** Map manifest difficulty to a subtle badge colour. */
-function difficultyColor(d: string): string {
+/** Palette-only difficulty badge classes. */
+function difficultyClass(d: string): string {
     switch (d) {
-        case 'easy':   return '#2e7d32';  // green
-        case 'medium': return '#1565c0';  // blue
-        case 'hard':   return '#c62828';  // red
-        default:       return '#555';
+        case 'easy':
+            return 'clay-badge--green';
+        case 'medium':
+            return 'clay-badge--blue';
+        case 'hard':
+            return 'clay-badge--peach';
+        default:
+            return 'clay-badge--white';
     }
 }
 
@@ -96,7 +108,7 @@ export function ScorePicker({ onScoreLoaded, onClearScore, loadedScore }: ScoreP
     }, []);
 
     // -------------------------------------------------------------------------
-    // 3b — card click: fetch + parse + lift
+    // 3b — tile click: fetch + parse + lift
     // -------------------------------------------------------------------------
     const handleCardClick = (entry: ManifestEntry) => {
         if (entry.file === null) return;
@@ -114,7 +126,7 @@ export function ScorePicker({ onScoreLoaded, onClearScore, loadedScore }: ScoreP
                 onScoreLoaded(parsed, entry.bpm, {
                     id: entry.id,
                     title: entry.title,
-                    composer: entry.composer,
+                    composer: entry.composer ?? 'Traditional',
                 });
             })
             .catch((err: unknown) => {
@@ -158,132 +170,127 @@ export function ScorePicker({ onScoreLoaded, onClearScore, loadedScore }: ScoreP
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
+    const playable = manifest?.filter(e => e.file !== null) ?? [];
+    const libraryUnavailable = manifest !== null && playable.length === 0;
+
     // -------------------------------------------------------------------------
     // Render
     // -------------------------------------------------------------------------
     return (
-        <div style={{ border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '1rem', marginBottom: '1.5rem', background: 'rgba(255,255,255,0.03)' }}>
+        <section className="clay-card scores" aria-labelledby="scores-title">
+            <header className="scores__head">
+                <span className="clay-iconplate clay-iconplate--blue">
+                    <LibraryMusicRounded />
+                </span>
+                <div>
+                    <h2 id="scores-title" className="clay-title clay-title--h2">
+                        Pick a score
+                    </h2>
+                    <p className="clay-text">
+                        Load a piece from the library, or bring your own MusicXML file.
+                    </p>
+                </div>
+            </header>
 
-            {/* Loaded score status */}
+            {/* ── Currently loaded ─────────────────────────────────────────── */}
             {loadedScore && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', padding: '0.5rem 0.75rem', background: 'rgba(76,175,80,0.12)', borderRadius: '6px', border: '1px solid rgba(76,175,80,0.3)' }}>
-                    <span style={{ fontSize: '0.95rem' }}>
-                        Loaded: <strong>{loadedScore.title}</strong> by {loadedScore.composer}
-                    </span>
-                    <button
-                        onClick={onClearScore}
-                        style={{ padding: '0.2rem 0.6rem', fontSize: '0.8rem', cursor: 'pointer', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', color: '#ccc' }}
-                    >
+                <div className="clay-notice clay-notice--success scores__loaded" role="status">
+                    <CheckCircleRounded sx={{ fontSize: 20, flex: '0 0 auto', marginTop: '2px' }} />
+                    <div className="scores__loaded-text">
+                        <strong>{loadedScore.title}</strong>
+                        <span className="scores__loaded-by">by {loadedScore.composer}</span>
+                    </div>
+                    <button type="button" className="clay-btn clay-btn--sm clay-btn--ghost" onClick={onClearScore}>
                         Clear
                     </button>
                 </div>
             )}
 
-            {/* BPM edit hint — shown whenever a score is loaded */}
-            {loadedScore && (
-                <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)', marginBottom: '0.75rem', marginTop: '-0.5rem' }}>
-                    Edit BPM if needed — uploaded files don&apos;t auto-detect tempo.
+            {/* ─ Upload ───────────────────────────────────────────────────── */}
+            <div className="scores__upload">
+                <label className="clay-label" htmlFor="score-file">
+                    Upload MusicXML
+                </label>
+                <div className="clay-file">
+                    <UploadFileRounded sx={{ fontSize: 22, color: 'var(--ink-soft)', flex: '0 0 auto' }} />
+                    <input
+                        id="score-file"
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".xml,.musicxml,.mxl"
+                        onChange={handleFileChange}
+                    />
+                </div>
+                <p className="clay-text scores__help">
+                    <InfoOutlined sx={{ fontSize: 15, verticalAlign: '-3px', marginRight: '6px' }} />
+                    Uploaded files keep the default {DEFAULT_BPM} BPM — adjust the tempo after loading.
+                </p>
+            </div>
+
+            {/* ── Errors ───────────────────────────────────────────────────── */}
+            {uploadError && (
+                <p className="clay-notice clay-notice--error" role="alert">
+                    <ErrorOutlineRounded sx={{ fontSize: 20, flex: '0 0 auto' }} />
+                    <span>{uploadError}</span>
                 </p>
             )}
 
-            {/* Upload section */}
-            <div style={{ marginBottom: '1.25rem' }}>
-                <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem', opacity: 0.8 }}>Or upload a MusicXML file:</p>
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".xml,.musicxml,.mxl"
-                    onChange={handleFileChange}
-                    style={{ fontSize: '0.85rem' }}
-                />
-            </div>
-
-            {/* Upload / library error banner */}
-            {uploadError && (
-                <div style={{ padding: '0.6rem 0.75rem', background: 'rgba(244,67,54,0.12)', border: '1px solid rgba(244,67,54,0.4)', borderRadius: '6px', marginBottom: '1rem', color: '#ef9a9a', fontSize: '0.85rem' }}>
-                    {uploadError}
-                </div>
+            {manifestError && (
+                <p className="clay-notice clay-notice--warn" role="status">
+                    <InfoOutlined sx={{ fontSize: 20, flex: '0 0 auto' }} />
+                    <span>
+                        Couldn&apos;t load the score library — use the upload option above.
+                        <span className="scores__err-detail"> ({manifestError})</span>
+                    </span>
+                </p>
             )}
 
-            {/* Library section */}
-            <div>
-                <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem', opacity: 0.8 }}>Score library:</p>
+            {libraryUnavailable && (
+                <p className="clay-notice clay-notice--warn" role="status">
+                    <InfoOutlined sx={{ fontSize: 20, flex: '0 0 auto' }} />
+                    <span>No scores available yet — use the upload option above.</span>
+                </p>
+            )}
 
-                {/* Manifest fetch error */}
-                {manifestError && (
-                    <div style={{ padding: '0.6rem 0.75rem', background: 'rgba(255,152,0,0.1)', border: '1px solid rgba(255,152,0,0.3)', borderRadius: '6px', color: '#ffcc80', fontSize: '0.85rem' }}>
-                        Couldn&apos;t load score library — use the upload option above.
-                        <span style={{ opacity: 0.6 }}> ({manifestError})</span>
-                    </div>
-                )}
+            {/* ── Library grid ─────────────────────────────────────────────── */}
+            {playable.length > 0 && (
+                <div className="scores__grid" role="group" aria-label="Score library">
+                    {playable.map(entry => {
+                        const isSelected = loadedScore?.id === entry.id;
+                        const isLoading = loadingFile === entry.id;
+                        return (
+                            <button
+                                key={entry.id}
+                                type="button"
+                                className={`clay-tile score-tile${isSelected ? ' is-selected' : ''}`}
+                                onClick={() => handleCardClick(entry)}
+                                disabled={isLoading}
+                                aria-pressed={isSelected}
+                            >
+                                <span className="score-tile__top">
+                                    <span className="score-tile__title">{entry.title}</span>
+                                    <span className={`clay-badge ${difficultyClass(entry.difficulty)}`}>
+                                        {formatDifficulty(entry.difficulty)}
+                                    </span>
+                                </span>
 
-                {/* Manifest empty */}
-                {manifest !== null && manifest.length === 0 && (
-                    <div style={{ padding: '0.6rem 0.75rem', background: 'rgba(255,152,0,0.1)', border: '1px solid rgba(255,152,0,0.3)', borderRadius: '6px', color: '#ffcc80', fontSize: '0.85rem' }}>
-                        No scores available — use the upload option above.
-                    </div>
-                )}
+                                <span className="score-tile__composer">{entry.composer ?? 'Traditional'}</span>
 
-                {/* Manifest all-null files */}
-                {manifest !== null && manifest.length > 0 && manifest.every(e => e.file === null) && (
-                    <div style={{ padding: '0.6rem 0.75rem', background: 'rgba(255,152,0,0.1)', border: '1px solid rgba(255,152,0,0.3)', borderRadius: '6px', color: '#ffcc80', fontSize: '0.85rem' }}>
-                        No scores available — use the upload option above.
-                    </div>
-                )}
-
-                {/* Library cards */}
-                {manifest !== null && manifest.some(e => e.file !== null) && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.75rem', marginTop: '0.75rem' }}>
-                        {manifest.filter(e => e.file !== null).map(entry => {
-                            const isSelected = loadedScore?.id === entry.id;
-                            const isLoading = loadingFile === entry.id;
-                            return (
-                                <button
-                                    key={entry.id}
-                                    onClick={() => handleCardClick(entry)}
-                                    disabled={isLoading}
-                                    style={{
-                                        background: isSelected ? 'rgba(76,175,80,0.15)' : 'rgba(255,255,255,0.05)',
-                                        border: isSelected ? '1px solid rgba(76,175,80,0.6)' : '1px solid rgba(255,255,255,0.12)',
-                                        borderRadius: '8px',
-                                        padding: '0.6rem 0.75rem',
-                                        textAlign: 'left',
-                                        cursor: isLoading ? 'wait' : 'pointer',
-                                        transition: 'background 0.15s, border-color 0.15s',
-                                        opacity: isLoading ? 0.6 : 1,
-                                    }}
-                                >
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
-                                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: isSelected ? '#a5d6a7' : '#e0e0e0', lineHeight: 1.3 }}>
-                                            {entry.title}
-                                        </div>
-                                        <span style={{
-                                            fontSize: '0.7rem',
-                                            padding: '0.1rem 0.35rem',
-                                            borderRadius: '4px',
-                                            background: difficultyColor(entry.difficulty),
-                                            color: '#fff',
-                                            whiteSpace: 'nowrap',
-                                            flexShrink: 0,
-                                        }}>
-                                            {formatDifficulty(entry.difficulty)}
+                                <span className="score-tile__foot">
+                                    <span className="clay-badge clay-badge--white">{entry.bpm} BPM</span>
+                                    {isSelected && (
+                                        <span className="score-tile__check">
+                                            <CheckCircleRounded sx={{ fontSize: 18 }} />
+                                            Loaded
                                         </span>
-                                    </div>
-                                    <div style={{ fontSize: '0.78rem', opacity: 0.65, marginTop: '0.2rem' }}>
-                                        {entry.composer}
-                                    </div>
-                                    <div style={{ fontSize: '0.75rem', opacity: 0.5, marginTop: '0.25rem' }}>
-                                        {entry.bpm} BPM
-                                    </div>
-                                    {isLoading && (
-                                        <div style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '0.2rem' }}>Loading…</div>
                                     )}
-                                </button>
-                            );
-                        })}
-                    </div>
-                )}
-            </div>
-        </div>
+                                    {isLoading && <span className="score-tile__loading">Loading…</span>}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+        </section>
     );
 }

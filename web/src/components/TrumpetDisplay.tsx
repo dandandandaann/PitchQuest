@@ -1,4 +1,3 @@
-import { Box } from '@mui/material';
 import type { PistonId } from '../trumpet/fingerings';
 
 export interface TrumpetDisplayProps {
@@ -20,30 +19,27 @@ function variantFilename(held: ReadonlySet<PistonId>): string {
   return `trumpet-press-${ids.join('-')}.png`;
 }
 
-export function TrumpetDisplay({
-  held,
-  maxHeight = 320,
-  alt = 'Trumpet with valves shown',
-}: TrumpetDisplayProps) {
+/** Screen-reader description of the current valve state. */
+function describe(held: ReadonlySet<PistonId>): string {
+  const ids = [1, 2, 3].filter((n) => held.has(n as PistonId));
+  if (ids.length === 0) return 'Trumpet diagram with all valves released.';
+  if (ids.length === 3) return 'Trumpet diagram with valves 1, 2 and 3 pressed.';
+  const list = ids.length === 2 ? `${ids[0]} and ${ids[1]}` : String(ids[0]);
+  return `Trumpet diagram with valve${ids.length === 2 ? 's' : ''} ${list} pressed.`;
+}
+
+export function TrumpetDisplay({ held, maxHeight = 320, alt }: TrumpetDisplayProps) {
   // Vite serves /public/* at the base path. Since the app is hosted at /PitchQuest/,
   // use `import.meta.env.BASE_URL` ("/PitchQuest/" in production, "/" in dev) so the
   // path is correct in both.
   const src = `${import.meta.env.BASE_URL}trumpet/${variantFilename(held)}`;
 
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-      <Box
-        component="img"
-        src={src}
-        alt={alt}
-        sx={{
-          maxHeight,
-          height: 'auto',
-          maxWidth: '100%',
-          width: 'auto',
-          display: 'block',
-        }}
-      />
-    </Box>
+    <img
+      className="trumpet-display"
+      src={src}
+      alt={alt ?? describe(held)}
+      style={{ maxHeight, maxWidth: '100%' }}
+    />
   );
 }
