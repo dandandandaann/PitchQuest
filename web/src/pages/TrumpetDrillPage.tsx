@@ -3,7 +3,6 @@ import { Box, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
 import { Renderer, Stave, StaveNote, Accidental, Voice, Formatter } from 'vexflow';
 import {
   KEY_TO_PISTON,
-  type PistonId,
   type PistonKey,
   pistonsMatch,
   getRequiredPistons,
@@ -11,8 +10,6 @@ import {
   type NoteFilter,
 } from '../trumpet/fingerings';
 import { TrumpetDisplay } from '../components/TrumpetDisplay';
-
-const ADVANCE_DELAY_MS = 200;
 
 const FILTER_STORAGE_KEY = 'pq.trumpetDrill.filter';
 const VALID_FILTERS: readonly NoteFilter[] = ['all', 'sharps', 'flats', 'naturals'];
@@ -63,7 +60,7 @@ function NoteStaff({ note }: NoteStaffProps) {
     container.innerHTML = '';
 
     const WIDTH = 240;
-    const HEIGHT = 140;
+    const HEIGHT = 160;
 
     const renderer = new Renderer(container, Renderer.Backends.SVG);
     renderer.resize(WIDTH, HEIGHT);
@@ -140,8 +137,6 @@ export function TrumpetDrillPage() {
 
   // Pending deferred note advance: timeout id + the required piston set captured
   // at SPACE press. Both are cleared if the held pistons stop matching mid-delay.
-  const pendingAdvanceRef = useRef<number | null>(null);
-  const pendingRequiredRef = useRef<readonly PistonId[] | null>(null);
 
   useEffect(() => {
     const isEditableTarget = (event: KeyboardEvent) => {
@@ -176,17 +171,9 @@ export function TrumpetDrillPage() {
         event.preventDefault(); // Space scrolls the page
         const required = getRequiredPistons(currentNoteRef.current);
         if (required && pistonsMatch(heldRef.current, required)) {
-          // Already an advance pending? Ignore rapid manual SPACE re-presses.
-          if (pendingAdvanceRef.current !== null) return;
-
           const nextNote = randomNote(filterRef.current).note; // repeats allowed
-          pendingRequiredRef.current = required;
-          pendingAdvanceRef.current = window.setTimeout(() => {
-            pendingAdvanceRef.current = null;
-            pendingRequiredRef.current = null;
-            currentNoteRef.current = nextNote;
-            setCurrentNote(nextNote);
-          }, ADVANCE_DELAY_MS);
+          currentNoteRef.current = nextNote;
+          setCurrentNote(nextNote);
         }
         // else: do nothing — no feedback, no state change
       }
@@ -200,19 +187,6 @@ export function TrumpetDrillPage() {
         const next = new Set(heldRef.current);
         next.delete(k);
         setHeldKeys(next);
-
-        // If a deferred advance is pending and releasing this piston breaks the
-        // required combination, cancel it — the note stays on screen.
-        const pendingRequired = pendingRequiredRef.current;
-        if (
-          pendingAdvanceRef.current !== null &&
-          pendingRequired &&
-          !pistonsMatch(next, pendingRequired)
-        ) {
-          window.clearTimeout(pendingAdvanceRef.current);
-          pendingAdvanceRef.current = null;
-          pendingRequiredRef.current = null;
-        }
       }
       // No action for SPACE keyup.
     };
@@ -222,11 +196,6 @@ export function TrumpetDrillPage() {
     return () => {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
-      if (pendingAdvanceRef.current !== null) {
-        window.clearTimeout(pendingAdvanceRef.current);
-        pendingAdvanceRef.current = null;
-        pendingRequiredRef.current = null;
-      }
     };
   }, []);
 
@@ -284,9 +253,6 @@ export function TrumpetDrillPage() {
 
       <TrumpetDisplay held={heldPistonIds} maxHeight={360} />
 
-      <Typography variant="caption" color="text.disabled" sx={{ mt: 2 }}>
-        Trumpet illustration — license/attribution pending
-      </Typography>
     </Box>
   );
 }

@@ -64,11 +64,12 @@ export function isNatural(note: string): boolean {
  *   'naturals' → notes containing neither (see isNatural)
  */
 export function filterFingerings(filter: NoteFilter): readonly Fingering[] {
-  if (filter === 'all') return FINGERINGS;
-  if (filter === 'sharps') return FINGERINGS.filter(f => f.note.includes('#'));
-  if (filter === 'flats') return FINGERINGS.filter(f => f.note.includes('b'));
-  // 'naturals'
-  return FINGERINGS.filter(f => isNatural(f.note));
+  if (filter === 'sharps') return FINGERINGS.filter(f => !f.note.includes('b'));
+  if (filter === 'flats') return FINGERINGS.filter(f => !f.note.includes('#'));
+  if (filter === 'naturals') return FINGERINGS.filter(f => !f.note.includes('#') && !f.note.includes('b'));
+
+  // if (filter === 'all') return FINGERINGS;
+  return FINGERINGS
 }
 
 /** Returns the required pistons for a written note, or null if not found. */
