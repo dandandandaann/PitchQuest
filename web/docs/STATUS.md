@@ -1,6 +1,6 @@
 # PitchQuest — Status & Handoff
 
-**Last updated:** post-Stage 6 — DIY i18n added (commits `3bb0051` → `3846137`, reviewer APPROVED); Stage 7 still pending.
+**Last updated:** post-Stage 6 — DIY i18n expanded to full-app coverage (commits `3bb0051` → `f1f47b4`, reviewer APPROVED); Stage 7 still pending.
 **Audience:** the next manager agent (or human) picking up this project.
 
 ---
@@ -114,17 +114,18 @@ npx tsx -e "import { runSegmenterHarness } from './src/audio/NoteSegmenter.test-
 
 All harnesses are pure functions (no React/DOM/I/O). They're also wired into the **dev panel on PracticePage** (6 sections, "Show dev panel" button at the bottom). When you open the page, you can see all 41 cases running live in the browser.
 
-### DIY i18n (sidebar-only) — post-Stage 6, reviewer APPROVED
+### DIY i18n (full-app) — post-Stage 6, reviewer APPROVED
 
-Added after Stage 6 in commits `3bb0051` → `3846137` (provider + dictionaries, provider mount, toggle component, sidebar wiring). Reviewed and **APPROVED**. Stage 7 scope is unchanged.
+Added after Stage 6 in commits `3bb0051` → `3846137` (provider + dictionaries, provider mount, toggle component, sidebar wiring), then expanded to **full-app coverage** in commits `d997bf8`, `2277cd4`, `18ce9cb`, `e58c9bf`, `a38d314`, `b4d1b1f`, `f1f47b4` (key expansion + EN scaffolding; SidebarLayout a11y strings; HomePage; TunerPage + tuner components; ScorePicker/NoteLane/TrumpetDisplay; PracticePage/TrumpetDrillPage/App fallback; final PT copy pass). Reviewed and **APPROVED** (0 blocking issues, 1 minor nit: PT copy uses "espaço" for the Space key token — cosmetic only, see LedeText note below). Stage 7 scope is unchanged.
 
 - **Implementation: DIY i18n at `web/src/i18n/`** — no i18n library. `I18nProvider` (in `I18nContext.tsx`) is mounted in `main.tsx` above `<App>`.
 - **Hooks:** `useT()` (translate a `TranslationKey`), `useLocale()`, `useSetLocale()`. All throw if used outside the provider.
 - **Persistence:** `localStorage['pq.lang']`, with a `navigator` Portuguese-detection fallback (any `pt*` navigator language → `pt`, otherwise `en`). Stored choice wins. `pq.lang` is a reserved key — don't reuse it for other persisted prefs.
 - **Side effect:** the provider keeps `<html lang>` in sync with the active locale.
 - **UI:** `LanguageToggle` (`web/src/components/LanguageToggle.tsx`) renders in the sidebar, directly above the mic card.
-- **Scope: sidebar-only.** Pages stay English. To extend: add strings to `web/src/i18n/dictionaries/en.ts` + `pt.ts` (keys in `keys.ts`) and swap the hardcoded strings in the page.
-- **PT copy** has been reviewed.
+- **Scope: full-app — 195 keys.** All 4 pages (Home, Tuner, Practice, TrumpetDrill), all shared components (SidebarLayout incl. a11y strings, ScorePicker, NoteLane, CentsMeter, NoteHistory, PitchDisplay, TrumpetDisplay, LanguageToggle), and the App route-fallback strings are translated. The PT glossary lives as a comment at the top of `web/src/i18n/dictionaries/pt.ts` (perfeito / ok / errou, cents, batidas, sustenido / bemol, afinado, partitura, exercício, digitação, estrito / automático) — **do not retranslate ad hoc**; follow the approved glossary. To extend: add strings to `web/src/i18n/dictionaries/en.ts` + `pt.ts` (keys in `keys.ts`) and swap the hardcoded strings in the component.
+- **Interpolation convention:** dynamic values use `{name}` placeholders in dictionary copy (e.g. `{bpm}`, `{cents}`, `{tier}`); the consuming component substitutes them at usage time (see `keys.ts` header).
+- **PT copy** has been reviewed. The PT lede on TrumpetDrillPage (`trumpet.header.lede`) must keep the literal `J`, `K`, `L`, and `Space` tokens — `LedeText` (in `TrumpetDrillPage.tsx`) splits on exactly those tokens to bold them; translating "Space" as "espaço" would break the highlighting.
 
 ## What's next
 
