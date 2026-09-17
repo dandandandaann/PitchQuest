@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { FormControlLabel, Switch, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { Renderer, Stave, StaveNote, Accidental, Voice, Formatter } from 'vexflow';
 import {
   KEY_TO_PISTON,
@@ -261,20 +261,17 @@ export function TrumpetDrillPage() {
             ♮ Naturals
           </ToggleButton>
         </ToggleButtonGroup>
-        <ToggleButtonGroup
-          value={hideNoteName ? 'hide' : 'show'}
-          exclusive
-          onChange={(_event, next: 'show' | 'hide' | null) => {
-            // MUI fires null when the active button is re-clicked — keep the current state.
-            if (next === null) return;
-            setHideNoteName(next === 'hide');
-          }}
-          size="small"
-          aria-label="Note name visibility"
-        >
-          <ToggleButton value="show">Show names</ToggleButton>
-          <ToggleButton value="hide">Hide names</ToggleButton>
-        </ToggleButtonGroup>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={hideNoteName}
+              onChange={event => setHideNoteName(event.target.checked)}
+              size="small"
+              inputProps={{ 'aria-label': 'Hide note names' }}
+            />
+          }
+          label="Hide note names"
+        />
       </section>
 
       {/* ═ THE DRILL ══════════════════════════════════════════════════════ */}
