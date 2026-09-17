@@ -19,6 +19,7 @@ import ErrorOutlineRounded from '@mui/icons-material/ErrorOutlineRounded';
 import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import { parseMusicXml } from '../score/MusicXmlParser';
 import { DEFAULT_BPM } from '../audio/TimingEngine';
+import { useT } from '../i18n/I18nContext';
 import type { ExpectedNote } from '../score/types';
 
 // ---------------------------------------------------------------------------
@@ -80,6 +81,8 @@ function difficultyClass(d: string): string {
 // ---------------------------------------------------------------------------
 
 export function ScorePicker({ onScoreLoaded, onClearScore, loadedScore }: ScorePickerProps) {
+    const t = useT();
+
     // 3b — library state
     const [manifest, setManifest] = useState<ManifestEntry[] | null>(null);
     const [manifestError, setManifestError] = useState<string | null>(null);
@@ -126,12 +129,16 @@ export function ScorePicker({ onScoreLoaded, onClearScore, loadedScore }: ScoreP
                 onScoreLoaded(parsed, entry.bpm, {
                     id: entry.id,
                     title: entry.title,
-                    composer: entry.composer ?? 'Traditional',
+                    composer: entry.composer ?? t('components.score_picker.composer_traditional'),
                 });
             })
             .catch((err: unknown) => {
                 const msg = err instanceof Error ? err.message : String(err);
-                setUploadError(`Failed to load "${entry.title}": ${msg}`);
+                setUploadError(
+                    t('components.score_picker.load_failed')
+                        .replace('{title}', entry.title)
+                        .replace('{error}', msg),
+                );
             })
             .finally(() => setLoadingFile(null));
     };
@@ -148,7 +155,7 @@ export function ScorePicker({ onScoreLoaded, onClearScore, loadedScore }: ScoreP
         reader.onload = ev => {
             const text = ev.target?.result;
             if (typeof text !== 'string') {
-                setUploadError('File read failed — got empty result.');
+                setUploadError(t('components.score_picker.read_failed'));
                 return;
             }
             try {
@@ -156,14 +163,14 @@ export function ScorePicker({ onScoreLoaded, onClearScore, loadedScore }: ScoreP
                 onScoreLoaded(parsed, DEFAULT_BPM, {
                     id: 'upload',
                     title: file.name,
-                    composer: 'Uploaded',
+                    composer: t('components.score_picker.composer_uploaded'),
                 });
             } catch (err: unknown) {
                 const msg = err instanceof Error ? err.message : String(err);
                 setUploadError(msg);
             }
         };
-        reader.onerror = () => setUploadError('File read failed — browser error.');
+        reader.onerror = () => setUploadError(t('components.score_picker.read_failed_browser'));
         reader.readAsText(file);
 
         // Reset the input so the same file can be re-selected after clearing
@@ -184,10 +191,10 @@ export function ScorePicker({ onScoreLoaded, onClearScore, loadedScore }: ScoreP
                 </span>
                 <div>
                     <h2 id="scores-title" className="clay-title clay-title--h2">
-                        Pick a score
+                        {t('components.score_picker.title')}
                     </h2>
                     <p className="clay-text">
-                        Load a piece from the library, or bring your own MusicXML file.
+                        {t('components.score_picker.subtitle')}
                     </p>
                 </div>
             </header>
@@ -198,10 +205,12 @@ export function ScorePicker({ onScoreLoaded, onClearScore, loadedScore }: ScoreP
                     <CheckCircleRounded sx={{ fontSize: 20, flex: '0 0 auto', marginTop: '2px' }} />
                     <div className="scores__loaded-text">
                         <strong>{loadedScore.title}</strong>
-                        <span className="scores__loaded-by">by {loadedScore.composer}</span>
+                        <span className="scores__loaded-by">
+                            {t('components.score_picker.loaded_by').replace('{composer}', loadedScore.composer)}
+                        </span>
                     </div>
                     <button type="button" className="clay-btn clay-btn--sm clay-btn--ghost" onClick={onClearScore}>
-                        Clear
+                        {t('components.score_picker.clear')}
                     </button>
                 </div>
             )}
@@ -209,7 +218,7 @@ export function ScorePicker({ onScoreLoaded, onClearScore, loadedScore }: ScoreP
             {/* ─ Upload ───────────────────────────────────────────────────── */}
             <div className="scores__upload">
                 <label className="clay-label" htmlFor="score-file">
-                    Upload MusicXML
+                    {t('components.score_picker.upload')}
                 </label>
                 <div className="clay-file">
                     <UploadFileRounded sx={{ fontSize: 22, color: 'var(--ink-soft)', flex: '0 0 auto' }} />
@@ -223,7 +232,7 @@ export function ScorePicker({ onScoreLoaded, onClearScore, loadedScore }: ScoreP
                 </div>
                 <p className="clay-text scores__help">
                     <InfoOutlined sx={{ fontSize: 15, verticalAlign: '-3px', marginRight: '6px' }} />
-                    Uploaded files keep the default {DEFAULT_BPM} BPM — adjust the tempo after loading.
+                    {t('components.score_picker.upload_help').replace('{bpm}', String(DEFAULT_BPM))}
                 </p>
             </div>
 
@@ -239,7 +248,7 @@ export function ScorePicker({ onScoreLoaded, onClearScore, loadedScore }: ScoreP
                 <p className="clay-notice clay-notice--warn" role="status">
                     <InfoOutlined sx={{ fontSize: 20, flex: '0 0 auto' }} />
                     <span>
-                        Couldn&apos;t load the score library — use the upload option above.
+                        {t('components.score_picker.library_error')}
                         <span className="scores__err-detail"> ({manifestError})</span>
                     </span>
                 </p>
@@ -248,13 +257,13 @@ export function ScorePicker({ onScoreLoaded, onClearScore, loadedScore }: ScoreP
             {libraryUnavailable && (
                 <p className="clay-notice clay-notice--warn" role="status">
                     <InfoOutlined sx={{ fontSize: 20, flex: '0 0 auto' }} />
-                    <span>No scores available yet — use the upload option above.</span>
+                    <span>{t('components.score_picker.library_empty')}</span>
                 </p>
             )}
 
             {/* ── Library grid ─────────────────────────────────────────────── */}
             {playable.length > 0 && (
-                <div className="scores__grid" role="group" aria-label="Score library">
+                <div className="scores__grid" role="group" aria-label={t('components.score_picker.library_aria')}>
                     {playable.map(entry => {
                         const isSelected = loadedScore?.id === entry.id;
                         const isLoading = loadingFile === entry.id;
@@ -274,17 +283,19 @@ export function ScorePicker({ onScoreLoaded, onClearScore, loadedScore }: ScoreP
                                     </span>
                                 </span>
 
-                                <span className="score-tile__composer">{entry.composer ?? 'Traditional'}</span>
+                                <span className="score-tile__composer">
+                                    {entry.composer ?? t('components.score_picker.composer_traditional')}
+                                </span>
 
                                 <span className="score-tile__foot">
                                     <span className="clay-badge clay-badge--white">{entry.bpm} BPM</span>
                                     {isSelected && (
                                         <span className="score-tile__check">
                                             <CheckCircleRounded sx={{ fontSize: 18 }} />
-                                            Loaded
+                                            {t('components.score_picker.loaded')}
                                         </span>
                                     )}
-                                    {isLoading && <span className="score-tile__loading">Loading…</span>}
+                                    {isLoading && <span className="score-tile__loading">{t('components.score_picker.loading')}</span>}
                                 </span>
                             </button>
                         );

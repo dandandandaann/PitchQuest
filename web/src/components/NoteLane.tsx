@@ -23,6 +23,7 @@ import type { ScoreTier, ScoreSummary } from '../audio/Scorer';
 import type { ScoredNote } from '../audio/Scorer';
 import type { PlayMode } from '../audio/hooks/useScoreSession';
 import { LANE_CONFIG } from '../audio/laneConfig';
+import { useT } from '../i18n/I18nContext';
 import { scoreMatches } from '../audio/Scorer';
 import { msPerBeat } from '../audio/TimingEngine';
 import './NoteLane.css';
@@ -144,6 +145,8 @@ export function NoteLane({
     playMode,
     onComplete,
 }: NoteLaneProps) {
+    const t = useT();
+
     // Ref to the lane-track DOM node. Written by the rAF loop (not React).
     const trackRef = useRef<HTMLDivElement>(null);
 
@@ -328,7 +331,7 @@ export function NoteLane({
     if (expected.length === 0) {
         return (
             <div className="lane-root lane-root--empty">
-                <span>Load a score above to see the lane</span>
+                <span>{t('components.note_lane.empty')}</span>
             </div>
         );
     }
@@ -354,10 +357,13 @@ export function NoteLane({
             {/* Song complete overlay */}
             {isDone && summary !== null && (
                 <div className="lane-complete-overlay">
-                    <h3>Complete!</h3>
+                    <h3>{t('components.note_lane.complete')}</h3>
                     <p>
-                        {summary.accuracyPct.toFixed(1)}% ({summary.perfect} perfect, {summary.ok} ok,{' '}
-                        {summary.miss} miss)
+                        {t('components.note_lane.summary')
+                            .replace('{accuracy}', summary.accuracyPct.toFixed(1))
+                            .replace('{perfect}', String(summary.perfect))
+                            .replace('{ok}', String(summary.ok))
+                            .replace('{miss}', String(summary.miss))}
                     </p>
                 </div>
             )}
