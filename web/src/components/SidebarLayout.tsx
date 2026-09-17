@@ -23,38 +23,42 @@ import MusicNoteRounded from '@mui/icons-material/MusicNoteRounded';
 import MenuRounded from '@mui/icons-material/MenuRounded';
 import CloseRounded from '@mui/icons-material/CloseRounded';
 import AutoAwesomeRounded from '@mui/icons-material/AutoAwesomeRounded';
+import { useT } from '../i18n/I18nContext';
+import type { TranslationKey } from '../i18n/keys';
+import { LanguageToggle } from './LanguageToggle';
 
 const DRAWER_WIDTH = 264;
 
 interface NavItem {
-  text: string;
+  text: TranslationKey;
   icon: ReactElement;
   path: string;
 }
 
 interface NavSection {
-  label: string | null;
+  label: TranslationKey | null;
   items: NavItem[];
 }
 
 const NAV_SECTIONS: NavSection[] = [
-  { label: null, items: [{ text: 'Home', icon: <HomeRounded />, path: '/' }] },
+  { label: null, items: [{ text: 'nav.home', icon: <HomeRounded />, path: '/' }] },
   {
-    label: 'Ear training',
-    items: [{ text: 'Tuner', icon: <GraphicEqRounded />, path: '/tuner' }],
+    label: 'section.ear_training',
+    items: [{ text: 'nav.tuner', icon: <GraphicEqRounded />, path: '/tuner' }],
   },
   {
-    label: 'Practice',
-    items: [{ text: 'Score practice', icon: <SchoolRounded />, path: '/practice' }],
+    label: 'section.practice',
+    items: [{ text: 'nav.practice.score', icon: <SchoolRounded />, path: '/practice' }],
   },
   {
-    label: 'Drills',
-    items: [{ text: 'Trumpet fingering', icon: <MusicNoteRounded />, path: '/trumpet-drill' }],
+    label: 'section.drills',
+    items: [{ text: 'nav.practice.trumpet', icon: <MusicNoteRounded />, path: '/trumpet-drill' }],
   },
 ];
 
 /** Brand block — a clay tile with a music-note glyph. */
 function Brand({ compact = false }: { compact?: boolean }) {
+  const t = useT();
   return (
     <Box
       sx={{
@@ -107,7 +111,7 @@ function Brand({ compact = false }: { compact?: boolean }) {
             color: 'var(--ink-faint)',
           }}
         >
-          Play · Listen · Improve
+          {t('brand.tagline')}
         </Typography>
       </Box>
     </Box>
@@ -117,6 +121,7 @@ function Brand({ compact = false }: { compact?: boolean }) {
 /** Sidebar nav body — shared by the permanent and temporary drawers. */
 function NavBody({ onNavigate }: { onNavigate: (path: string) => void }) {
   const location = useLocation();
+  const t = useT();
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -132,7 +137,7 @@ function NavBody({ onNavigate }: { onNavigate: (path: string) => void }) {
             subheader={
               section.label ? (
                 <ListSubheader component="div" disableSticky>
-                  {section.label}
+                  {t(section.label)}
                 </ListSubheader>
               ) : undefined
             }
@@ -146,7 +151,7 @@ function NavBody({ onNavigate }: { onNavigate: (path: string) => void }) {
                 >
                   <ListItemIcon>{item.icon}</ListItemIcon>
                   <ListItemText
-                    primary={item.text}
+                    primary={t(item.text)}
                     slotProps={{
                       primary: {
                         sx: { fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '0.95rem' },
@@ -160,29 +165,33 @@ function NavBody({ onNavigate }: { onNavigate: (path: string) => void }) {
         ))}
       </Box>
 
-      <Box sx={{ p: 2 }}>
-        <Box
-          sx={{
-            p: 2,
-            borderRadius: '18px',
-            background: 'var(--blue-100)',
-            boxShadow: 'var(--clay-inner-soft), inset 0 0 0 2px var(--blue-300)',
-          }}
-        >
-          <Typography
+      <Box>
+        {/* Language switcher — self-wraps in its own p:2 container. */}
+        <LanguageToggle />
+        <Box sx={{ p: 2 }}>
+          <Box
             sx={{
-              fontFamily: 'var(--font-display)',
-              fontWeight: 800,
-              fontSize: '0.8125rem',
-              color: 'var(--ink)',
-              mb: 0.5,
+              p: 2,
+              borderRadius: '18px',
+              background: 'var(--blue-100)',
+              boxShadow: 'var(--clay-inner-soft), inset 0 0 0 2px var(--blue-300)',
             }}
           >
-            Mic stays on-device
-          </Typography>
-          <Typography sx={{ fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--ink-soft)' }}>
-            Pitch is analysed locally with YIN. Nothing is uploaded.
-          </Typography>
+            <Typography
+              sx={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: '0.8125rem',
+                color: 'var(--ink)',
+                mb: 0.5,
+              }}
+            >
+              {t('card.mic.title')}
+            </Typography>
+            <Typography sx={{ fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--ink-soft)' }}>
+              {t('card.mic.body')}
+            </Typography>
+          </Box>
         </Box>
       </Box>
     </Box>
