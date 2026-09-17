@@ -13,6 +13,7 @@ import { useScoreSession } from '../audio/hooks/useScoreSession';
 import { useDevPanelHarnesses } from '../audio/hooks/useDevPanelHarnesses';
 import { DEFAULT_SCORING_THRESHOLDS, type ScoringThresholds } from '../audio/Scorer';
 import { NoteLane } from '../components/NoteLane';
+import { useT } from '../i18n/I18nContext';
 
 import MicRounded from '@mui/icons-material/MicRounded';
 import MicOffRounded from '@mui/icons-material/MicOffRounded';
@@ -28,7 +29,15 @@ import GraphicEqRounded from '@mui/icons-material/GraphicEqRounded';
 
 const MAX_DETECTED_NOTES = 20; // Live log cap for segmented notes
 
+/** Maps a score tier to its translated `common.tier.*` key. */
+const TIER_KEY = {
+    perfect: 'common.tier.perfect',
+    ok: 'common.tier.ok',
+    miss: 'common.tier.miss',
+} as const;
+
 export function PracticePage() {
+    const t = useT();
     const { isStarted, startAudio, stopAudio, audioContext, audioStartPerfNow } = useAudioContext();
     const [detectedNotes, setDetectedNotes] = useState<DetectedNote[]>([]);
     const segmenterRef = useRef<NoteSegmenter | null>(null);
@@ -151,16 +160,13 @@ export function PracticePage() {
             {/* ═ HEADER BLOCK ════════════════════════════════════════════════ */}
             <header className="pq-header">
                 <div className="pq-header__text">
-                    <span className="clay-eyebrow">Practice</span>
-                    <h1 className="clay-title clay-title--h1">Score practice</h1>
-                    <p className="clay-lede">
-                        Load a piece, start the mic, and play. Every note is matched against the score and coloured
-                        as it lands — green for perfect, blue for close, grey for missed.
-                    </p>
+                    <span className="clay-eyebrow">{t('section.practice')}</span>
+                    <h1 className="clay-title clay-title--h1">{t('practice.header.title')}</h1>
+                    <p className="clay-lede">{t('practice.header.lede')}</p>
                 </div>
                 <span className={`clay-badge ${isStarted ? 'clay-badge--green' : 'clay-badge--white'}`}>
                     <GraphicEqRounded sx={{ fontSize: 15 }} />
-                    {isStarted ? 'Listening' : 'Mic off'}
+                    {isStarted ? t('common.mic.listening') : t('common.mic.off')}
                 </span>
             </header>
 
@@ -179,9 +185,9 @@ export function PracticePage() {
                     </span>
                     <div>
                         <h2 id="practice-settings-title" className="clay-title clay-title--h2">
-                            Session settings
+                            {t('practice.settings.title')}
                         </h2>
-                        <p className="clay-text">Tempo and how strictly the lane waits for you.</p>
+                        <p className="clay-text">{t('practice.settings.subtitle')}</p>
                     </div>
                 </header>
 
@@ -189,7 +195,7 @@ export function PracticePage() {
                     <div className="practice-field">
                         <label className="clay-label" htmlFor="bpm-input">
                             <SpeedRounded sx={{ fontSize: 16, verticalAlign: '-3px', marginRight: '6px' }} />
-                            Tempo (BPM)
+                            {t('practice.settings.bpm_label')}
                         </label>
                         <input
                             id="bpm-input"
@@ -202,14 +208,14 @@ export function PracticePage() {
                             onChange={handleBpmChange}
                         />
                         <p className="clay-text practice-field__help">
-                            <TimerRounded sx={{ fontSize: 14, verticalAlign: '-2px', marginRight: '4px' }} />1 beat ≈{' '}
-                            {msPerBeat(bpm).toFixed(0)} ms
+                            <TimerRounded sx={{ fontSize: 14, verticalAlign: '-2px', marginRight: '4px' }} />
+                            {t('practice.settings.bpm_help').replace('{ms}', msPerBeat(bpm).toFixed(0))}
                         </p>
                     </div>
 
                     <div className="practice-field">
                         <label className="clay-label" htmlFor="mode-select">
-                            Advance mode
+                            {t('practice.settings.mode_label')}
                         </label>
                         <select
                             id="mode-select"
@@ -217,13 +223,13 @@ export function PracticePage() {
                             value={playMode}
                             onChange={e => setPlayMode(e.target.value as PlayMode)}
                         >
-                            <option value="wait">Wait — auto-advance after the grace window</option>
-                            <option value="strict-wait">Strict — hold until you hit the note</option>
+                            <option value="wait">{t('practice.settings.mode_wait')}</option>
+                            <option value="strict-wait">{t('practice.settings.mode_strict')}</option>
                         </select>
                         <p className="clay-text practice-field__help">
                             {playMode === 'wait'
-                                ? 'The lane moves on by itself, marking missed notes.'
-                                : 'The lane freezes on the active note until you play it correctly.'}
+                                ? t('practice.settings.mode_help_wait')
+                                : t('practice.settings.mode_help_strict')}
                         </p>
                     </div>
                 </div>
@@ -232,13 +238,15 @@ export function PracticePage() {
                 <details className="practice-advanced">
                     <summary className="practice-advanced__summary">
                         <InsightsRounded sx={{ fontSize: 18 }} />
-                        Scoring thresholds
-                        <span className="practice-advanced__hint">pitch ±{scoringThresholds.pitchCentsPerfect}¢ perfect</span>
+                        {t('practice.thresholds.summary')}
+                        <span className="practice-advanced__hint">
+                            {t('practice.thresholds.hint').replace('{cents}', String(scoringThresholds.pitchCentsPerfect))}
+                        </span>
                     </summary>
 
                     <div className="practice-advanced__body">
                         <div className="practice-advanced__grid">
-                            <label htmlFor="th-pitch-perf">Pitch — perfect (cents)</label>
+                            <label htmlFor="th-pitch-perf">{t('practice.thresholds.pitch_perfect')}</label>
                             <input
                                 id="th-pitch-perf"
                                 className="clay-field"
@@ -259,9 +267,9 @@ export function PracticePage() {
                                     })
                                 }
                             />
-                            <p className="practice-advanced__desc">within this error → perfect</p>
+                            <p className="practice-advanced__desc">{t('practice.thresholds.desc_perfect')}</p>
 
-                            <label htmlFor="th-pitch-ok">Pitch — ok (cents)</label>
+                            <label htmlFor="th-pitch-ok">{t('practice.thresholds.pitch_ok')}</label>
                             <input
                                 id="th-pitch-ok"
                                 className="clay-field"
@@ -280,9 +288,9 @@ export function PracticePage() {
                                     })
                                 }
                             />
-                            <p className="practice-advanced__desc">within this error → ok, beyond → miss</p>
+                            <p className="practice-advanced__desc">{t('practice.thresholds.desc_ok')}</p>
 
-                            <label htmlFor="th-time-perf">Timing — perfect (beats)</label>
+                            <label htmlFor="th-time-perf">{t('practice.thresholds.time_perfect')}</label>
                             <input
                                 id="th-time-perf"
                                 className="clay-field"
@@ -303,9 +311,9 @@ export function PracticePage() {
                                     })
                                 }
                             />
-                            <p className="practice-advanced__desc">within this error → perfect</p>
+                            <p className="practice-advanced__desc">{t('practice.thresholds.desc_perfect')}</p>
 
-                            <label htmlFor="th-time-ok">Timing — ok (beats)</label>
+                            <label htmlFor="th-time-ok">{t('practice.thresholds.time_ok')}</label>
                             <input
                                 id="th-time-ok"
                                 className="clay-field"
@@ -324,7 +332,7 @@ export function PracticePage() {
                                     })
                                 }
                             />
-                            <p className="practice-advanced__desc">within this error → ok, beyond → miss</p>
+                            <p className="practice-advanced__desc">{t('practice.thresholds.desc_ok')}</p>
                         </div>
 
                         <button
@@ -333,7 +341,7 @@ export function PracticePage() {
                             onClick={() => setScoringThresholds(DEFAULT_SCORING_THRESHOLDS)}
                         >
                             <ReplayRounded sx={{ fontSize: 18 }} />
-                            Reset to defaults
+                            {t('practice.thresholds.reset')}
                         </button>
                     </div>
                 </details>
@@ -352,16 +360,18 @@ export function PracticePage() {
                             </h2>
                             <p className="clay-text">
                                 {loadedScore.source.composer} · {bpm} BPM ·{' '}
-                                {playMode === 'wait' ? 'auto-advance' : 'strict wait'}
+                                {playMode === 'wait' ? t('practice.lane.mode_wait') : t('practice.lane.mode_strict')}
                             </p>
                         </div>
                         <div className="practice-lane__score">
                             <span className="clay-badge clay-badge--white">
-                                {doneCount} / {totalCount} notes
+                                {t('practice.lane.notes_progress')
+                                    .replace('{done}', String(doneCount))
+                                    .replace('{total}', String(totalCount))}
                             </span>
                             {session.activeTier !== null && (
                                 <span className={`clay-badge clay-badge--${session.activeTier}`}>
-                                    last: {session.activeTier}
+                                    {t('practice.lane.last_tier').replace('{tier}', t(TIER_KEY[session.activeTier]))}
                                 </span>
                             )}
                         </div>
@@ -378,9 +388,7 @@ export function PracticePage() {
                     />
 
                     {!isStarted && (
-                        <p className="clay-text practice-lane__note">
-                            Start the microphone below to begin the run — the lane waits at the first note.
-                        </p>
+                        <p className="clay-text practice-lane__note">{t('practice.lane.start_hint')}</p>
                     )}
                 </section>
             )}
@@ -392,15 +400,14 @@ export function PracticePage() {
                         <MicRounded />
                     </span>
                     <h2 id="practice-gate-title" className="clay-title clay-title--h2">
-                        Start the microphone
+                        {t('practice.gate.title')}
                     </h2>
                     <p className="clay-lede" style={{ textAlign: 'center' }}>
-                        PitchQuest listens for single held notes. Play one note at a time and hold it — chords and
-                        fast runs are out of scope for now.
+                        {t('practice.gate.body')}
                     </p>
                     <button type="button" className="clay-btn clay-btn--primary clay-btn--lg" onClick={startAudio}>
                         <MicRounded sx={{ fontSize: 22 }} />
-                        Start microphone
+                        {t('common.mic.start')}
                     </button>
                 </section>
             ) : (
@@ -408,22 +415,22 @@ export function PracticePage() {
                     <header className="practice-detected__head">
                         <div>
                             <h2 id="practice-detected-title" className="clay-title clay-title--h2">
-                                Detected notes
+                                {t('practice.detected.title')}
                             </h2>
                             <p className="clay-text">
-                                Each row is one held pitch after segmentation · 1 beat ≈ {msPerBeat(bpm).toFixed(0)} ms
+                                {t('practice.detected.subtitle').replace('{ms}', msPerBeat(bpm).toFixed(0))}
                             </p>
                         </div>
                         <button type="button" className="clay-btn clay-btn--ghost" onClick={stopAudio}>
                             <MicOffRounded sx={{ fontSize: 20 }} />
-                            Stop microphone
+                            {t('common.mic.stop')}
                         </button>
                     </header>
 
                     {detectedNotes.length === 0 ? (
                         <p className="clay-notice" role="status">
                             <GraphicEqRounded sx={{ fontSize: 20, flex: '0 0 auto' }} />
-                            <span>Listening… sing or play a note to start.</span>
+                            <span>{t('practice.detected.listening')}</span>
                         </p>
                     ) : (
                         <ul className="detected-list">
@@ -451,11 +458,9 @@ export function PracticePage() {
             {/* ══ DEV PANEL ═══════════════════════════════════════════════════ */}
             <section className="clay-card dev-panel" aria-labelledby="dev-panel-title">
                 <h2 id="dev-panel-title" className="clay-eyebrow">
-                    Developer
+                    {t('practice.dev.title')}
                 </h2>
-                <p className="clay-text dev-panel__lede">
-                    Pure-function test harnesses (segmenter, timing, parser, matcher, scorer) run live in the browser.
-                </p>
+                <p className="clay-text dev-panel__lede">{t('practice.dev.lede')}</p>
                 <button
                     type="button"
                     className="clay-btn clay-btn--sm clay-btn--ghost"
@@ -463,7 +468,7 @@ export function PracticePage() {
                     aria-expanded={showDevPanel}
                     aria-controls="dev-panel-content"
                 >
-                    {showDevPanel ? 'Hide' : 'Show'} test harnesses
+                    {showDevPanel ? t('practice.dev.toggle_hide') : t('practice.dev.toggle_show')}
                 </button>
 
                 {showDevPanel && (
@@ -485,6 +490,7 @@ interface DevPanelContentProps {
 }
 
 function DevPanelContent({ harnesses }: DevPanelContentProps) {
+    const t = useT();
     const { segmenter, timing, musicXml, matcher, scorer, incrementalMatcher } = harnesses;
 
     function renderSection(
@@ -499,7 +505,9 @@ function DevPanelContent({ harnesses }: DevPanelContentProps) {
                 <p className="dev-section__head">
                     <span className={`clay-badge ${allPass ? 'clay-badge--green' : 'clay-badge--peach'}`}>
                         {allPass ? <CheckCircleRounded sx={{ fontSize: 14 }} /> : <ErrorOutlineRounded sx={{ fontSize: 14 }} />}
-                        {result.pass}/{total} pass
+                        {t('practice.dev.pass')
+                            .replace('{pass}', String(result.pass))
+                            .replace('{total}', String(total))}
                     </span>
                     <span className="dev-section__label">{label}</span>
                 </p>
@@ -517,12 +525,12 @@ function DevPanelContent({ harnesses }: DevPanelContentProps) {
 
     return (
         <div className="dev-grid">
-            {renderSection('Segmenter', segmenter)}
-            {renderSection('Timing engine', timing)}
-            {renderSection('Score parser', musicXml)}
-            {renderSection('Matcher', matcher)}
-            {renderSection('Scorer', scorer)}
-            {renderSection('Incremental matcher', incrementalMatcher)}
+            {renderSection(t('practice.dev.section.segmenter'), segmenter)}
+            {renderSection(t('practice.dev.section.timing'), timing)}
+            {renderSection(t('practice.dev.section.parser'), musicXml)}
+            {renderSection(t('practice.dev.section.matcher'), matcher)}
+            {renderSection(t('practice.dev.section.scorer'), scorer)}
+            {renderSection(t('practice.dev.section.incremental'), incrementalMatcher)}
         </div>
     );
 }

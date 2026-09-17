@@ -3,6 +3,7 @@ import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { SidebarLayout } from './components/SidebarLayout';
+import { useT } from './i18n/I18nContext';
 import { HomePage } from './pages/HomePage';
 import { TunerPage } from './pages/TunerPage';
 import { PracticePage } from './pages/PracticePage';
@@ -16,12 +17,13 @@ const TrumpetDrillPage = lazy(() =>
 
 /** Clay skeleton shown while a lazy route chunk downloads. */
 function RouteFallback() {
+  const t = useT();
   return (
     <div className="pq-page">
       <div className="clay-card" role="status" aria-live="polite">
-        <span className="clay-eyebrow">Loading</span>
+        <span className="clay-eyebrow">{t('app.fallback.eyebrow')}</span>
         <p className="clay-text" style={{ marginTop: 'var(--sp-2)' }}>
-          Warming up the practice room…
+          {t('app.fallback.body')}
         </p>
       </div>
     </div>

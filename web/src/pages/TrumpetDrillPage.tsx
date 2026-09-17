@@ -10,7 +10,7 @@ import {
   type NoteFilter,
 } from '../trumpet/fingerings';
 import { TrumpetDisplay } from '../components/TrumpetDisplay';
-
+import { useT } from '../i18n/I18nContext';
 import KeyboardRounded from '@mui/icons-material/KeyboardRounded';
 import MusicNoteRounded from '@mui/icons-material/MusicNoteRounded';
 import GraphicEqRounded from '@mui/icons-material/GraphicEqRounded';
@@ -87,6 +87,24 @@ function accidentalFor(note: string): '#' | 'b' | undefined {
   return undefined;
 }
 
+/**
+ * Render the lede with the key tokens (J, K, L, Space) bolded, matching the
+ * original hardcoded markup. Splitting is safe in both locales as long as the
+ * translated copy keeps those literal tokens.
+ */
+const LEDE_STRONG_TOKENS = new Set(['J', 'K', 'L', 'Space']);
+
+function LedeText({ text }: { text: string }) {
+  const parts = text.split(/(J|K|L|Space)/g);
+  return (
+    <>
+      {parts.map((part, i) =>
+        LEDE_STRONG_TOKENS.has(part) ? <strong key={i}>{part}</strong> : part,
+      )}
+    </>
+  );
+}
+
 interface NoteStaffProps {
   note: string;
 }
@@ -147,6 +165,7 @@ function NoteStaff({ note }: NoteStaffProps) {
 }
 
 export function TrumpetDrillPage() {
+  const t = useT();
   const [noteFilter, setNoteFilter] = useState<NoteFilter>(loadFilter);
   const filterRef = useRef(noteFilter);
 
@@ -272,21 +291,19 @@ export function TrumpetDrillPage() {
           <span className="clay-eyebrow">Drills</span>
           <h1 className="clay-title clay-title--h1">Trumpet fingering</h1>
           <p className="clay-lede">
-            A note appears on the staff. Hold its valves with <strong>J</strong>, <strong>K</strong> and{' '}
-            <strong>L</strong>, then tap <strong>Space</strong> to advance. Correct fingering only — the drill
-            ignores anything else.
+            <LedeText text={t('trumpet.header.lede')} />
           </p>
         </div>
         <span className="clay-badge clay-badge--white">
           <KeyboardRounded sx={{ fontSize: 15 }} />
-          Keyboard drill
+          {t('trumpet.header.badge')}
         </span>
       </header>
 
       {/* ═ NOTE FILTER ════════════════════════════════════════════════════ */}
       <section className="clay-card drill-filter" aria-labelledby="drill-filter-title">
         <h2 id="drill-filter-title" className="clay-title clay-title--h3">
-          Which accidentals?
+          {t('trumpet.filter.title')}
         </h2>
         <ToggleButtonGroup
           value={noteFilter}
@@ -297,19 +314,19 @@ export function TrumpetDrillPage() {
             if (next !== null) setNoteFilter(next);
           }}
           size="small"
-          aria-label="Note filter"
+          aria-label={t('trumpet.filter.aria')}
         >
-          <ToggleButton value="all" aria-label="All accidentals">
-            All
+          <ToggleButton value="all" aria-label={t('trumpet.filter.all_aria')}>
+            {t('trumpet.filter.all')}
           </ToggleButton>
-          <ToggleButton value="sharps" aria-label="Sharps only">
-            ♯ Sharps
+          <ToggleButton value="sharps" aria-label={t('trumpet.filter.sharps_aria')}>
+            {t('trumpet.filter.sharps')}
           </ToggleButton>
-          <ToggleButton value="flats" aria-label="Flats only">
-            ♭ Flats
+          <ToggleButton value="flats" aria-label={t('trumpet.filter.flats_aria')}>
+            {t('trumpet.filter.flats')}
           </ToggleButton>
-          <ToggleButton value="naturals" aria-label="Naturals only">
-            ♮ Naturals
+          <ToggleButton value="naturals" aria-label={t('trumpet.filter.naturals_aria')}>
+            {t('trumpet.filter.naturals')}
           </ToggleButton>
         </ToggleButtonGroup>
         <FormControlLabel
@@ -318,17 +335,17 @@ export function TrumpetDrillPage() {
               checked={hideNoteName}
               onChange={event => setHideNoteName(event.target.checked)}
               size="small"
-              inputProps={{ 'aria-label': 'Hide note names' }}
+              inputProps={{ 'aria-label': t('trumpet.filter.hide_names_aria') }}
             />
           }
-          label="Hide note names"
+          label={t('trumpet.filter.hide_names')}
         />
       </section>
 
       {/* ═ THE DRILL ══════════════════════════════════════════════════════ */}
       <section className="clay-card clay-card--feature drill-stage" aria-labelledby="drill-stage-title">
         <h2 id="drill-stage-title" className="clay-visually-hidden">
-          Current drill note
+          {t('trumpet.stage.title')}
         </h2>
 
         <div className="drill-stage__grid">
@@ -336,7 +353,7 @@ export function TrumpetDrillPage() {
           <div className="drill-staff clay-well">
             <span className="clay-eyebrow">
               <MusicNoteRounded sx={{ fontSize: 15 }} />
-              Play this note
+              {t('trumpet.stage.play_this')}
             </span>
             <NoteStaff note={currentNote} />
             <p className="drill-staff__name" aria-live="polite">
@@ -350,14 +367,14 @@ export function TrumpetDrillPage() {
               <TrumpetDisplay held={heldPistonIds} maxHeight={240} />
             </div>
 
-            <div className="drill-valves" aria-label="Valve state">
+            <div className="drill-valves" aria-label={t('trumpet.valves.aria')}>
               {([1, 2, 3] as const).map(id => {
                 const down = heldPistonIds.has(id);
                 return (
                   <span
                     key={id}
                     className={`clay-chip drill-valve${down ? ' drill-valve--down' : ''}`}
-                    aria-label={`Valve ${id} ${down ? 'held' : 'released'}`}
+                    aria-label={t(down ? 'trumpet.valve.held' : 'trumpet.valve.released').replace('{id}', String(id))}
                   >
                     {id}
                   </span>
@@ -370,16 +387,16 @@ export function TrumpetDrillPage() {
         {/* Keyboard legend */}
         <div className="drill-legend">
           <span className="drill-legend__item">
-            <kbd className="kbd">J</kbd> valve 1
+            <kbd className="kbd">J</kbd> {t('trumpet.legend.valve1')}
           </span>
           <span className="drill-legend__item">
-            <kbd className="kbd">K</kbd> valve 2
+            <kbd className="kbd">K</kbd> {t('trumpet.legend.valve2')}
           </span>
           <span className="drill-legend__item">
-            <kbd className="kbd">L</kbd> valve 3
+            <kbd className="kbd">L</kbd> {t('trumpet.legend.valve3')}
           </span>
           <span className="drill-legend__item">
-            <kbd className="kbd">Space</kbd> check &amp; advance
+            <kbd className="kbd">Space</kbd> {t('trumpet.legend.space')}
           </span>
         </div>
       </section>
@@ -388,7 +405,7 @@ export function TrumpetDrillPage() {
       <section className="clay-card drill-status" aria-labelledby="drill-status-title">
         <div className="drill-status__header">
           <h2 id="drill-status-title" className="clay-title clay-title--h3">
-            Session
+            {t('trumpet.status.title')}
           </h2>
           <FormControlLabel
             control={
@@ -396,10 +413,10 @@ export function TrumpetDrillPage() {
                 checked={hideStatus}
                 onChange={event => setHideStatus(event.target.checked)}
                 size="small"
-                inputProps={{ 'aria-label': 'Hide status values' }}
+                inputProps={{ 'aria-label': t('trumpet.status.hide_aria') }}
               />
             }
-            label="Hide"
+            label={t('trumpet.status.hide')}
           />
         </div>
         <div className="drill-status__metrics">
@@ -408,21 +425,21 @@ export function TrumpetDrillPage() {
               {hideStatus ? <span className="clay-visually-hidden">{formatMmSs(elapsedSec)}</span> : formatMmSs(elapsedSec)}
               {hideStatus && <span aria-hidden="true">—</span>}
             </span>
-            <span className="drill-status__label">Time</span>
+            <span className="drill-status__label">{t('trumpet.status.time')}</span>
           </div>
           <div className="clay-well drill-status__metric">
             <span className="drill-status__value">
               {hideStatus ? <span className="clay-visually-hidden">{notesPerSec(successCount, elapsedSec)}</span> : notesPerSec(successCount, elapsedSec)}
               {hideStatus && <span aria-hidden="true">—</span>}
             </span>
-            <span className="drill-status__label">Notes/sec</span>
+            <span className="drill-status__label">{t('trumpet.status.notes_per_sec')}</span>
           </div>
           <div className="clay-well drill-status__metric">
             <span className="drill-status__value">
               {hideStatus ? <span className="clay-visually-hidden">{wrongCount}</span> : wrongCount}
               {hideStatus && <span aria-hidden="true">—</span>}
             </span>
-            <span className="drill-status__label">Wrong notes</span>
+            <span className="drill-status__label">{t('trumpet.status.wrong')}</span>
           </div>
         </div>
       </section>
@@ -431,12 +448,9 @@ export function TrumpetDrillPage() {
       <footer className="clay-card drill-foot">
         <span className="clay-eyebrow">
           <GraphicEqRounded sx={{ fontSize: 15 }} />
-          Tip
+          {t('trumpet.tip.eyebrow')}
         </span>
-        <p className="clay-text">
-          Nothing moves if the fingering is wrong — that silence is the feedback. Release a valve and try again: the
-          same note stays on the staff.
-        </p>
+        <p className="clay-text">{t('trumpet.tip.body')}</p>
       </footer>
     </div>
   );
