@@ -428,7 +428,7 @@ export function TrumpetDrillPage() {
       </section>
 
       {/* ══ TIP ════════════════════════════════════════════════════════════ */}
-      <footer className="clay-card clay-card--sunk drill-foot">
+      <footer className="clay-card drill-foot">
         <span className="clay-eyebrow">
           <GraphicEqRounded sx={{ fontSize: 15 }} />
           Tip

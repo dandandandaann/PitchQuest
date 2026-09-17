@@ -449,7 +449,7 @@ export function PracticePage() {
             )}
 
             {/* ══ DEV PANEL ═══════════════════════════════════════════════════ */}
-            <section className="clay-card clay-card--sunk dev-panel" aria-labelledby="dev-panel-title">
+            <section className="clay-card dev-panel" aria-labelledby="dev-panel-title">
                 <h2 id="dev-panel-title" className="clay-eyebrow">
                     Developer
                 </h2>

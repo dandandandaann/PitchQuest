@@ -172,7 +172,7 @@ export function TunerPage() {
             )}
 
             {/* ═ TECH NOTE ═══════════════════════════════════════════════════ */}
-            <footer className="clay-card clay-card--sunk tuner-foot">
+            <footer className="clay-card tuner-foot">
                 <span className="clay-eyebrow">Under the hood</span>
                 <p className="clay-text">
                     AudioWorklet → <strong>pitchy</strong> (YIN) → median filter (5) on frequency →

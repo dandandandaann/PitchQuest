@@ -612,7 +612,7 @@ a.clay-icon-btn {
   height: 46vmax;
   top: -16vmax;
   left: -12vmax;
-  background: radial-gradient(circle at 35% 35%, var(--clay-peach), transparent 68%);
+  background: radial-gradient(circle at 35% 35%, var(--clay-blue), transparent 68%);
   animation: pq-drift-a 34s ease-in-out infinite alternate;
 }
 
@@ -621,7 +621,7 @@ a.clay-icon-btn {
   height: 40vmax;
   bottom: -14vmax;
   right: -10vmax;
-  background: radial-gradient(circle at 60% 40%, var(--clay-blue), transparent 68%);
+  background: radial-gradient(circle at 60% 40%, var(--clay-peach), transparent 68%);
   animation: pq-drift-b 42s ease-in-out infinite alternate;
 }
 
