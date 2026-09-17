@@ -290,6 +290,50 @@ export const muiTheme = createTheme({
       },
     },
 
+    /* ── Switch (drill-page toggles) ───────────────────────────────────── */
+    MuiSwitch: {
+      styleOverrides: {
+        track: {
+          backgroundColor: palette.white,
+          border: `1px solid ${palette.peach300}`,
+          boxShadow: clayInnerSoft,
+          opacity: 1,
+          transition: `background-color 200ms ${EASE_CLAY}, box-shadow 200ms ease-out`,
+        },
+        switchBase: {
+          '&.Mui-checked': {
+            color: palette.white,
+            '& + .MuiSwitch-track': {
+              backgroundColor: palette.green,
+              border: `1px solid ${palette.green600}`,
+              boxShadow: clayInnerSoft,
+              opacity: 1,
+            },
+          },
+          '&.Mui-focusVisible + .MuiSwitch-track': {
+            boxShadow: `${clayInnerSoft}, inset 0 0 0 2px ${palette.green700}`,
+          },
+        },
+        thumb: {
+          backgroundColor: palette.white,
+          boxShadow: claySurface,
+          transition: `transform 200ms ${EASE_CLAY}, box-shadow 200ms ease-out`,
+          '&:hover': { boxShadow: claySurfaceRaised },
+        },
+      },
+    },
+
+    MuiFormControlLabel: {
+      styleOverrides: {
+        label: {
+          fontFamily: FONT_DISPLAY,
+          fontWeight: 800,
+          fontSize: '0.875rem',
+          color: palette.ink,
+        },
+      },
+    },
+
     /* ── Navigation (sidebar) ──────────────────────────────────────────── */
     MuiDrawer: {
       styleOverrides: {
