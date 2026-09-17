@@ -262,19 +262,18 @@ export function TrumpetDrillPage() {
           </ToggleButton>
         </ToggleButtonGroup>
         <ToggleButtonGroup
-          value={hideNoteName ? 'hidden' : 'visible'}
+          value={hideNoteName ? 'hide' : 'show'}
           exclusive
-          onChange={(_event, next: 'visible' | 'hidden' | null) => {
-            // MUI fires null when the active button is re-clicked — never let it stick.
+          onChange={(_event, next: 'show' | 'hide' | null) => {
+            // MUI fires null when the active button is re-clicked — keep the current state.
             if (next === null) return;
-            setHideNoteName(next === 'hidden');
+            setHideNoteName(next === 'hide');
           }}
           size="small"
           aria-label="Note name visibility"
         >
-          <ToggleButton value="hidden" aria-label="Hide note names">
-            Hide note names
-          </ToggleButton>
+          <ToggleButton value="show">Show names</ToggleButton>
+          <ToggleButton value="hide">Hide names</ToggleButton>
         </ToggleButtonGroup>
       </section>
 
