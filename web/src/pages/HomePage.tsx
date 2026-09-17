@@ -1,12 +1,19 @@
+import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom';
 import GraphicEqRounded from '@mui/icons-material/GraphicEqRounded';
 import SchoolRounded from '@mui/icons-material/SchoolRounded';
 import MusicNoteRounded from '@mui/icons-material/MusicNoteRounded';
 import BoltRounded from '@mui/icons-material/BoltRounded';
 import ArrowForwardRounded from '@mui/icons-material/ArrowForwardRounded';
+import { useT } from '../i18n/I18nContext';
+
+/** Which `home.features.*` / `home.steps.*` translation group a card uses. */
+type FeatureKey = 'tuner' | 'score' | 'drill';
+type StepKey = 'pick' | 'mic' | 'play';
 
 /** Static hero art: a miniature of the practice lane, in clay. */
 function LanePreview() {
+  const t = useT();
   return (
     <div className="pq-art" aria-hidden="true">
       <div className="pq-art__topline">
@@ -34,65 +41,41 @@ function LanePreview() {
 
       <div className="pq-art__legend">
         <span className="pq-art__key">
-          <i className="pq-art__dot pq-art__dot--perfect" /> Perfect
+          <i className="pq-art__dot pq-art__dot--perfect" /> {t('home.lane_preview.perfect')}
         </span>
         <span className="pq-art__key">
-          <i className="pq-art__dot pq-art__dot--ok" /> Close
+          <i className="pq-art__dot pq-art__dot--ok" /> {t('home.lane_preview.close')}
         </span>
         <span className="pq-art__key">
-          <i className="pq-art__dot pq-art__dot--miss" /> Missed
+          <i className="pq-art__dot pq-art__dot--miss" /> {t('home.lane_preview.missed')}
         </span>
       </div>
     </div>
   );
 }
 
-const FEATURES = [
-  {
-    to: '/tuner',
-    icon: <GraphicEqRounded />,
-    tint: 'blue' as const,
-    title: 'Tuner',
-    body: 'Watch the needle settle. A big note readout, a cent meter, and an instrument-key selector for transposing horns.',
-    cta: 'Open the tuner',
-  },
-  {
-    to: '/practice',
-    icon: <SchoolRounded />,
-    tint: 'peach' as const,
-    title: 'Score practice',
-    body: 'Load a MusicXML piece, sing or play along, and watch each note light up green as it lands on the beat.',
-    cta: 'Practise a score',
-  },
-  {
-    to: '/trumpet-drill',
-    icon: <MusicNoteRounded />,
-    tint: 'green' as const,
-    title: 'Trumpet drill',
-    body: 'Random notes on a staff. Hold the right valves on J, K and L, then tap space to advance. Speed builds itself.',
-    cta: 'Start drilling',
-  },
+/** Locale-independent feature-card shell; copy comes from `home.features.<key>.*`. */
+const FEATURES: Array<{
+  to: string;
+  icon: ReactElement;
+  tint: 'blue' | 'peach' | 'green';
+  key: FeatureKey;
+}> = [
+  { to: '/tuner', icon: <GraphicEqRounded />, tint: 'blue', key: 'tuner' },
+  { to: '/practice', icon: <SchoolRounded />, tint: 'peach', key: 'score' },
+  { to: '/trumpet-drill', icon: <MusicNoteRounded />, tint: 'green', key: 'drill' },
 ];
 
-const STEPS = [
-  {
-    n: '1',
-    title: 'Pick a piece',
-    body: 'Choose from the score library or drop in your own MusicXML file. Tempo is editable on the spot.',
-  },
-  {
-    n: '2',
-    title: 'Start the mic',
-    body: 'Your audio is analysed on-device with the YIN algorithm — nothing is recorded, nothing is uploaded.',
-  },
-  {
-    n: '3',
-    title: 'Play the notes',
-    body: 'Each note is measured for pitch and timing. Perfect, close or missed — then the score shows you the damage.',
-  },
+/** Locale-independent step shell; copy comes from `home.steps.<key>.*`. */
+const STEPS: Array<{ n: string; key: StepKey }> = [
+  { n: '1', key: 'pick' },
+  { n: '2', key: 'mic' },
+  { n: '3', key: 'play' },
 ];
 
 export function HomePage() {
+  const t = useT();
+
   return (
     <div className="pq-page">
       {/* ═ HERO BLOCK ══════════════════════════════════════════════════════ */}
@@ -101,42 +84,39 @@ export function HomePage() {
           <div className="pq-hero__copy">
             <span className="clay-badge clay-badge--white">
               <BoltRounded sx={{ fontSize: 15 }} />
-              Clay-crafted pitch training
+              {t('home.hero.badge')}
             </span>
 
             <h1 id="pq-hero-title" className="clay-title clay-title--hero">
-              Hit the note.
+              {t('home.hero.title1')}
               <br />
-              Hold the streak.
+              {t('home.hero.title2')}
             </h1>
 
-            <p className="clay-lede">
-              PitchQuest listens while you play, slices your sound into single notes, and scores every one of them for
-              pitch and timing. A tuner, a score trainer and a trumpet drill — all under one roof.
-            </p>
+            <p className="clay-lede">{t('home.hero.lede')}</p>
 
             <div className="pq-hero__actions">
               <Link className="clay-btn clay-btn--primary clay-btn--lg" to="/tuner">
-                Start with the tuner
+                {t('home.hero.cta_tuner')}
               </Link>
               <Link className="clay-btn clay-btn--ghost clay-btn--lg" to="/practice">
-                Practise a score
+                {t('home.hero.cta_score')}
                 <ArrowForwardRounded sx={{ fontSize: 20 }} />
               </Link>
             </div>
 
             <dl className="pq-statrow">
               <div className="pq-stat">
-                <dt>On-device</dt>
-                <dd>Audio never leaves the browser</dd>
+                <dt>{t('home.stats.ondevice.label')}</dt>
+                <dd>{t('home.stats.ondevice.value')}</dd>
               </div>
               <div className="pq-stat">
-                <dt>3 modes</dt>
-                <dd>Tuner · score practice · drills</dd>
+                <dt>{t('home.stats.modes.label')}</dt>
+                <dd>{t('home.stats.modes.value')}</dd>
               </div>
               <div className="pq-stat">
-                <dt>±25¢</dt>
-                <dd>Perfect-pitch window, tunable</dd>
+                <dt>{t('home.stats.cents.label')}</dt>
+                <dd>{t('home.stats.cents.value')}</dd>
               </div>
             </dl>
           </div>
@@ -150,9 +130,9 @@ export function HomePage() {
       {/* ═ FEATURE BLOCKS ══════════════════════════════════════════════════ */}
       <section aria-labelledby="pq-features-title">
         <div className="pq-section-head">
-          <span className="clay-eyebrow">Three ways in</span>
+          <span className="clay-eyebrow">{t('home.features.eyebrow')}</span>
           <h2 id="pq-features-title" className="clay-title clay-title--h2">
-            Pick the room you want to practise in
+            {t('home.features.title')}
           </h2>
         </div>
 
@@ -160,10 +140,10 @@ export function HomePage() {
           {FEATURES.map(f => (
             <Link key={f.to} to={f.to} className={`clay-tile pq-feature pq-feature--${f.tint}`}>
               <span className={`clay-iconplate clay-iconplate--${f.tint} pq-feature__icon`}>{f.icon}</span>
-              <h3 className="clay-title clay-title--h3 pq-feature__title">{f.title}</h3>
-              <p className="clay-text pq-feature__body">{f.body}</p>
+              <h3 className="clay-title clay-title--h3 pq-feature__title">{t(`home.features.${f.key}.title`)}</h3>
+              <p className="clay-text pq-feature__body">{t(`home.features.${f.key}.body`)}</p>
               <span className="pq-feature__cta">
-                {f.cta}
+                {t(`home.features.${f.key}.cta`)}
                 <ArrowForwardRounded sx={{ fontSize: 18 }} />
               </span>
             </Link>
@@ -174,9 +154,9 @@ export function HomePage() {
       {/* ══ HOW IT WORKS ════════════════════════════════════════════════════ */}
       <section aria-labelledby="pq-steps-title">
         <div className="pq-section-head">
-          <span className="clay-eyebrow">How it works</span>
+          <span className="clay-eyebrow">{t('home.how.eyebrow')}</span>
           <h2 id="pq-steps-title" className="clay-title clay-title--h2">
-            Three steps from silence to a score
+            {t('home.how.title')}
           </h2>
         </div>
 
@@ -184,8 +164,8 @@ export function HomePage() {
           {STEPS.map(s => (
             <li key={s.n} className="clay-card pq-step">
               <span className="clay-stepnum">{s.n}</span>
-              <h3 className="clay-title clay-title--h3">{s.title}</h3>
-              <p className="clay-text">{s.body}</p>
+              <h3 className="clay-title clay-title--h3">{t(`home.steps.${s.key}.title`)}</h3>
+              <p className="clay-text">{t(`home.steps.${s.key}.body`)}</p>
             </li>
           ))}
         </ol>
@@ -195,19 +175,17 @@ export function HomePage() {
       <section className="clay-card clay-card--feature pq-cta">
         <div className="pq-cta__copy">
           <span className="clay-eyebrow" style={{ color: 'var(--green-800)' }}>
-            Ready when you are
+            {t('home.cta.eyebrow')}
           </span>
-          <h2 className="clay-title clay-title--h2">Your first note is one click away</h2>
-          <p className="clay-text clay-text--strong">
-            No account, no download, no setup. Open the tuner, allow the microphone, and play.
-          </p>
+          <h2 className="clay-title clay-title--h2">{t('home.cta.title')}</h2>
+          <p className="clay-text clay-text--strong">{t('home.cta.body')}</p>
         </div>
         <div className="pq-cta__actions">
           <Link className="clay-btn clay-btn--lg" to="/tuner">
-            Open the tuner
+            {t('home.cta.tuner')}
           </Link>
           <Link className="clay-btn clay-btn--peach clay-btn--lg" to="/trumpet-drill">
-            Try a drill
+            {t('home.cta.drill')}
           </Link>
         </div>
       </section>
