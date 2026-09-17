@@ -43,7 +43,7 @@ export const pt: Record<TranslationKey, string> = {
   'card.mic.body': 'A afinação é analisada localmente com o YIN. Nada é enviado.',
   'lang.toggle_label': 'Idioma',
   // ── home ──────────────────────────────────────────────────────────────
-  'home.hero.badge': 'Treino de afinação em argila',
+  'home.hero.badge': 'Bora soprar velhão',
   'home.hero.title1': 'Acerte a nota.',
   'home.hero.title2': 'Mantenha a sequência.',
   'home.hero.lede':
