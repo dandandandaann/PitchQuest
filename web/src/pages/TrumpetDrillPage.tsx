@@ -17,6 +17,7 @@ import GraphicEqRounded from '@mui/icons-material/GraphicEqRounded';
 
 const FILTER_STORAGE_KEY = 'pq.trumpetDrill.filter';
 const HIDE_NAME_STORAGE_KEY = 'pq.trumpetDrill.hideNoteName';
+const HIDE_STATUS_STORAGE_KEY = 'pq.trumpetDrill.hideStatus';
 const VALID_FILTERS: readonly NoteFilter[] = ['all', 'sharps', 'flats', 'naturals'];
 
 /** Ink colour, mirrored from styles/tokens.css (VexFlow needs a literal). */
@@ -41,6 +42,29 @@ function loadHideNoteName(): boolean {
 function saveHideNoteName(hide: boolean): void {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(HIDE_NAME_STORAGE_KEY, hide ? 'true' : 'false');
+}
+
+function loadHideStatus(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.localStorage.getItem(HIDE_STATUS_STORAGE_KEY) === 'true';
+}
+
+function saveHideStatus(hide: boolean): void {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(HIDE_STATUS_STORAGE_KEY, hide ? 'true' : 'false');
+}
+
+/** Format seconds as m:ss (e.g. 0:07, 12:05). */
+function formatMmSs(totalSec: number): string {
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+/** Cumulative notes-per-second; guarded to 0.0 before the timer starts. */
+function notesPerSec(successCount: number, elapsedSec: number): string {
+  if (elapsedSec <= 0) return '0.0';
+  return (successCount / elapsedSec).toFixed(1);
 }
 
 /**
@@ -138,6 +162,29 @@ export function TrumpetDrillPage() {
     saveHideNoteName(hideNoteName);
   }, [hideNoteName]);
 
+  // Session status: timer + counters start on the first successful note. All live in
+  // component state only — no session persistence, reset on unmount/page leave.
+  const [hideStatus, setHideStatus] = useState<boolean>(loadHideStatus);
+  useEffect(() => {
+    saveHideStatus(hideStatus);
+  }, [hideStatus]);
+
+  const [successCount, setSuccessCount] = useState(0);
+  const [wrongCount, setWrongCount] = useState(0);
+  const [elapsedSec, setElapsedSec] = useState(0);
+  const startedAtRef = useRef<number | null>(null);
+
+  // 500ms ticker for smooth mm:ss rollover. Runs regardless of hideStatus so
+  // counting continues while the values are hidden. No-op until first success.
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      if (startedAtRef.current !== null) {
+        setElapsedSec(Math.floor((performance.now() - startedAtRef.current) / 1000));
+      }
+    }, 500);
+    return () => window.clearInterval(id);
+  }, []);
+
   const [held, setHeld] = useState<ReadonlySet<PistonKey>>(() => new Set());
 
   // The display layer works in PistonId land (1/2/3) while keyboard logic stays in
@@ -185,11 +232,15 @@ export function TrumpetDrillPage() {
         event.preventDefault(); // Space scrolls the page
         const required = getRequiredPistons(currentNoteRef.current);
         if (required && pistonsMatch(heldRef.current, required)) {
+          if (startedAtRef.current === null) startedAtRef.current = performance.now();
+          setSuccessCount(c => c + 1);
           const nextNote = randomNote(filterRef.current).note; // repeats allowed
           currentNoteRef.current = nextNote;
           setCurrentNote(nextNote);
+        } else {
+          // Failed check counts as a wrong note but never starts the timer.
+          setWrongCount(c => c + 1);
         }
-        // else: do nothing — no feedback, no state change
       }
     };
 
@@ -330,6 +381,49 @@ export function TrumpetDrillPage() {
           <span className="drill-legend__item">
             <kbd className="kbd">Space</kbd> check &amp; advance
           </span>
+        </div>
+      </section>
+
+      {/* ═ SESSION STATUS ═════════════════════════════════════════════════ */}
+      <section className="clay-card drill-status" aria-labelledby="drill-status-title">
+        <div className="drill-status__header">
+          <h2 id="drill-status-title" className="clay-title clay-title--h3">
+            Session
+          </h2>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={hideStatus}
+                onChange={event => setHideStatus(event.target.checked)}
+                size="small"
+                inputProps={{ 'aria-label': 'Hide status values' }}
+              />
+            }
+            label="Hide"
+          />
+        </div>
+        <div className="drill-status__metrics">
+          <div className="clay-well drill-status__metric">
+            <span className="drill-status__value">
+              {hideStatus ? <span className="clay-visually-hidden">{formatMmSs(elapsedSec)}</span> : formatMmSs(elapsedSec)}
+              {hideStatus && <span aria-hidden="true">—</span>}
+            </span>
+            <span className="drill-status__label">Time</span>
+          </div>
+          <div className="clay-well drill-status__metric">
+            <span className="drill-status__value">
+              {hideStatus ? <span className="clay-visually-hidden">{notesPerSec(successCount, elapsedSec)}</span> : notesPerSec(successCount, elapsedSec)}
+              {hideStatus && <span aria-hidden="true">—</span>}
+            </span>
+            <span className="drill-status__label">Notes/sec</span>
+          </div>
+          <div className="clay-well drill-status__metric">
+            <span className="drill-status__value">
+              {hideStatus ? <span className="clay-visually-hidden">{wrongCount}</span> : wrongCount}
+              {hideStatus && <span aria-hidden="true">—</span>}
+            </span>
+            <span className="drill-status__label">Wrong notes</span>
+          </div>
         </div>
       </section>
 
