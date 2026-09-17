@@ -31,7 +31,7 @@ const I18nContext = createContext<I18nContextValue | null>(null);
 
 /**
  * Initial locale: persisted preference first, then browser-language
- * detection (any `pt*` navigator language → pt). Falls back to `en`.
+ * detection (any `pt*` navigator language → pt). Falls back to `pt`.
  * All storage access is guarded — Safari private mode and SSR can throw.
  */
 function detectInitialLocale(): Locale {
@@ -44,7 +44,7 @@ function detectInitialLocale(): Locale {
   if (typeof navigator !== 'undefined' && PT_LOCALE_RE.test(navigator.language)) {
     return 'pt';
   }
-  return 'en';
+  return 'pt';
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {

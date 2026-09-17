@@ -120,7 +120,7 @@ Added after Stage 6 in commits `3bb0051` → `3846137` (provider + dictionaries,
 
 - **Implementation: DIY i18n at `web/src/i18n/`** — no i18n library. `I18nProvider` (in `I18nContext.tsx`) is mounted in `main.tsx` above `<App>`.
 - **Hooks:** `useT()` (translate a `TranslationKey`), `useLocale()`, `useSetLocale()`. All throw if used outside the provider.
-- **Persistence:** `localStorage['pq.lang']`, with a `navigator` Portuguese-detection fallback (any `pt*` navigator language → `pt`, otherwise `en`). Stored choice wins. `pq.lang` is a reserved key — don't reuse it for other persisted prefs.
+- **Persistence:** `localStorage['pq.lang']`, with a `navigator` Portuguese-detection fallback (any `pt*` navigator language → `pt`, final default `pt`). Stored choice wins. `pq.lang` is a reserved key — don't reuse it for other persisted prefs.
 - **Side effect:** the provider keeps `<html lang>` in sync with the active locale.
 - **UI:** `LanguageToggle` (`web/src/components/LanguageToggle.tsx`) renders in the sidebar, directly above the mic card.
 - **Scope: full-app — 195 keys.** All 4 pages (Home, Tuner, Practice, TrumpetDrill), all shared components (SidebarLayout incl. a11y strings, ScorePicker, NoteLane, CentsMeter, NoteHistory, PitchDisplay, TrumpetDisplay, LanguageToggle), and the App route-fallback strings are translated. The PT glossary lives as a comment at the top of `web/src/i18n/dictionaries/pt.ts` (perfeito / ok / errou, cents, batidas, sustenido / bemol, afinado, partitura, exercício, digitação, estrito / automático) — **do not retranslate ad hoc**; follow the approved glossary. To extend: add strings to `web/src/i18n/dictionaries/en.ts` + `pt.ts` (keys in `keys.ts`) and swap the hardcoded strings in the component.
