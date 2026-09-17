@@ -85,3 +85,11 @@ export function useT(): (key: TranslationKey) => string {
   if (!ctx) throw new Error('useT must be used within an I18nProvider');
   return ctx.t;
 }
+
+/** Change the active locale (also persists it and syncs <html lang>).
+    Must be used inside {@link I18nProvider}. */
+export function useSetLocale(): (locale: Locale) => void {
+  const ctx = useContext(I18nContext);
+  if (!ctx) throw new Error('useSetLocale must be used within an I18nProvider');
+  return ctx.setLocale;
+}
