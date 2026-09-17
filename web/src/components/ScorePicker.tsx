@@ -58,10 +58,6 @@ interface ManifestEntry {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatDifficulty(d: string): string {
-    return d.charAt(0).toUpperCase() + d.slice(1);
-}
-
 /** Palette-only difficulty badge classes. */
 function difficultyClass(d: string): string {
     switch (d) {
@@ -82,6 +78,20 @@ function difficultyClass(d: string): string {
 
 export function ScorePicker({ onScoreLoaded, onClearScore, loadedScore }: ScorePickerProps) {
     const t = useT();
+
+    /** Localized difficulty label; unknown values fall back to capitalization. */
+    const formatDifficulty = (d: string): string => {
+        switch (d) {
+            case 'easy':
+                return t('components.score_picker.difficulty_easy');
+            case 'medium':
+                return t('components.score_picker.difficulty_medium');
+            case 'hard':
+                return t('components.score_picker.difficulty_hard');
+            default:
+                return d.charAt(0).toUpperCase() + d.slice(1);
+        }
+    };
 
     // 3b — library state
     const [manifest, setManifest] = useState<ManifestEntry[] | null>(null);

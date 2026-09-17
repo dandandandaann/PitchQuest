@@ -288,8 +288,8 @@ export function TrumpetDrillPage() {
       {/* ═ HEADER BLOCK ════════════════════════════════════════════════════ */}
       <header className="pq-header">
         <div className="pq-header__text">
-          <span className="clay-eyebrow">Drills</span>
-          <h1 className="clay-title clay-title--h1">Trumpet fingering</h1>
+          <span className="clay-eyebrow">{t('trumpet.header.eyebrow')}</span>
+          <h1 className="clay-title clay-title--h1">{t('trumpet.header.title')}</h1>
           <p className="clay-lede">
             <LedeText text={t('trumpet.header.lede')} />
           </p>

@@ -17,8 +17,8 @@ function LanePreview() {
   return (
     <div className="pq-art" aria-hidden="true">
       <div className="pq-art__topline">
-        <span className="clay-badge clay-badge--white">Ode to Joy</span>
-        <span className="clay-badge">90 BPM</span>
+        <span className="clay-badge clay-badge--white">{t('home.lane_preview.song')}</span>
+        <span className="clay-badge">{t('home.lane_preview.tempo').replace('{bpm}', '90')}</span>
       </div>
 
       <div className="pq-art__lane">

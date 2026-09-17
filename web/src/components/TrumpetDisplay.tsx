@@ -26,7 +26,7 @@ function describe(held: ReadonlySet<PistonId>, t: (key: TranslationKey) => strin
   const ids = [1, 2, 3].filter((n) => held.has(n as PistonId));
   if (ids.length === 0) return t('components.trumpet_display.alt_released');
   if (ids.length === 3) return t('components.trumpet_display.alt_all_pressed');
-  const list = ids.length === 2 ? `${ids[0]} and ${ids[1]}` : String(ids[0]);
+  const list = ids.length === 2 ? `${ids[0]} ${t('common.and')} ${ids[1]}` : String(ids[0]);
   const key: TranslationKey =
     ids.length === 2
       ? 'components.trumpet_display.alt_valves_pressed'

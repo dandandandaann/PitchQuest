@@ -14,6 +14,7 @@ export const en: Record<TranslationKey, string> = {
   'common.mic.stop': 'Stop microphone',
   'common.mic.listening': 'Listening',
   'common.mic.off': 'Mic off',
+  'common.and': 'and',
   // ── a11y (SidebarLayout) ──────────────────────────────────────────────
   'a11y.skip_to_content': 'Skip to main content',
   'a11y.nav.primary': 'Primary',
@@ -51,6 +52,8 @@ export const en: Record<TranslationKey, string> = {
   'home.lane_preview.perfect': 'Perfect',
   'home.lane_preview.close': 'Close',
   'home.lane_preview.missed': 'Missed',
+  'home.lane_preview.song': 'Ode to Joy',
+  'home.lane_preview.tempo': '{bpm} BPM',
   'home.features.eyebrow': 'Three ways in',
   'home.features.title': 'Pick the room you want to practise in',
   'home.features.tuner.title': 'Tuner',
@@ -143,6 +146,8 @@ export const en: Record<TranslationKey, string> = {
   'practice.dev.section.scorer': 'Scorer',
   'practice.dev.section.incremental': 'Incremental matcher',
   // ── trumpet ───────────────────────────────────────────────────────────
+  'trumpet.header.eyebrow': 'Drills',
+  'trumpet.header.title': 'Trumpet fingering',
   'trumpet.header.badge': 'Keyboard drill',
   'trumpet.header.lede':
     'A note appears on the staff. Hold its valves with J, K and L, then tap Space to advance. Correct fingering only — the drill ignores anything else.',
@@ -208,6 +213,9 @@ export const en: Record<TranslationKey, string> = {
   'components.score_picker.loading': 'Loading…',
   'components.score_picker.composer_traditional': 'Traditional',
   'components.score_picker.composer_uploaded': 'Uploaded',
+  'components.score_picker.difficulty_easy': 'Easy',
+  'components.score_picker.difficulty_medium': 'Medium',
+  'components.score_picker.difficulty_hard': 'Hard',
   'components.score_picker.load_failed': 'Failed to load "{title}": {error}',
   'components.score_picker.read_failed': 'File read failed — got empty result.',
   'components.score_picker.read_failed_browser': 'File read failed — browser error.',
