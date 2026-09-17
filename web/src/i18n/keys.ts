@@ -1,6 +1,9 @@
 /**
  * All translation keys used by the app.
  *
+ * Locales are English (`en`) and Brazilian Portuguese (`pt` = pt-BR, not
+ * European Portuguese). The toggle offers EN | PT.
+ *
  * Dot-namespaced by UI area (`area.subarea.label`). Adding a key here forces
  * both dictionaries (`en.ts` and `pt.ts`) to provide a value, since both are
  * typed as `Record<TranslationKey, string>`.
@@ -173,6 +176,7 @@ export type TranslationKey =
   | 'trumpet.legend.valve2'
   | 'trumpet.legend.valve3'
   | 'trumpet.legend.space'
+  | 'trumpet.legend.space_key_name'
   | 'trumpet.status.title'
   | 'trumpet.status.hide'
   | 'trumpet.status.hide_aria'
@@ -206,6 +210,8 @@ export type TranslationKey =
   | 'components.score_picker.clear'
   | 'components.score_picker.upload'
   | 'components.score_picker.upload_help'
+  | 'components.score_picker.choose_file'
+  | 'components.score_picker.no_file'
   | 'components.score_picker.library_error'
   | 'components.score_picker.library_empty'
   | 'components.score_picker.library_aria'

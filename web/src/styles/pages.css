@@ -620,6 +620,26 @@
   flex-direction: column;
 }
 
+.scores__file-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  background: var(--surface-sunk);
+  border-radius: var(--r-md);
+  box-shadow: var(--clay-inner-soft), inset 0 0 0 2px var(--line-strong);
+}
+
+.scores__filename {
+  font-size: var(--fs-sm);
+  color: var(--ink-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
 .scores__help {
   margin-top: var(--sp-2);
   font-size: var(--fs-sm);

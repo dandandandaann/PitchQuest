@@ -100,6 +100,7 @@ export function ScorePicker({ onScoreLoaded, onClearScore, loadedScore }: ScoreP
 
     // 3a — upload error state
     const [uploadError, setUploadError] = useState<string | null>(null);
+    const [fileName, setFileName] = useState<string | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -160,6 +161,7 @@ export function ScorePicker({ onScoreLoaded, onClearScore, loadedScore }: ScoreP
         setUploadError(null);
         const file = e.target.files?.[0];
         if (!file) return;
+        setFileName(file.name);
 
         const reader = new FileReader();
         reader.onload = ev => {
@@ -227,17 +229,29 @@ export function ScorePicker({ onScoreLoaded, onClearScore, loadedScore }: ScoreP
 
             {/* ─ Upload ───────────────────────────────────────────────────── */}
             <div className="scores__upload">
-                <label className="clay-label" htmlFor="score-file">
+                <span className="clay-label" id="score-file-label">
                     {t('components.score_picker.upload')}
-                </label>
-                <div className="clay-file">
+                </span>
+                <div className="scores__file-row">
                     <UploadFileRounded sx={{ fontSize: 22, color: 'var(--ink-soft)', flex: '0 0 auto' }} />
+                    <button
+                        type="button"
+                        className="clay-btn clay-btn--sm"
+                        onClick={() => fileInputRef.current?.click()}
+                    >
+                        {t('components.score_picker.choose_file')}
+                    </button>
+                    <span className="scores__filename" aria-live="polite">
+                        {fileName ?? t('components.score_picker.no_file')}
+                    </span>
                     <input
                         id="score-file"
                         ref={fileInputRef}
                         type="file"
                         accept=".xml,.musicxml,.mxl"
                         onChange={handleFileChange}
+                        className="clay-visually-hidden"
+                        aria-labelledby="score-file-label"
                     />
                 </div>
                 <p className="clay-text scores__help">

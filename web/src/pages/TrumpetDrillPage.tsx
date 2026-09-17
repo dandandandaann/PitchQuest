@@ -88,14 +88,15 @@ function accidentalFor(note: string): '#' | 'b' | undefined {
 }
 
 /**
- * Render the lede with the key tokens (J, K, L, Space) bolded, matching the
- * original hardcoded markup. Splitting is safe in both locales as long as the
- * translated copy keeps those literal tokens.
+ * Render the lede with the key tokens (J, K, L, Space/Espaço) bolded, matching
+ * the original hardcoded markup. Splitting is safe in both locales as long as
+ * the translated copy keeps those literal tokens. The PT (pt-BR) copy uses
+ * "Espaço", so both the EN and PT tokens are matched here.
  */
-const LEDE_STRONG_TOKENS = new Set(['J', 'K', 'L', 'Space']);
+const LEDE_STRONG_TOKENS = new Set(['J', 'K', 'L', 'Space', 'Espaço']);
 
 function LedeText({ text }: { text: string }) {
-  const parts = text.split(/(J|K|L|Space)/g);
+  const parts = text.split(/(J|K|L|Space|Espaço)/g);
   return (
     <>
       {parts.map((part, i) =>
@@ -396,7 +397,8 @@ export function TrumpetDrillPage() {
             <kbd className="kbd">L</kbd> {t('trumpet.legend.valve3')}
           </span>
           <span className="drill-legend__item">
-            <kbd className="kbd">Space</kbd> {t('trumpet.legend.space')}
+            <kbd className="kbd">Space</kbd>
+            <span className="clay-visually-hidden">{t('trumpet.legend.space_key_name')}</span> {t('trumpet.legend.space')}
           </span>
         </div>
       </section>

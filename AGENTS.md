@@ -74,6 +74,7 @@ npx tsx -e "import { runSegmenterHarness } from './src/audio/NoteSegmenter.test-
 - **AudioWorklet** - `pitch-processor.js` lives in `public/` and is loaded via `import.meta.env.BASE_URL`. Do not move it to `src/`.
 - **No automated test suite** - Use the `*.test-harness.ts` files (see above).
 - **`git add -A` is FORBIDDEN** - The working tree may contain untracked files (`.tmp/`, scratch files). Always use selective `git add <specific files>`. See `web/docs/STATUS.md` "Operational gotchas" for the full list.
+- **Brazilian Portuguese (pt-BR)** - The app's `pt` locale is Brazilian Portuguese, never European Portuguese. All PT copy follows the pt-BR glossary in `web/src/i18n/dictionaries/pt.ts`. Keep this in mind for any future translation work.
 - **Pre-existing lint errors** in `web/src/audio/hooks/useAudioContext.ts` (refs accessed during render). Do NOT fix as part of unrelated work; they predate Stages 1+.
 
 ## Tech Stack

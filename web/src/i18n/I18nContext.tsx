@@ -32,6 +32,7 @@ const I18nContext = createContext<I18nContextValue | null>(null);
 /**
  * Initial locale: persisted preference first, then browser-language
  * detection (any `pt*` navigator language → pt). Falls back to `pt`.
+ * The `pt` locale is Brazilian Portuguese (pt-BR), not European Portuguese.
  * All storage access is guarded — Safari private mode and SSR can throw.
  */
 function detectInitialLocale(): Locale {

@@ -1,7 +1,8 @@
 import type { TranslationKey } from '../keys';
 
 /**
- * Portuguese (BR) dictionary — manager-approved strings, do not retranslate ad hoc.
+ * Portuguese (pt-BR — Brazilian Portuguese, not European Portuguese) dictionary —
+ * manager-approved strings, do not retranslate ad hoc.
  *
  * The 11 original nav/brand/card keys below carry approved PT translations and
  * are final. Every other key was filled as part of the full-app i18n pass,
@@ -68,15 +69,15 @@ export const pt: Record<TranslationKey, string> = {
   'home.features.tuner.cta': 'Abrir o afinador',
   'home.features.score.title': 'Praticar partitura',
   'home.features.score.body':
-    'Carregue uma peça em MusicXML, cante ou toque junto e veja cada nota acender em verde quando entra no tempo.',
+    'Carregue uma partitura em MusicXML, cante ou toque junto e veja cada nota acender em verde quando entra no tempo.',
   'home.features.score.cta': 'Praticar partitura',
   'home.features.drill.title': 'Exercício de trompete',
   'home.features.drill.body':
-    'Notas aleatórias na pauta. Segure os pistões certos em J, K e L e aperte espaço para avançar. A velocidade aumenta sozinha.',
+    'Notas aleatórias na pauta. Segure os pistos certos em J, K e L e aperte Espaço para avançar. A velocidade aumenta sozinha.',
   'home.features.drill.cta': 'Começar o exercício',
   'home.how.eyebrow': 'Como funciona',
   'home.how.title': 'Três passos do silêncio à partitura',
-  'home.steps.pick.title': 'Escolha uma peça',
+  'home.steps.pick.title': 'Escolha uma partitura',
   'home.steps.pick.body':
     'Escolha da biblioteca de partituras ou envie seu próprio arquivo MusicXML. O tempo é editável na hora.',
   'home.steps.mic.title': 'Ligue o microfone',
@@ -96,7 +97,7 @@ export const pt: Record<TranslationKey, string> = {
     'Segure uma nota e veja o ponteiro. Fique dentro da faixa verde e você estará dentro de ±25 cents.',
   'tuner.gate.title': 'Ligue seu microfone',
   'tuner.gate.body':
-    'Seu navegador vai pedir permissão. O áudio é analisado neste dispositivo com o algoritmo YIN — nada é gravado nem enviado.',
+    'Seu navegador vai pedir permissão. O áudio é analisado neste dispositivo com o algoritmo YIN — nada é gravado nem salvo.',
   'tuner.gate.hint': 'Toca um instrumento transpositor? Escolha o tom dele depois de começar.',
   'tuner.controls.aria': 'Controles do afinador',
   'tuner.controls.instrument_key': 'Tom do instrumento',
@@ -108,7 +109,7 @@ export const pt: Record<TranslationKey, string> = {
   // ── practice ──────────────────────────────────────────────────────────
   'practice.header.title': 'Praticar partitura',
   'practice.header.lede':
-    'Carregue uma peça, ligue o microfone e toque. Cada nota é comparada com a partitura e colorida ao entrar — verde para perfeito, azul para quase, cinza para errou.',
+    'Carregue uma partitura, ligue o microfone e toque. Cada nota é comparada com a partitura e colorida ao entrar — verde para perfeito, azul para quase, cinza para errou.',
   'practice.settings.title': 'Configurações da sessão',
   'practice.settings.subtitle': 'O tempo e o quão estritamente a pista espera por você.',
   'practice.settings.bpm_label': 'Tempo (BPM)',
@@ -116,7 +117,7 @@ export const pt: Record<TranslationKey, string> = {
   'practice.settings.mode_label': 'Modo de avanço',
   'practice.settings.mode_wait': 'Automático — avança sozinho após a janela de tolerância',
   'practice.settings.mode_strict': 'Estrito — espera até você acertar a nota',
-  'practice.settings.mode_help_wait': 'A pista segue sozinha, marcando as notas erradas.',
+  'practice.settings.mode_help_wait': 'A música segue sozinha, marcando as notas erradas.',
   'practice.settings.mode_help_strict': 'A pista trava na nota ativa até você tocá-la corretamente.',
   'practice.thresholds.summary': 'Limites de pontuação',
   'practice.thresholds.hint': 'afinação ±{cents}¢ perfeita',
@@ -156,7 +157,7 @@ export const pt: Record<TranslationKey, string> = {
   'trumpet.header.title': 'Digitação do trompete',
   'trumpet.header.badge': 'Exercício no teclado',
   'trumpet.header.lede':
-    'Uma nota aparece na pauta. Segure os pistões dela com J, K e L e aperte Space para avançar. Só vale a digitação correta — o exercício ignora qualquer outra coisa.',
+    'Uma nota aparece na pauta. Segure os pistos dela com J, K e L e aperte Espaço para avançar. Só vale a digitação correta — o exercício ignora qualquer outra coisa.',
   'trumpet.filter.title': 'Quais acidentes?',
   'trumpet.filter.aria': 'Filtro de notas',
   'trumpet.filter.all': 'Todas',
@@ -171,13 +172,14 @@ export const pt: Record<TranslationKey, string> = {
   'trumpet.filter.hide_names_aria': 'Ocultar nomes das notas',
   'trumpet.stage.title': 'Nota atual do exercício',
   'trumpet.stage.play_this': 'Toque esta nota',
-  'trumpet.valves.aria': 'Estado dos pistões',
-  'trumpet.valve.held': 'Pistão {id} pressionado',
-  'trumpet.valve.released': 'Pistão {id} solto',
-  'trumpet.legend.valve1': 'pistão 1',
-  'trumpet.legend.valve2': 'pistão 2',
-  'trumpet.legend.valve3': 'pistão 3',
+  'trumpet.valves.aria': 'Estado dos pistos',
+  'trumpet.valve.held': 'Pisto {id} pressionado',
+  'trumpet.valve.released': 'Pisto {id} solto',
+  'trumpet.legend.valve1': 'pisto 1',
+  'trumpet.legend.valve2': 'pisto 2',
+  'trumpet.legend.valve3': 'pisto 3',
   'trumpet.legend.space': 'verificar e avançar',
+  'trumpet.legend.space_key_name': 'Espaço',
   'trumpet.status.title': 'Sessão',
   'trumpet.status.hide': 'Ocultar',
   'trumpet.status.hide_aria': 'Ocultar valores de status',
@@ -186,7 +188,7 @@ export const pt: Record<TranslationKey, string> = {
   'trumpet.status.wrong': 'Notas erradas',
   'trumpet.tip.eyebrow': 'Dica',
   'trumpet.tip.body':
-    'Nada se move se a digitação estiver errada — esse silêncio é o retorno. Solte um pistão e tente de novo: a mesma nota continua na pauta.',
+    'Nada se move se a digitação estiver errada — esse silêncio é o retorno. Solte um pisto e tente de novo: a mesma nota continua na pauta.',
   // ── components ────────────────────────────────────────────────────────
   'components.cents_meter.verdict_waiting': 'Aguardando uma nota',
   'components.cents_meter.verdict_in_tune': 'Afinado',
@@ -207,11 +209,13 @@ export const pt: Record<TranslationKey, string> = {
   'components.note_history.title': 'Últimas notas tocadas',
   'components.note_history.empty': 'Nada por enquanto — toque uma nota.',
   'components.score_picker.title': 'Escolha uma partitura',
-  'components.score_picker.subtitle': 'Carregue uma peça da biblioteca ou traga seu próprio arquivo MusicXML.',
+  'components.score_picker.subtitle': 'Carregue uma partitura da biblioteca ou traga seu próprio arquivo MusicXML.',
   'components.score_picker.loaded_by': 'por {composer}',
   'components.score_picker.clear': 'Limpar',
-  'components.score_picker.upload': 'Enviar MusicXML',
+  'components.score_picker.upload': 'Enviar partitura',
   'components.score_picker.upload_help': 'Arquivos enviados mantêm o padrão de {bpm} BPM — ajuste o tempo depois de carregar.',
+  'components.score_picker.choose_file': 'Escolher arquivo',
+  'components.score_picker.no_file': 'Nenhum arquivo escolhido',
   'components.score_picker.library_error': 'Não foi possível carregar a biblioteca de partituras — use a opção de envio acima.',
   'components.score_picker.library_empty': 'Nenhuma partitura disponível ainda — use a opção de envio acima.',
   'components.score_picker.library_aria': 'Biblioteca de partituras',
@@ -228,8 +232,8 @@ export const pt: Record<TranslationKey, string> = {
   'components.note_lane.empty': 'Carregue uma partitura acima para ver a pista',
   'components.note_lane.complete': 'Concluído!',
   'components.note_lane.summary': '{accuracy}% ({perfect} perfeito, {ok} ok, {miss} errou)',
-  'components.trumpet_display.alt_released': 'Diagrama do trompete com todos os pistões soltos.',
-  'components.trumpet_display.alt_all_pressed': 'Diagrama do trompete com os pistões 1, 2 e 3 pressionados.',
-  'components.trumpet_display.alt_valve_pressed': 'Diagrama do trompete com o pistão {list} pressionado.',
-  'components.trumpet_display.alt_valves_pressed': 'Diagrama do trompete com os pistões {list} pressionados.',
+  'components.trumpet_display.alt_released': 'Diagrama do trompete com todos os pistos soltos.',
+  'components.trumpet_display.alt_all_pressed': 'Diagrama do trompete com os pistos 1, 2 e 3 pressionados.',
+  'components.trumpet_display.alt_valve_pressed': 'Diagrama do trompete com o pisto {list} pressionado.',
+  'components.trumpet_display.alt_valves_pressed': 'Diagrama do trompete com os pistos {list} pressionados.',
 };
