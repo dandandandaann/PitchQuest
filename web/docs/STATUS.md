@@ -1,6 +1,6 @@
 # PitchQuest — Status & Handoff
 
-**Last updated:** end of Stage 6 (commit `a7b86d4`).
+**Last updated:** post-Stage 6 — DIY i18n added (commits `3bb0051` → `3846137`, reviewer APPROVED); Stage 7 still pending.
 **Audience:** the next manager agent (or human) picking up this project.
 
 ---
@@ -37,8 +37,10 @@ web/src/
 │   └── MusicXmlParser.test-harness.ts
 ├── components/              # Shared UI
 │   ├── CentsMeter.tsx, PitchDisplay.tsx, SidebarLayout.tsx, NoteHistory.tsx
+│   ├── LanguageToggle.tsx            # i18n: EN/PT switcher, sidebar (above mic card)
 │   ├── ScorePicker.tsx               # Stage 6: library picker + file upload
 │   └── NoteLane.tsx, NoteLane.css   # Stage 6: rAF-driven scrolling lane
+├── i18n/                    # DIY i18n — I18nContext (provider + useT/useLocale/useSetLocale), keys.ts, dictionaries/{en,pt}.ts
 ├── pages/
 │   ├── HomePage.tsx
 │   ├── TunerPage.tsx                 # Real-time needle + cents meter
@@ -111,6 +113,18 @@ npx tsx -e "import { runSegmenterHarness } from './src/audio/NoteSegmenter.test-
 | IncrementalMatcher | 6 | Wait-mode cursor; cases: perfect run, out-of-window ignored, dropped note + forceMissActive, out-of-order ignored, empty list, wrong-pitch window match |
 
 All harnesses are pure functions (no React/DOM/I/O). They're also wired into the **dev panel on PracticePage** (6 sections, "Show dev panel" button at the bottom). When you open the page, you can see all 41 cases running live in the browser.
+
+### DIY i18n (sidebar-only) — post-Stage 6, reviewer APPROVED
+
+Added after Stage 6 in commits `3bb0051` → `3846137` (provider + dictionaries, provider mount, toggle component, sidebar wiring). Reviewed and **APPROVED**. Stage 7 scope is unchanged.
+
+- **Implementation: DIY i18n at `web/src/i18n/`** — no i18n library. `I18nProvider` (in `I18nContext.tsx`) is mounted in `main.tsx` above `<App>`.
+- **Hooks:** `useT()` (translate a `TranslationKey`), `useLocale()`, `useSetLocale()`. All throw if used outside the provider.
+- **Persistence:** `localStorage['pq.lang']`, with a `navigator` Portuguese-detection fallback (any `pt*` navigator language → `pt`, otherwise `en`). Stored choice wins. `pq.lang` is a reserved key — don't reuse it for other persisted prefs.
+- **Side effect:** the provider keeps `<html lang>` in sync with the active locale.
+- **UI:** `LanguageToggle` (`web/src/components/LanguageToggle.tsx`) renders in the sidebar, directly above the mic card.
+- **Scope: sidebar-only.** Pages stay English. To extend: add strings to `web/src/i18n/dictionaries/en.ts` + `pt.ts` (keys in `keys.ts`) and swap the hardcoded strings in the page.
+- **PT copy** has been reviewed.
 
 ## What's next
 
