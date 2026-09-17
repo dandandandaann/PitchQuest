@@ -15,8 +15,19 @@
  * ~0ms via the global rule in index.css, so the needle snaps instead of easing.
  */
 
+import { useT } from '../i18n/I18nContext';
+
 interface CentsMeterProps {
     cents: number | null;
+}
+
+/** Substitute `{name}` placeholders in a dictionary string. */
+function fill(template: string, params: Record<string, string>): string {
+    let out = template;
+    for (const [name, value] of Object.entries(params)) {
+        out = out.replaceAll(`{${name}}`, value);
+    }
+    return out;
 }
 
 /* ── Geometry ─────────────────────────────────────────────────────────────
@@ -56,6 +67,7 @@ function arcPath(fromCents: number, toCents: number, radius: number): string {
 const TICKS = [-50, -40, -30, -25, -20, -10, 0, 10, 20, 25, 30, 40, 50];
 
 export function CentsMeter({ cents }: CentsMeterProps) {
+    const t = useT();
     const isLive = cents !== null;
     const c = cents ?? 0;
     const angle = isLive ? centsToDeg(c) : 0;
@@ -65,14 +77,22 @@ export function CentsMeter({ cents }: CentsMeterProps) {
 
     /** Short human label for the readout under the gauge. */
     const verdict = !isLive
-        ? 'Waiting for a note'
+        ? t('components.cents_meter.verdict_waiting')
         : isInTune
-          ? 'In tune'
+          ? t('components.cents_meter.verdict_in_tune')
           : c < 0
-            ? 'Flat — go sharper'
-            : 'Sharp — go flatter';
+            ? t('components.cents_meter.verdict_flat')
+            : t('components.cents_meter.verdict_sharp');
 
     const readoutTone = !isLive ? 'idle' : isInTune ? 'good' : isClose ? 'close' : 'off';
+
+    const ariaLabel = !isLive
+        ? t('components.cents_meter.aria_no_note')
+        : fill(t('components.cents_meter.aria_tuning'), {
+              cents: String(Math.round(c)),
+              direction: c < 0 ? t('components.cents_meter.direction_flat') : c > 0 ? t('components.cents_meter.direction_sharp') : '',
+              verdict,
+          });
 
     return (
         <figure className={`cents-meter cents-meter--${readoutTone}`}>
@@ -80,11 +100,7 @@ export function CentsMeter({ cents }: CentsMeterProps) {
                 className="cents-meter__gauge"
                 viewBox="0 0 320 186"
                 role="img"
-                aria-label={
-                    isLive
-                        ? `Tuning gauge: ${Math.round(c)} cents ${c < 0 ? 'flat' : c > 0 ? 'sharp' : ''}, ${verdict}`
-                        : 'Tuning gauge: no note detected'
-                }
+                aria-label={ariaLabel}
             >
                 {/* Background arc — the unlit clay track */}
                 <path
@@ -147,13 +163,19 @@ export function CentsMeter({ cents }: CentsMeterProps) {
             </svg>
 
             <div className="cents-meter__legend" aria-hidden="true">
-                <span>Flat</span>
-                <span className="cents-meter__legend-mid">In tune</span>
-                <span>Sharp</span>
+                <span>{t('components.cents_meter.legend_flat')}</span>
+                <span className="cents-meter__legend-mid">{t('components.cents_meter.legend_in_tune')}</span>
+                <span>{t('components.cents_meter.legend_sharp')}</span>
             </div>
 
             <figcaption className="cents-meter__readout">
-                <span className="clay-badge">{isLive ? `${c > 0 ? '+' : ''}${Math.round(c)} cents` : '— cents'}</span>
+                <span className="clay-badge">
+                    {isLive
+                        ? fill(t('components.cents_meter.cents_value'), {
+                              cents: `${c > 0 ? '+' : ''}${Math.round(c)}`,
+                          })
+                        : t('components.cents_meter.cents_idle')}
+                </span>
                 <span className="cents-meter__verdict">{verdict}</span>
             </figcaption>
         </figure>

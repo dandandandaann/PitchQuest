@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useT } from '../i18n/I18nContext';
 
 interface NoteHistoryProps {
     history: string[];
@@ -20,6 +21,7 @@ function variantFor(note: string): string {
 }
 
 export function NoteHistory({ history }: NoteHistoryProps) {
+    const t = useT();
     const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -30,11 +32,11 @@ export function NoteHistory({ history }: NoteHistoryProps) {
     }, [history]);
 
     return (
-        <section className="note-history" aria-label="Recently detected notes">
-            <h3 className="note-history__title">Last played notes</h3>
+        <section className="note-history" aria-label={t('components.note_history.aria')}>
+            <h3 className="note-history__title">{t('components.note_history.title')}</h3>
 
             {history.length === 0 ? (
-                <p className="clay-text">Nothing yet — play a note.</p>
+                <p className="clay-text">{t('components.note_history.empty')}</p>
             ) : (
                 <div ref={containerRef} className="clay-scroller note-history__scroll">
                     {history.map((note, index) => (

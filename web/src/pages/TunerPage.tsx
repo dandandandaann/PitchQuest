@@ -8,6 +8,7 @@ import type { PitchData } from '../audio/hooks/usePitchDetection';
 import { PitchDisplay } from '../components/PitchDisplay';
 import { CentsMeter } from '../components/CentsMeter';
 import { NoteHistory } from '../components/NoteHistory';
+import { useT } from '../i18n/I18nContext';
 
 // Note to semitone offset mapping for transposition
 const NOTE_OFFSETS: Record<string, number> = {
@@ -34,6 +35,7 @@ const TRANSPOSITION_NOTES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A
 const HOLD_MS = 500; // Visual hold duration for the cents meter/note display
 
 export function TunerPage() {
+    const t = useT();
     const { isStarted, startAudio, stopAudio, audioContext } = useAudioContext();
     const [transposeNote, setTransposeNote] = useState<string>('C');
 
@@ -94,15 +96,13 @@ export function TunerPage() {
             {/* ═ HEADER BLOCK ════════════════════════════════════════════════ */}
             <header className="pq-header">
                 <div className="pq-header__text">
-                    <span className="clay-eyebrow">Ear training</span>
-                    <h1 className="clay-title clay-title--h1">Tuner</h1>
-                    <p className="clay-lede">
-                        Hold a note and watch the needle. Stay inside the green band and you are within ±25 cents.
-                    </p>
+                    <span className="clay-eyebrow">{t('section.ear_training')}</span>
+                    <h1 className="clay-title clay-title--h1">{t('tuner.header.title')}</h1>
+                    <p className="clay-lede">{t('tuner.header.lede')}</p>
                 </div>
                 <span className={`clay-badge ${isStarted ? 'clay-badge--green' : 'clay-badge--white'}`}>
                     <GraphicEqRounded sx={{ fontSize: 15 }} />
-                    {isStarted ? 'Listening' : 'Mic off'}
+                    {isStarted ? t('common.mic.listening') : t('common.mic.off')}
                 </span>
             </header>
 
@@ -113,27 +113,24 @@ export function TunerPage() {
                         <MicRounded />
                     </span>
                     <h2 id="tuner-gate-title" className="clay-title clay-title--h2">
-                        Turn on your microphone
+                        {t('tuner.gate.title')}
                     </h2>
                     <p className="clay-lede" style={{ textAlign: 'center' }}>
-                        Your browser will ask for permission. Audio is analysed on this device with the YIN
-                        algorithm — nothing is recorded or uploaded.
+                        {t('tuner.gate.body')}
                     </p>
                     <button type="button" className="clay-btn clay-btn--primary clay-btn--lg" onClick={startAudio}>
                         <MicRounded sx={{ fontSize: 22 }} />
-                        Start microphone
+                        {t('common.mic.start')}
                     </button>
-                    <p className="clay-text tuner-gate__hint">
-                        Playing a transposing instrument? Pick its key after you start.
-                    </p>
+                    <p className="clay-text tuner-gate__hint">{t('tuner.gate.hint')}</p>
                 </section>
             ) : (
                 <>
                     {/* ═ CONTROLS ═══════════════════════════════════════════ */}
-                    <section className="clay-card tuner-controls" aria-label="Tuner controls">
+                    <section className="clay-card tuner-controls" aria-label={t('tuner.controls.aria')}>
                         <div className="tuner-controls__field">
                             <label className="clay-label" htmlFor="transpose-select">
-                                Instrument key
+                                {t('tuner.controls.instrument_key')}
                             </label>
                             <select
                                 id="transpose-select"
@@ -145,20 +142,17 @@ export function TunerPage() {
                                     <option key={note} value={note}>{note}</option>
                                 ))}
                             </select>
-                            <p className="clay-text tuner-controls__help">
-                                Shifts the readout for transposing instruments — leave on <strong>C</strong> for
-                                concert pitch.
-                            </p>
+                            <p className="clay-text tuner-controls__help">{t('tuner.controls.help')}</p>
                         </div>
 
                         <button type="button" className="clay-btn clay-btn--ghost" onClick={handleStop}>
                             <MicOffRounded sx={{ fontSize: 20 }} />
-                            Stop microphone
+                            {t('common.mic.stop')}
                         </button>
                     </section>
 
                     {/* ═ READOUT ════════════════════════════════════════════ */}
-                    <section className="clay-card clay-card--feature tuner-readout" aria-label="Live pitch readout">
+                    <section className="clay-card clay-card--feature tuner-readout" aria-label={t('tuner.readout.aria')}>
                         <PitchDisplay
                             noteName={displayedPitchData?.noteName || null}
                             frequency={displayedPitchData?.frequency || null}
@@ -173,11 +167,8 @@ export function TunerPage() {
 
             {/* ═ TECH NOTE ═══════════════════════════════════════════════════ */}
             <footer className="clay-card tuner-foot">
-                <span className="clay-eyebrow">Under the hood</span>
-                <p className="clay-text">
-                    AudioWorklet → <strong>pitchy</strong> (YIN) → median filter (5) on frequency →
-                    moving average (3) on cents. Analysis window 2048 samples, accepted range 80–1500 Hz.
-                </p>
+                <span className="clay-eyebrow">{t('tuner.tech.eyebrow')}</span>
+                <p className="clay-text">{t('tuner.tech.body')}</p>
             </footer>
         </div>
     );
