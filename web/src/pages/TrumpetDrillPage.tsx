@@ -16,6 +16,7 @@ import MusicNoteRounded from '@mui/icons-material/MusicNoteRounded';
 import GraphicEqRounded from '@mui/icons-material/GraphicEqRounded';
 
 const FILTER_STORAGE_KEY = 'pq.trumpetDrill.filter';
+const HIDE_NAME_STORAGE_KEY = 'pq.trumpetDrill.hideNoteName';
 const VALID_FILTERS: readonly NoteFilter[] = ['all', 'sharps', 'flats', 'naturals'];
 
 /** Ink colour, mirrored from styles/tokens.css (VexFlow needs a literal). */
@@ -30,6 +31,16 @@ function loadFilter(): NoteFilter {
 function saveFilter(filter: NoteFilter): void {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(FILTER_STORAGE_KEY, filter);
+}
+
+function loadHideNoteName(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.localStorage.getItem(HIDE_NAME_STORAGE_KEY) === 'true';
+}
+
+function saveHideNoteName(hide: boolean): void {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(HIDE_NAME_STORAGE_KEY, hide ? 'true' : 'false');
 }
 
 /**
@@ -121,6 +132,12 @@ export function TrumpetDrillPage() {
   }, [noteFilter]);
 
   const [currentNote, setCurrentNote] = useState<string>(() => randomNote(noteFilter).note);
+  const [hideNoteName, setHideNoteName] = useState<boolean>(loadHideNoteName);
+
+  useEffect(() => {
+    saveHideNoteName(hideNoteName);
+  }, [hideNoteName]);
+
   const [held, setHeld] = useState<ReadonlySet<PistonKey>>(() => new Set());
 
   // The display layer works in PistonId land (1/2/3) while keyboard logic stays in
@@ -244,6 +261,21 @@ export function TrumpetDrillPage() {
             ♮ Naturals
           </ToggleButton>
         </ToggleButtonGroup>
+        <ToggleButtonGroup
+          value={hideNoteName ? 'hidden' : 'visible'}
+          exclusive
+          onChange={(_event, next: 'visible' | 'hidden' | null) => {
+            // MUI fires null when the active button is re-clicked — never let it stick.
+            if (next === null) return;
+            setHideNoteName(next === 'hidden');
+          }}
+          size="small"
+          aria-label="Note name visibility"
+        >
+          <ToggleButton value="hidden" aria-label="Hide note names">
+            Hide note names
+          </ToggleButton>
+        </ToggleButtonGroup>
       </section>
 
       {/* ═ THE DRILL ══════════════════════════════════════════════════════ */}
@@ -261,7 +293,7 @@ export function TrumpetDrillPage() {
             </span>
             <NoteStaff note={currentNote} />
             <p className="drill-staff__name" aria-live="polite">
-              {currentNote}
+              {hideNoteName ? <span className="clay-visually-hidden">{currentNote}</span> : currentNote}
             </p>
           </div>
 
