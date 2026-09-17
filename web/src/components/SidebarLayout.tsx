@@ -127,7 +127,7 @@ function NavBody({ onNavigate }: { onNavigate: (path: string) => void }) {
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Brand />
 
-      <Box component="nav" aria-label="Primary" sx={{ flex: '1 1 auto', overflowY: 'auto', pt: 1 }}>
+      <Box component="nav" aria-label={t('a11y.nav.primary')} sx={{ flex: '1 1 auto', overflowY: 'auto', pt: 1 }}>
         {NAV_SECTIONS.map((section, i) => (
           <List
             key={section.label ?? `section-${i}`}
@@ -199,6 +199,7 @@ function NavBody({ onNavigate }: { onNavigate: (path: string) => void }) {
 }
 
 export function SidebarLayout() {
+  const t = useT();
   const navigate = useNavigate();
   const theme = useTheme();
   const isCompact = useMediaQuery(theme.breakpoints.down('md'));
@@ -217,7 +218,7 @@ export function SidebarLayout() {
       </div>
 
       <a className="clay-visually-hidden" href="#main-content">
-        Skip to main content
+        {t('a11y.skip_to_content')}
       </a>
 
       <div className="pq-shell">
@@ -235,7 +236,7 @@ export function SidebarLayout() {
             <Toolbar sx={{ minHeight: '68px !important', gap: 1 }}>
               <IconButton
                 edge="start"
-                aria-label="Open navigation menu"
+                aria-label={t('a11y.nav.open_menu')}
                 aria-expanded={mobileOpen}
                 aria-controls="pq-nav-drawer"
                 onClick={() => setMobileOpen(true)}
@@ -288,7 +289,7 @@ export function SidebarLayout() {
             }}
           >
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 1, px: 1 }}>
-              <IconButton aria-label="Close navigation menu" onClick={() => setMobileOpen(false)}>
+              <IconButton aria-label={t('a11y.nav.close_menu')} onClick={() => setMobileOpen(false)}>
                 <CloseRounded />
               </IconButton>
             </Box>
