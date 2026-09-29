@@ -61,10 +61,10 @@ function formatMmSs(totalSec: number): string {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-/** Cumulative notes-per-second; guarded to 0.0 before the timer starts. */
-function notesPerSec(successCount: number, elapsedSec: number): string {
+/** Cumulative notes-per-minute; guarded to 0.0 before the timer starts. */
+function notesPerMin(successCount: number, elapsedSec: number): string {
   if (elapsedSec <= 0) return '0.0';
-  return (successCount / elapsedSec).toFixed(1);
+  return ((successCount / elapsedSec) * 60).toFixed(1);
 }
 
 /**
@@ -431,10 +431,17 @@ export function TrumpetDrillPage() {
           </div>
           <div className="clay-well drill-status__metric">
             <span className="drill-status__value">
-              {hideStatus ? <span className="clay-visually-hidden">{notesPerSec(successCount, elapsedSec)}</span> : notesPerSec(successCount, elapsedSec)}
+              {hideStatus ? <span className="clay-visually-hidden">{notesPerMin(successCount, elapsedSec)}</span> : notesPerMin(successCount, elapsedSec)}
               {hideStatus && <span aria-hidden="true">—</span>}
             </span>
-            <span className="drill-status__label">{t('trumpet.status.notes_per_sec')}</span>
+            <span className="drill-status__label">{t('trumpet.status.notes_per_min')}</span>
+          </div>
+          <div className="clay-well drill-status__metric">
+            <span className="drill-status__value">
+              {hideStatus ? <span className="clay-visually-hidden">{successCount}</span> : successCount}
+              {hideStatus && <span aria-hidden="true">—</span>}
+            </span>
+            <span className="drill-status__label">{t('trumpet.status.success')}</span>
           </div>
           <div className="clay-well drill-status__metric">
             <span className="drill-status__value">

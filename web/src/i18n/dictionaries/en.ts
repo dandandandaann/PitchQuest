@@ -182,7 +182,8 @@ export const en: Record<TranslationKey, string> = {
   'trumpet.status.hide': 'Hide',
   'trumpet.status.hide_aria': 'Hide status values',
   'trumpet.status.time': 'Time',
-  'trumpet.status.notes_per_sec': 'Notes/sec',
+  'trumpet.status.notes_per_min': 'Notes/min',
+  'trumpet.status.success': 'Correct notes',
   'trumpet.status.wrong': 'Wrong notes',
   'trumpet.tip.eyebrow': 'Tip',
   'trumpet.tip.body':
