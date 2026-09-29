@@ -20,6 +20,7 @@ import HomeRounded from '@mui/icons-material/HomeRounded';
 import GraphicEqRounded from '@mui/icons-material/GraphicEqRounded';
 import SchoolRounded from '@mui/icons-material/SchoolRounded';
 import MusicNoteRounded from '@mui/icons-material/MusicNoteRounded';
+import SwapHorizRounded from '@mui/icons-material/SwapHorizRounded';
 import MenuRounded from '@mui/icons-material/MenuRounded';
 import CloseRounded from '@mui/icons-material/CloseRounded';
 import AutoAwesomeRounded from '@mui/icons-material/AutoAwesomeRounded';
@@ -52,7 +53,10 @@ const NAV_SECTIONS: NavSection[] = [
   },
   {
     label: 'section.drills',
-    items: [{ text: 'nav.practice.trumpet', icon: <MusicNoteRounded />, path: '/trumpet-drill' }],
+    items: [
+      { text: 'nav.practice.trumpet', icon: <MusicNoteRounded />, path: '/trumpet-drill' },
+      { text: 'nav.practice.trombone', icon: <SwapHorizRounded />, path: '/trombone-drill' },
+    ],
   },
 ];
 

@@ -14,6 +14,9 @@ import './styles/tokens.css';
 const TrumpetDrillPage = lazy(() =>
   import('./pages/TrumpetDrillPage').then(m => ({ default: m.TrumpetDrillPage })),
 );
+const TromboneDrillPage = lazy(() =>
+  import('./pages/TromboneDrillPage').then(m => ({ default: m.TromboneDrillPage })),
+);
 
 /** Clay skeleton shown while a lazy route chunk downloads. */
 function RouteFallback() {
@@ -45,6 +48,14 @@ function App() {
               element={
                 <Suspense fallback={<RouteFallback />}>
                   <TrumpetDrillPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/trombone-drill"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <TromboneDrillPage />
                 </Suspense>
               }
             />

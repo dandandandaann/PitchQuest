@@ -3,12 +3,13 @@ import { Link } from 'react-router-dom';
 import GraphicEqRounded from '@mui/icons-material/GraphicEqRounded';
 import SchoolRounded from '@mui/icons-material/SchoolRounded';
 import MusicNoteRounded from '@mui/icons-material/MusicNoteRounded';
+import SwapHorizRounded from '@mui/icons-material/SwapHorizRounded';
 import BoltRounded from '@mui/icons-material/BoltRounded';
 import ArrowForwardRounded from '@mui/icons-material/ArrowForwardRounded';
 import { useT } from '../i18n/I18nContext';
 
 /** Which `home.features.*` / `home.steps.*` translation group a card uses. */
-type FeatureKey = 'tuner' | 'score' | 'drill';
+type FeatureKey = 'tuner' | 'score' | 'drill' | 'trombone_drill';
 type StepKey = 'pick' | 'mic' | 'play';
 
 /** Static hero art: a miniature of the practice lane, in clay. */
@@ -64,6 +65,7 @@ const FEATURES: Array<{
   { to: '/tuner', icon: <GraphicEqRounded />, tint: 'blue', key: 'tuner' },
   { to: '/practice', icon: <SchoolRounded />, tint: 'peach', key: 'score' },
   { to: '/trumpet-drill', icon: <MusicNoteRounded />, tint: 'green', key: 'drill' },
+  { to: '/trombone-drill', icon: <SwapHorizRounded />, tint: 'blue', key: 'trombone_drill' },
 ];
 
 /** Locale-independent step shell; copy comes from `home.steps.<key>.*`. */
@@ -141,11 +143,17 @@ export function HomePage() {
             <Link key={f.to} to={f.to} className={`clay-tile pq-feature pq-feature--${f.tint}`}>
               <span className={`clay-iconplate clay-iconplate--${f.tint} pq-feature__icon`}>{f.icon}</span>
               <h3 className="clay-title clay-title--h3 pq-feature__title">{t(`home.features.${f.key}.title`)}</h3>
-              <p className="clay-text pq-feature__body">{t(`home.features.${f.key}.body`)}</p>
-              <span className="pq-feature__cta">
-                {t(`home.features.${f.key}.cta`)}
-                <ArrowForwardRounded sx={{ fontSize: 18 }} />
-              </span>
+              <p className="clay-text pq-feature__body">
+                {f.key === 'trombone_drill'
+                  ? t('home.features.trombone_drill.subtitle')
+                  : t(`home.features.${f.key}.body`)}
+              </p>
+              {f.key !== 'trombone_drill' && (
+                <span className="pq-feature__cta">
+                  {t(`home.features.${f.key}.cta`)}
+                  <ArrowForwardRounded sx={{ fontSize: 18 }} />
+                </span>
+              )}
             </Link>
           ))}
         </div>
@@ -183,6 +191,9 @@ export function HomePage() {
         <div className="pq-cta__actions">
           <Link className="clay-btn clay-btn--lg" to="/tuner">
             {t('home.cta.tuner')}
+          </Link>
+          <Link className="clay-btn clay-btn--lg" to="/trombone-drill">
+            {t('home.cta.trombone_drill')}
           </Link>
           <Link className="clay-btn clay-btn--peach clay-btn--lg" to="/trumpet-drill">
             {t('home.cta.drill')}
