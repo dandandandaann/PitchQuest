@@ -35,6 +35,7 @@ export const pt: Record<TranslationKey, string> = {
   'nav.tuner': 'Afinador',
   'nav.practice.score': 'Praticar partitura',
   'nav.practice.trumpet': 'Digitação do trompete',
+  'nav.practice.trombone': 'Vara do trombone',
   'section.ear_training': 'Treino de ouvido',
   'section.practice': 'Prática',
   'section.drills': 'Exercícios',
@@ -75,6 +76,9 @@ export const pt: Record<TranslationKey, string> = {
   'home.features.drill.body':
     'Notas aleatórias na pauta. Segure os pistos certos em J, K e L e aperte Espaço para avançar. A velocidade aumenta sozinha.',
   'home.features.drill.cta': 'Começar o exercício',
+  'home.features.trombone_drill.title': 'Exercício de trombone',
+  'home.features.trombone_drill.subtitle':
+    'Notas aleatórias na pauta em clave de fá. Arraste a vara até a posição certa e aperte Espaço para avançar. A velocidade vem com o treino.',
   'home.how.eyebrow': 'Como funciona',
   'home.how.title': 'Três passos do silêncio à partitura',
   'home.steps.pick.title': 'Escolha uma partitura',
@@ -91,6 +95,7 @@ export const pt: Record<TranslationKey, string> = {
   'home.cta.body': 'Sem conta, sem download, sem configuração. Abra o afinador, permita o microfone e toque.',
   'home.cta.tuner': 'Abrir o afinador',
   'home.cta.drill': 'Experimente um exercício',
+  'home.cta.trombone_drill': 'Experimente o trombone',
   // ── tuner ─────────────────────────────────────────────────────────────
   'tuner.header.title': 'Afinador',
   'tuner.header.lede':
@@ -189,6 +194,42 @@ export const pt: Record<TranslationKey, string> = {
   'trumpet.tip.eyebrow': 'Dica',
   'trumpet.tip.body':
     'Nada se move se a digitação estiver errada — esse silêncio é o retorno. Solte um pisto e tente de novo: a mesma nota continua na pauta.',
+  // ── trombone ──────────────────────────────────────────────────────
+  'trombone.header.eyebrow': 'Exercícios',
+  'trombone.header.title': 'Vara do trombone',
+  'trombone.header.badge': 'Exercício na vara',
+  'trombone.header.lede':
+    'Uma nota aparece na pauta. Arraste a vara até a posição dela e aperte Espaço para avançar. Só vale a posição correta — o exercício ignora qualquer outra coisa.',
+  'trombone.filter.title': 'Quais acidentes?',
+  'trombone.filter.aria': 'Filtro de notas',
+  'trombone.filter.all': 'Todas',
+  'trombone.filter.sharps': '♯ Sustenidos',
+  'trombone.filter.flats': '♭ Bemóis',
+  'trombone.filter.naturals': '♮ Naturais',
+  'trombone.filter.all_aria': 'Todos os acidentes',
+  'trombone.filter.sharps_aria': 'Apenas sustenidos',
+  'trombone.filter.flats_aria': 'Apenas bemóis',
+  'trombone.filter.naturals_aria': 'Apenas naturais',
+  'trombone.filter.hide_names': 'Ocultar nomes das notas',
+  'trombone.filter.hide_names_aria': 'Ocultar nomes das notas',
+  'trombone.stage.title': 'Nota atual do exercício',
+  'trombone.stage.play_this': 'Toque esta nota',
+  'trombone.position.aria': 'Posição da vara',
+  'trombone.position.held': 'Posição {id}',
+  'trombone.slide.aria': 'Controle da vara',
+  'trombone.legend.drag': 'arraste a vara até a posição da nota',
+  'trombone.legend.space': 'verificar e avançar',
+  'trombone.legend.space_key_name': 'Espaço',
+  'trombone.status.title': 'Sessão',
+  'trombone.status.hide': 'Ocultar',
+  'trombone.status.hide_aria': 'Ocultar valores de status',
+  'trombone.status.time': 'Tempo',
+  'trombone.status.notes_per_min': 'Notas/min',
+  'trombone.status.success': 'Notas corretas',
+  'trombone.status.wrong': 'Notas erradas',
+  'trombone.tip.eyebrow': 'Dica',
+  'trombone.tip.body':
+    'Nada se move se a posição estiver errada — esse silêncio é o retorno. Arraste a vara e tente de novo: a mesma nota continua na pauta.',
   // ── components ────────────────────────────────────────────────────────
   'components.cents_meter.verdict_waiting': 'Aguardando uma nota',
   'components.cents_meter.verdict_in_tune': 'Afinado',
@@ -236,4 +277,5 @@ export const pt: Record<TranslationKey, string> = {
   'components.trumpet_display.alt_all_pressed': 'Diagrama do trompete com os pistos 1, 2 e 3 pressionados.',
   'components.trumpet_display.alt_valve_pressed': 'Diagrama do trompete com o pisto {list} pressionado.',
   'components.trumpet_display.alt_valves_pressed': 'Diagrama do trompete com os pistos {list} pressionados.',
+  'components.trombone_display.alt': 'Diagrama do trombone com a vara na posição {position}.',
 };

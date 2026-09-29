@@ -28,6 +28,7 @@ export const en: Record<TranslationKey, string> = {
   'nav.tuner': 'Tuner',
   'nav.practice.score': 'Score practice',
   'nav.practice.trumpet': 'Trumpet fingering',
+  'nav.practice.trombone': 'Trombone slide',
   'section.ear_training': 'Ear training',
   'section.practice': 'Practice',
   'section.drills': 'Drills',
@@ -68,6 +69,9 @@ export const en: Record<TranslationKey, string> = {
   'home.features.drill.body':
     'Random notes on a staff. Hold the right valves on J, K and L, then tap space to advance. Speed builds itself.',
   'home.features.drill.cta': 'Start drilling',
+  'home.features.trombone_drill.title': 'Trombone drill',
+  'home.features.trombone_drill.subtitle':
+    'Random notes on a bass-clef staff. Drag the slide to the right position, then tap space to advance. Speed builds itself.',
   'home.how.eyebrow': 'How it works',
   'home.how.title': 'Three steps from silence to a score',
   'home.steps.pick.title': 'Pick a piece',
@@ -84,6 +88,7 @@ export const en: Record<TranslationKey, string> = {
   'home.cta.body': 'No account, no download, no setup. Open the tuner, allow the microphone, and play.',
   'home.cta.tuner': 'Open the tuner',
   'home.cta.drill': 'Try a drill',
+  'home.cta.trombone_drill': 'Try the trombone drill',
   // ── tuner ─────────────────────────────────────────────────────────────
   'tuner.header.title': 'Tuner',
   'tuner.header.lede':
@@ -182,6 +187,42 @@ export const en: Record<TranslationKey, string> = {
   'trumpet.tip.eyebrow': 'Tip',
   'trumpet.tip.body':
     'Nothing moves if the fingering is wrong — that silence is the feedback. Release a valve and try again: the same note stays on the staff.',
+  // ── trombone ──────────────────────────────────────────────────────
+  'trombone.header.eyebrow': 'Drills',
+  'trombone.header.title': 'Trombone slide',
+  'trombone.header.badge': 'Slide drill',
+  'trombone.header.lede':
+    'A note appears on the staff. Drag the slide to its position, then tap Space to advance. Correct position only — the drill ignores anything else.',
+  'trombone.filter.title': 'Which accidentals?',
+  'trombone.filter.aria': 'Note filter',
+  'trombone.filter.all': 'All',
+  'trombone.filter.sharps': '♯ Sharps',
+  'trombone.filter.flats': '♭ Flats',
+  'trombone.filter.naturals': '♮ Naturals',
+  'trombone.filter.all_aria': 'All accidentals',
+  'trombone.filter.sharps_aria': 'Sharps only',
+  'trombone.filter.flats_aria': 'Flats only',
+  'trombone.filter.naturals_aria': 'Naturals only',
+  'trombone.filter.hide_names': 'Hide note names',
+  'trombone.filter.hide_names_aria': 'Hide note names',
+  'trombone.stage.title': 'Current drill note',
+  'trombone.stage.play_this': 'Play this note',
+  'trombone.position.aria': 'Slide position',
+  'trombone.position.held': 'Position {id}',
+  'trombone.slide.aria': 'Slide position control',
+  'trombone.legend.drag': 'drag the slide to the note’s position',
+  'trombone.legend.space': 'check & advance',
+  'trombone.legend.space_key_name': 'Space',
+  'trombone.status.title': 'Session',
+  'trombone.status.hide': 'Hide',
+  'trombone.status.hide_aria': 'Hide status values',
+  'trombone.status.time': 'Time',
+  'trombone.status.notes_per_min': 'Notes/min',
+  'trombone.status.success': 'Correct notes',
+  'trombone.status.wrong': 'Wrong notes',
+  'trombone.tip.eyebrow': 'Tip',
+  'trombone.tip.body':
+    'Nothing moves if the position is wrong — that silence is the feedback. Drag the slide and try again: the same note stays on the staff.',
   // ── components ────────────────────────────────────────────────────────
   'components.cents_meter.verdict_waiting': 'Waiting for a note',
   'components.cents_meter.verdict_in_tune': 'In tune',
@@ -229,4 +270,5 @@ export const en: Record<TranslationKey, string> = {
   'components.trumpet_display.alt_all_pressed': 'Trumpet diagram with valves 1, 2 and 3 pressed.',
   'components.trumpet_display.alt_valve_pressed': 'Trumpet diagram with valve {list} pressed.',
   'components.trumpet_display.alt_valves_pressed': 'Trumpet diagram with valves {list} pressed.',
+  'components.trombone_display.alt': 'Trombone diagram with the slide at position {position}.',
 };

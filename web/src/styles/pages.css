@@ -1272,3 +1272,98 @@
     font-size: 2.25rem;
   }
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   8. TROMBONE DRILL — slide control
+   ═════════════════════════════════════════════════════════════════ */
+
+/* Draggable horizontal track. `touch-action: none` lets touch users drag
+   without the page scrolling under their finger. */
+.slide-track {
+  position: relative;
+  height: 56px;
+  margin-top: 18px;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.slide-track:active {
+  cursor: grabbing;
+}
+
+/* Rail the handle travels along. */
+.slide-track__rail {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  right: 0;
+  height: 10px;
+  border-radius: var(--r-xs);
+  background: var(--clay-white);
+  box-shadow: var(--clay-inner-soft);
+}
+
+/* Detent tick + label at each of the 7 positions. */
+.slide-track__detent {
+  position: absolute;
+  top: 0;
+  /* Re-centre on the detent point (the box is narrower than the handle). */
+  width: 2px;
+  height: 30px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--peach-300);
+  display: flex;
+  justify-content: center;
+}
+
+.slide-track__detent-label {
+  position: absolute;
+  top: 32px;
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--ink-soft);
+  line-height: 1;
+}
+
+/* The handle. Snaps to detents via `left` set inline from React. */
+.slide-track__handle {
+  position: absolute;
+  top: 15px;
+  width: 34px;
+  height: 34px;
+  /* Re-centre on the detent point. */
+  margin-left: -17px;
+  border-radius: 50%;
+  background: var(--clay-white);
+  box-shadow: var(--clay-surface), inset 0 0 0 2px var(--peach-300);
+  cursor: grab;
+  touch-action: none;
+  transition:
+    box-shadow var(--dur) var(--ease-out),
+    background-color var(--dur) var(--ease-out);
+}
+
+.slide-track__handle:hover {
+  background: var(--clay-peach);
+}
+
+.slide-track__handle:focus-visible {
+  outline: 3px solid var(--blue-500);
+  outline-offset: 2px;
+}
+
+.slide-track__handle:active {
+  cursor: grabbing;
+  transform: translateY(1px);
+  box-shadow: var(--clay-pressed), inset 0 0 0 2px var(--peach-400);
+}
+
+.trombone-display {
+  display: block;
+  width: auto;
+  height: auto;
+}
