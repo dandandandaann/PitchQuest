@@ -208,8 +208,6 @@ export type TranslationKey =
   | 'trombone.filter.hide_names_aria'
   | 'trombone.stage.title'
   | 'trombone.stage.play_this'
-  | 'trombone.position.aria'
-  | 'trombone.position.held'
   | 'trombone.slide.aria'
   | 'trombone.legend.drag'
   | 'trombone.legend.space'

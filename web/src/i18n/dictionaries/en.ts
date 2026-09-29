@@ -207,8 +207,6 @@ export const en: Record<TranslationKey, string> = {
   'trombone.filter.hide_names_aria': 'Hide note names',
   'trombone.stage.title': 'Current drill note',
   'trombone.stage.play_this': 'Play this note',
-  'trombone.position.aria': 'Slide position',
-  'trombone.position.held': 'Position {id}',
   'trombone.slide.aria': 'Slide position control',
   'trombone.legend.drag': 'drag the slide to the note’s position',
   'trombone.legend.space': 'check & advance',

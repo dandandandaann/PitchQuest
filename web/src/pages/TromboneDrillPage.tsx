@@ -215,6 +215,10 @@ export function TromboneDrillPage() {
   const heldPositionRef = useRef(heldPosition);
 
   useEffect(() => {
+    heldPositionRef.current = heldPosition;
+  }, [heldPosition]);
+
+  useEffect(() => {
     const isEditableTarget = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
       return Boolean(
@@ -333,21 +337,6 @@ export function TromboneDrillPage() {
             </div>
 
             <SlideControl value={heldPosition} onChange={setHeldPosition} />
-
-            <div className="drill-valves" aria-label={t('trombone.position.aria')}>
-              {([1, 2, 3, 4, 5, 6, 7] as const).map(id => {
-                const active = heldPosition === id;
-                return (
-                  <span
-                    key={id}
-                    className={`clay-chip drill-valve${active ? ' drill-valve--down' : ''}`}
-                    aria-label={t('trombone.position.held').replace('{id}', String(id))}
-                  >
-                    {id}
-                  </span>
-                );
-              })}
-            </div>
           </div>
         </div>
 
