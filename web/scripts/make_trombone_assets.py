@@ -37,10 +37,11 @@ GEOMETRY / METHOD:
   trims that away:
     * Y_OFFSET = 400 removes the empty band above the artwork, so it starts at
       y=40 (40 px of top padding) and ends at y=519.
-    * SHIFTS re-centers each variant: the slide layer moves with the body, so
-      the whole artwork (x 88 .. 1831 + E_p) is shifted by
-      1350 - (88 + 1831 + E_p) / 2 and lands centered on the canvas at every
-      position, with equal left/right margins (87 px at pos-7).
+    * The artwork is left-anchored (SHIFTS = 0): body at x=88, slide shifts
+      rightward by E_p. The right side of the canvas is intentionally empty
+      so the user can drag the visible trombone leftward through the slide
+      positions (pos-1 artwork is on the left, pos-7's extended slide
+      approaches the right edge).
   CSS in web/src/styles/pages.css keys off these numbers (ruler band, figure
   max-width, image max-height).
 """
@@ -67,18 +68,15 @@ OFFSETS = [0, 112, 231, 358, 492, 632, 782]
 N_POS = 7
 
 # -------------------------------------------------------------- new canvas
-CANVAS_W = 2700    # 87 px of margin either side of the pos-7 artwork
+CANVAS_W = 2700    # 88 px of left margin (artwork is left-anchored); pos-7 ends at x=2613
 CANVAS_H = 1000    # artwork occupies y 40..519; the rest is empty
 Y_OFFSET = 400     # trim the empty band above the artwork (topmost y is 440)
 
 
-def round_px(v: float) -> int:
-    """Round a pixel offset to the nearest whole pixel (halves away from zero)."""
-    return int(v + 0.5) if v >= 0 else -int(-v + 0.5)
-
-
-# Per-variant x shift that re-centers the artwork (slide included) on the canvas.
-SHIFTS = [round_px(CANVAS_W / 2 - (ART_X0 + CROOK_RIGHT_X1 + e) / 2) for e in OFFSETS]
+# Per-variant x shift. 0 = artwork stays at its source-px position
+# (left-anchored, mirroring the original 2742x1356 layout -- body at x=88,
+# slide shifts rightward with E_p).
+SHIFTS = [0] * N_POS
 
 # ---------------------------------------------------------------- load + cut
 src = Image.open(SRC).convert("RGB")
@@ -177,8 +175,7 @@ for p in range(1, N_POS + 1):
     out = os.path.join(OUT_DIR, f"trombone-pos-{p}.webp")
     canvas.save(out, format="WEBP", lossless=True)
     kb = os.path.getsize(out) / 1024
-    print(f"pos-{p}: offset={s:3d}px  x-shift={shift:+4d}px  "
-          f"artwork x {ART_X0 + shift}..{CROOK_RIGHT_X1 + s + shift}  "
+    print(f"pos-{p}: offset={s:3d}px  artwork x {ART_X0}..{CROOK_RIGHT_X1 + s}  "
           f"{CANVAS_W}x{CANVAS_H}  {kb:.0f} kB  -> {out}")
 
 # ------------------------------------------------------------------- checks
@@ -206,7 +203,7 @@ for y in range(pos1.height):
 print(f"pos-1: {bad_rgb} pixels with altered RGB (expect 0), "
       f"max channel delta vs source when composited over white: {max_delta}")
 
-# per-variant: artwork sits inside the canvas and is centered on it
+# per-variant: artwork sits inside the canvas and is left-anchored on it
 for p in range(1, N_POS + 1):
     im = Image.open(os.path.join(OUT_DIR, f"trombone-pos-{p}.webp")).convert("RGBA")
     ipx = im.load()
@@ -218,14 +215,13 @@ for p in range(1, N_POS + 1):
     expect = CROOK_RIGHT_X1 + OFFSETS[p - 1] + SHIFTS[p - 1]
     edge_ok = abs(right - expect) <= 2
     bbox = im.getbbox()
-    center = (bbox[0] + bbox[2]) / 2
-    centered_ok = abs(center - CANVAS_W / 2) <= 1
+    left_ok = abs(bbox[0] - ART_X0) <= 1
     print(f"pos-{p}: measured crook right x={right}, expected {expect} "
           f"(delta {right - expect:+d}) {'OK' if edge_ok else 'FAIL'}; "
-          f"artwork bbox x {bbox[0]}..{bbox[2]} (center {center}, want {CANVAS_W / 2}) "
-          f"{'OK' if centered_ok else 'FAIL'}, y {bbox[1]}..{bbox[3]}; "
+          f"artwork bbox x {bbox[0]}..{bbox[2]} (left edge {bbox[0]}, want {ART_X0}) "
+          f"{'OK' if left_ok else 'FAIL'}, y {bbox[1]}..{bbox[3]}; "
           f"bbox right {bbox[2]} <= canvas {im.width}: {bbox[2] <= im.width}")
-    assert edge_ok and centered_ok and bbox[2] <= im.width
+    assert edge_ok and left_ok and bbox[2] <= im.width
 
 # no opaque near-background specks anywhere in the widest variant
 pos7 = Image.open(os.path.join(OUT_DIR, "trombone-pos-7.webp")).convert("RGBA")

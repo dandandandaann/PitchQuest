@@ -1338,14 +1338,13 @@
 }
 
 /* Ruler overlapping the bottom of the trombone, aligned to the brace travel
-   band of the image. Image is 2700x1000 (2.7:1); the slide brace travels
-   from x=1233 (pos-1) to x=1639 (pos-7), so the band is left:45.67%,
-   width:15.04% of the figure width. The image has ~230px of empty space
-   below the brace, so pulling the ruler up by 50px never covers it. */
+   band of the image. Image is 2700x1000 (2.7:1), artwork left-anchored
+   (body at x=88). The slide brace travels from x=842 (pos-1) to x=1639
+   (pos-7), so the band is left:31.19%, width:29.52% of the figure width. */
 .trombone-dragwell__ruler {
   position: relative;
-  width: 15.04%;
-  margin-left: 45.67%;
+  width: 29.52%;
+  margin-left: 31.19%;
   height: 44px;
   margin-top: -50px;
   pointer-events: none;
@@ -1384,11 +1383,11 @@
 .trombone-dragwell__ruler-tick-label {
   margin-top: 4px;
   font-family: var(--font-display);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-sm);
   font-weight: 700;
   color: var(--ink-soft);
   line-height: 1;
-  padding: 1px 4px;
+  padding: 2px 6px;
   border-radius: var(--r-xs);
   background: var(--clay-white);
   box-shadow: var(--clay-inner-soft);
