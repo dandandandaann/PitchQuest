@@ -1274,91 +1274,126 @@
 }
 
 /* ════════════════════════════════════════════════════════════════════════
-   8. TROMBONE DRILL — slide control
+   8. TROMBONE DRILL — drag-on-image slide
    ═════════════════════════════════════════════════════════════════ */
 
-/* Draggable horizontal track. `touch-action: none` lets touch users drag
-   without the page scrolling under their finger. */
-.slide-track {
+.trombone-dragwell {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--sp-3);
+}
+
+.trombone-dragwell__figure {
   position: relative;
-  height: 56px;
-  margin-top: 18px;
-  touch-action: none;
+  width: 100%;
+  /* Cap at the image's natural width at its max height (260 * 2742/1356 ≈
+     526px) so the figure always matches the rendered image width — the ruler
+     below is positioned as a percentage of this box. */
+  max-width: 526px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* Drag surface: wraps the image so native image-drag never sees the pointer
+   (the img keeps only its slider/keyboard role). */
+.trombone-dragwell__surface {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   cursor: grab;
+  touch-action: none;
   user-select: none;
   -webkit-user-select: none;
 }
 
-.slide-track:active {
+.trombone-dragwell__surface:active {
   cursor: grabbing;
 }
 
-/* Rail the handle travels along. */
-.slide-track__rail {
+.trombone-dragwell__image {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 260px;
+  margin: 0 auto; /* center within the figure */
+  cursor: inherit;
+  touch-action: none;
+  -webkit-user-drag: none;
+}
+
+.trombone-dragwell__image:focus-visible {
+  outline: 3px solid var(--blue-500);
+  outline-offset: 2px;
+}
+
+/* Ruler below the trombone, aligned to the brace travel band of the image.
+   Image is 2742x1356; brace travels from x=842 to x=1639, so the band is
+   left:30.71%, width:29.07% of the figure width. */
+.trombone-dragwell__ruler {
+  position: relative;
+  width: 29.07%;
+  margin-left: 30.71%;
+  height: 44px;
+  margin-top: 10px;
+  pointer-events: none;
+}
+
+.trombone-dragwell__ruler-rail {
   position: absolute;
-  top: 10px;
+  top: 8px;
   left: 0;
   right: 0;
-  height: 10px;
+  height: 8px;
   border-radius: var(--r-xs);
   background: var(--clay-white);
   box-shadow: var(--clay-inner-soft);
 }
 
-/* Detent tick + label at each of the 7 positions. */
-.slide-track__detent {
+.trombone-dragwell__ruler-tick {
   position: absolute;
   top: 0;
-  /* Re-centre on the detent point (the box is narrower than the handle). */
   width: 2px;
-  height: 30px;
+  height: 24px;
   margin-left: -1px;
-  border-radius: 1px;
-  background: var(--peach-300);
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
 }
 
-.slide-track__detent-label {
-  position: absolute;
-  top: 32px;
+.trombone-dragwell__ruler-tick-mark {
+  width: 2px;
+  height: 24px;
+  border-radius: 1px;
+  background: var(--peach-300);
+}
+
+.trombone-dragwell__ruler-tick-label {
+  margin-top: 4px;
   font-family: var(--font-display);
   font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--ink-soft);
   line-height: 1;
-}
-
-/* The handle. Snaps to detents via `left` set inline from React. */
-.slide-track__handle {
-  position: absolute;
-  top: 15px;
-  width: 34px;
-  height: 34px;
-  /* Re-centre on the detent point. */
-  margin-left: -17px;
-  border-radius: 50%;
+  padding: 1px 4px;
+  border-radius: var(--r-xs);
   background: var(--clay-white);
-  box-shadow: var(--clay-surface), inset 0 0 0 2px var(--peach-300);
-  cursor: grab;
-  touch-action: none;
-  transition:
-    box-shadow var(--dur) var(--ease-out),
-    background-color var(--dur) var(--ease-out);
+  box-shadow: var(--clay-inner-soft);
+  white-space: nowrap;
 }
 
-.slide-track__handle:hover {
+.trombone-dragwell__ruler-tick--active .trombone-dragwell__ruler-tick-mark {
+  background: var(--peach-500, var(--peach-400));
+}
+
+.trombone-dragwell__ruler-tick--active .trombone-dragwell__ruler-tick-label {
+  color: var(--ink);
+  font-weight: 900;
   background: var(--clay-peach);
-}
-
-.slide-track__handle:focus-visible {
-  outline: 3px solid var(--blue-500);
-  outline-offset: 2px;
-}
-
-.slide-track__handle:active {
-  cursor: grabbing;
-  transform: translateY(1px);
   box-shadow: var(--clay-pressed), inset 0 0 0 2px var(--peach-400);
 }
 

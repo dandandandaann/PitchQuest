@@ -8,7 +8,6 @@ import {
   randomNote,
   type NoteFilter,
 } from '../trombone/positions';
-import { TromboneDisplay } from '../components/TromboneDisplay';
 import { SlideControl } from '../components/SlideControl';
 import { useT } from '../i18n/I18nContext';
 import SwipeRightRounded from '@mui/icons-material/SwipeRightRounded';
@@ -330,13 +329,9 @@ export function TromboneDrillPage() {
             </p>
           </div>
 
-          {/* Trombone + slide control + held position */}
-          <div className="drill-side">
-            <div className="clay-well drill-side__trumpet">
-              <TromboneDisplay position={heldPosition} maxHeight={190} />
-            </div>
-
-            <SlideControl value={heldPosition} onChange={setHeldPosition} />
+          {/* Trombone slide control — the image itself is the slider */}
+          <div className="clay-well trombone-dragwell">
+            <SlideControl value={heldPosition} onChange={setHeldPosition} maxHeight={260} />
           </div>
         </div>
 

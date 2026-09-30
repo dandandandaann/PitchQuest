@@ -215,7 +215,7 @@ export const pt: Record<TranslationKey, string> = {
   'trombone.filter.hide_names_aria': 'Ocultar nomes das notas',
   'trombone.stage.title': 'Nota atual do exercício',
   'trombone.stage.play_this': 'Toque esta nota',
-  'trombone.slide.aria': 'Controle da vara',
+  'trombone.slide.aria': 'Trombone: arraste a imagem do trombone ou use as setas para definir a posição da vara, de 1 a 7.',
   'trombone.legend.drag': 'arraste a vara até a posição da nota',
   'trombone.legend.space': 'verificar e avançar',
   'trombone.legend.space_key_name': 'Espaço',
