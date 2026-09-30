@@ -1294,10 +1294,10 @@
 .trombone-dragwell__figure {
   position: relative;
   width: 100%;
-  /* Cap at the image's natural width at its max height (360 * 2742/1356 ≈
-     729px) so the figure always matches the rendered image width — the ruler
+  /* Cap at the image's natural width at its max height (480 * 2700/1000 =
+     1296px) so the figure always matches the rendered image width — the ruler
      below is positioned as a percentage of this box. */
-  max-width: 730px;
+  max-width: 1300px;
   margin: 0 auto;
   display: flex;
   justify-content: center;
@@ -1325,7 +1325,7 @@
   width: auto;
   height: auto;
   max-width: 100%;
-  max-height: 360px;
+  max-height: 480px; /* canvas is 2700x1000, so this renders 1296px wide */
   margin: 0 auto; /* center within the figure */
   cursor: inherit;
   touch-action: none;
@@ -1338,14 +1338,14 @@
 }
 
 /* Ruler overlapping the bottom of the trombone, aligned to the brace travel
-   band of the image. Image is 2742x1356; brace travels from x=842 to x=1639,
-   so the band is left:30.71%, width:29.07% of the figure width. The bottom
-   ~50px of the rendered image is empty space below the brace, so pulling the
-   ruler up by 50px never covers it. */
+   band of the image. Image is 2700x1000 (2.7:1); the slide brace travels
+   from x=1233 (pos-1) to x=1639 (pos-7), so the band is left:45.67%,
+   width:15.04% of the figure width. The image has ~230px of empty space
+   below the brace, so pulling the ruler up by 50px never covers it. */
 .trombone-dragwell__ruler {
   position: relative;
-  width: 29.07%;
-  margin-left: 30.71%;
+  width: 15.04%;
+  margin-left: 45.67%;
   height: 44px;
   margin-top: -50px;
   pointer-events: none;

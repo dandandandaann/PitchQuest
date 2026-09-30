@@ -331,7 +331,7 @@ export function TromboneDrillPage() {
 
           {/* Trombone slide control — the image itself is the slider */}
           <div className="clay-well trombone-dragwell">
-            <SlideControl value={heldPosition} onChange={setHeldPosition} maxHeight={360} />
+            <SlideControl value={heldPosition} onChange={setHeldPosition} maxHeight={480} />
           </div>
         </div>
 
