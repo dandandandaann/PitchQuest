@@ -120,8 +120,9 @@ function NoteStaff({ note }: NoteStaffProps) {
     // Clear any prior SVG (re-renders on note change).
     container.innerHTML = '';
 
-    const WIDTH = 260;
-    const HEIGHT = 170;
+    // Match .drill-staff__svg in pages.css (340 × 220).
+    const WIDTH = 340;
+    const HEIGHT = 220;
 
     const renderer = new Renderer(container, Renderer.Backends.SVG);
     renderer.resize(WIDTH, HEIGHT);

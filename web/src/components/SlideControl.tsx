@@ -26,7 +26,7 @@ export interface SlideControlProps {
  * native image drag hijacks the pointer even with `draggable={false}`, and
  * `preventDefault()` on the surface's `pointerdown` suppresses it.
  */
-export function SlideControl({ value, onChange, maxHeight = 230 }: SlideControlProps) {
+export function SlideControl({ value, onChange, maxHeight = 360 }: SlideControlProps) {
   const t = useT();
   const numbersRef = useRef<HTMLDivElement | null>(null);
   const draggingRef = useRef(false);

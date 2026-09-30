@@ -119,8 +119,8 @@ function NoteStaff({ note }: NoteStaffProps) {
     // Clear any prior SVG (re-renders on note change).
     container.innerHTML = '';
 
-    const WIDTH = 260;
-    const HEIGHT = 170;
+    const WIDTH = 340;
+    const HEIGHT = 220;
 
     const renderer = new Renderer(container, Renderer.Backends.SVG);
     renderer.resize(WIDTH, HEIGHT);
@@ -331,7 +331,7 @@ export function TromboneDrillPage() {
 
           {/* Trombone slide control — the image itself is the slider */}
           <div className="clay-well trombone-dragwell">
-            <SlideControl value={heldPosition} onChange={setHeldPosition} maxHeight={260} />
+            <SlideControl value={heldPosition} onChange={setHeldPosition} maxHeight={360} />
           </div>
         </div>
 
