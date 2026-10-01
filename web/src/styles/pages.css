@@ -1078,6 +1078,17 @@
   margin-left: auto;
 }
 
+/* The filter card's switches as ONE right-aligned group. A wrapper is needed
+   because two sibling `margin-left: auto` items would each take a share of the
+   free space and leave a gap between them. */
+.drill-filter__toggles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-4);
+  margin-left: auto;
+}
+
 .drill-stage {
   display: flex;
   flex-direction: column;

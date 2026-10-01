@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FormControlLabel, Switch, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { Renderer, Stave, StaveNote, Accidental, Voice, Formatter } from 'vexflow';
 import {
@@ -11,6 +11,7 @@ import {
 } from '../trumpet/fingerings';
 import { TrumpetDisplay } from '../components/TrumpetDisplay';
 import { useT } from '../i18n/I18nContext';
+import { useInstrumentSound } from '../sound/useInstrumentSound';
 import KeyboardRounded from '@mui/icons-material/KeyboardRounded';
 import MusicNoteRounded from '@mui/icons-material/MusicNoteRounded';
 import GraphicEqRounded from '@mui/icons-material/GraphicEqRounded';
@@ -18,6 +19,7 @@ import GraphicEqRounded from '@mui/icons-material/GraphicEqRounded';
 const FILTER_STORAGE_KEY = 'pq.trumpetDrill.filter';
 const HIDE_NAME_STORAGE_KEY = 'pq.trumpetDrill.hideNoteName';
 const HIDE_STATUS_STORAGE_KEY = 'pq.trumpetDrill.hideStatus';
+const MUTE_STORAGE_KEY = 'pq.trumpetDrill.mute';
 const VALID_FILTERS: readonly NoteFilter[] = ['all', 'sharps', 'flats', 'naturals'];
 
 /** Ink colour, mirrored from styles/tokens.css (VexFlow needs a literal). */
@@ -52,6 +54,16 @@ function loadHideStatus(): boolean {
 function saveHideStatus(hide: boolean): void {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(HIDE_STATUS_STORAGE_KEY, hide ? 'true' : 'false');
+}
+
+function loadMute(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.localStorage.getItem(MUTE_STORAGE_KEY) === 'true';
+}
+
+function saveMute(mute: boolean): void {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(MUTE_STORAGE_KEY, mute ? 'true' : 'false');
 }
 
 /** Format seconds as m:ss (e.g. 0:07, 12:05). */
@@ -183,6 +195,15 @@ export function TrumpetDrillPage() {
     saveHideNoteName(hideNoteName);
   }, [hideNoteName]);
 
+  // Instrument sound. The mute flag is persisted like the other view toggles;
+  // `play` is referentially stable, so `submitAnswer` below keeps its identity
+  // across mute flips and the keydown listener can still be registered once.
+  const [muted, setMuted] = useState<boolean>(loadMute);
+  useEffect(() => {
+    saveMute(muted);
+  }, [muted]);
+  const { play: playNoteSound } = useInstrumentSound('trumpet', { enabled: !muted });
+
   // Session status: timer + counters start on the first successful note. All live in
   // component state only — no session persistence, reset on unmount/page leave.
   const [hideStatus, setHideStatus] = useState<boolean>(loadHideStatus);
@@ -220,6 +241,29 @@ export function TrumpetDrillPage() {
   const currentNoteRef = useRef(currentNote);
   const heldRef = useRef(held);
 
+  /**
+   * The ONE success path: Space and the future on-screen submit button both
+   * call this, so both sound the note and advance. Reads every mutable input
+   * from a ref, so it never reads stale state and stays stable.
+   */
+  const submitAnswer = useCallback((): void => {
+    const required = getRequiredPistons(currentNoteRef.current);
+    if (required && pistonsMatch(heldRef.current, required)) {
+      if (startedAtRef.current === null) startedAtRef.current = performance.now();
+      setSuccessCount(c => c + 1);
+      // Capture BEFORE overwriting: the sound is for the note just answered.
+      const answeredNote = currentNoteRef.current;
+      const nextNote = randomNote(filterRef.current).note; // repeats allowed
+      currentNoteRef.current = nextNote;
+      setCurrentNote(nextNote);
+      // WRITTEN note name — the Bb transposition lives in the sound module.
+      playNoteSound(answeredNote);
+    } else {
+      // Failed check counts as a wrong note but never starts the timer.
+      setWrongCount(c => c + 1);
+    }
+  }, [playNoteSound]);
+
   useEffect(() => {
     const isEditableTarget = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
@@ -251,17 +295,7 @@ export function TrumpetDrillPage() {
 
       if (k === ' ') {
         event.preventDefault(); // Space scrolls the page
-        const required = getRequiredPistons(currentNoteRef.current);
-        if (required && pistonsMatch(heldRef.current, required)) {
-          if (startedAtRef.current === null) startedAtRef.current = performance.now();
-          setSuccessCount(c => c + 1);
-          const nextNote = randomNote(filterRef.current).note; // repeats allowed
-          currentNoteRef.current = nextNote;
-          setCurrentNote(nextNote);
-        } else {
-          // Failed check counts as a wrong note but never starts the timer.
-          setWrongCount(c => c + 1);
-        }
+        submitAnswer();
       }
     };
 
@@ -283,7 +317,7 @@ export function TrumpetDrillPage() {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
     };
-  }, []);
+  }, [submitAnswer]);
 
   return (
     <div className="pq-page">
@@ -331,17 +365,30 @@ export function TrumpetDrillPage() {
             {t('trumpet.filter.naturals')}
           </ToggleButton>
         </ToggleButtonGroup>
-        <FormControlLabel
-          control={
-            <Switch
-              checked={hideNoteName}
-              onChange={event => setHideNoteName(event.target.checked)}
-              size="small"
-              inputProps={{ 'aria-label': t('trumpet.filter.hide_names_aria') }}
-            />
-          }
-          label={t('trumpet.filter.hide_names')}
-        />
+        <div className="drill-filter__toggles">
+          <FormControlLabel
+            control={
+              <Switch
+                checked={muted}
+                onChange={event => setMuted(event.target.checked)}
+                size="small"
+                inputProps={{ 'aria-label': t('trumpet.filter.mute_aria') }}
+              />
+            }
+            label={t('trumpet.filter.mute')}
+          />
+          <FormControlLabel
+            control={
+              <Switch
+                checked={hideNoteName}
+                onChange={event => setHideNoteName(event.target.checked)}
+                size="small"
+                inputProps={{ 'aria-label': t('trumpet.filter.hide_names_aria') }}
+              />
+            }
+            label={t('trumpet.filter.hide_names')}
+          />
+        </div>
       </section>
 
       {/* ═ THE DRILL ══════════════════════════════════════════════════════ */}
