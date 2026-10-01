@@ -84,8 +84,9 @@ export function createSamplePlayer(): SamplePlayer {
     const cached = loading.get(path);
     if (cached !== undefined) return cached;
 
-    // Vite serves /public/* at the base URL. The app is hosted at /PitchQuest/,
-    // so import.meta.env.BASE_URL keeps this correct in dev ("/") and prod.
+    // vite.config.ts pins base to '/PitchQuest/' unconditionally, so
+    // import.meta.env.BASE_URL is '/PitchQuest/' in dev and prod alike.
+    // Root-relative '/sounds/...' paths would 404 in both environments.
     const url = `${import.meta.env.BASE_URL}${path}`;
 
     const pending = (async (): Promise<AudioBuffer | null> => {
