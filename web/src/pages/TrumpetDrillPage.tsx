@@ -491,7 +491,7 @@ export function TrumpetDrillPage() {
               <TrumpetDisplay held={held} maxHeight={240} />
             </div>
 
-            <div className="drill-valves" aria-label={t('trumpet.valves.aria')}>
+            <div className="drill-valves" role="group" aria-label={t('trumpet.valves.aria')}>
               {([1, 2, 3] as const).map(id => {
                 const down = held.has(id);
                 return (
