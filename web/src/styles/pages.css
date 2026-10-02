@@ -1228,6 +1228,29 @@
   box-shadow: var(--clay-pressed), inset 0 0 0 3px var(--green-700);
 }
 
+/* Seven tap-detent buttons below the trombone art — the primary touch input.
+   flex-wrap + fixed 56px targets means the row lays out 4+3 at 360px and a
+   single centred row once >=440px is available, with no media queries. */
+.trombone-detents {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-2);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Reuse the trumpet valve visuals; only the size differs so seven fit. */
+.trombone-detents .drill-valve {
+  flex: 0 0 auto;
+  width: 56px;
+  min-width: 44px;
+  height: 56px;
+  touch-action: manipulation;
+}
+
 .drill-legend {
   display: flex;
   flex-wrap: wrap;

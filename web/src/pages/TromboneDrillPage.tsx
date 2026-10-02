@@ -9,6 +9,8 @@ import {
   type NoteFilter,
 } from '../trombone/positions';
 import { SlideControl } from '../components/SlideControl';
+import { DrillSubmitButton } from '../components/DrillSubmitButton';
+import { HAPTIC_CORRECT, HAPTIC_WRONG, haptic } from '../utils/haptics';
 import { useT } from '../i18n/I18nContext';
 import { useInstrumentSound } from '../sound/useInstrumentSound';
 import SwipeRightRounded from '@mui/icons-material/SwipeRightRounded';
@@ -248,6 +250,7 @@ export function TromboneDrillPage() {
     if (required && positionMatches(heldPositionRef.current, required)) {
       if (startedAtRef.current === null) startedAtRef.current = performance.now();
       setSuccessCount(c => c + 1);
+      haptic(HAPTIC_CORRECT);
       // Capture BEFORE overwriting: the sound is for the note just answered.
       const answeredNote = currentNoteRef.current;
       const nextNote = randomNote(filterRef.current).note; // repeats allowed
@@ -258,6 +261,7 @@ export function TromboneDrillPage() {
     } else {
       // Failed check counts as a wrong note but never starts the timer.
       setWrongCount(c => c + 1);
+      haptic(HAPTIC_WRONG);
     }
   }, [playNoteSound]);
 
@@ -378,7 +382,7 @@ export function TromboneDrillPage() {
 
           {/* Trombone slide control — the image itself is the slider */}
           <div className="clay-well trombone-dragwell">
-            <SlideControl value={heldPosition} onChange={setHeldPosition} maxHeight={480} />
+            <SlideControl value={heldPosition} onChange={setHeldPosition} maxHeight={480} showTapDetents />
           </div>
         </div>
 
@@ -396,6 +400,15 @@ export function TromboneDrillPage() {
             {t('trombone.legend.space')}
           </span>
         </div>
+
+        {/* Touch hint — supplements the keyboard legend above, never replaces it. */}
+        <p className="drill-legend__touch">{t('trombone.legend.touch')}</p>
+
+        <DrillSubmitButton
+          onPress={submitAnswer}
+          label={t('trombone.submit.label')}
+          ariaLabel={t('trombone.submit.aria')}
+        />
       </section>
 
       {/* ═ SESSION STATUS ═════════════════════════════════════════════════ */}

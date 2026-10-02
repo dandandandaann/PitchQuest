@@ -3,6 +3,7 @@ import { Box, Stack } from '@mui/material';
 import type { PositionId } from '../trombone/positions';
 import { POSITION_COUNT, clampPosition, detentPct, positionFromRatio } from './slidePositions';
 import { useT } from '../i18n/I18nContext';
+import { HAPTIC_VALVE_DOWN, haptic } from '../utils/haptics';
 import { TromboneDisplay } from './TromboneDisplay';
 
 export interface SlideControlProps {
@@ -12,6 +13,8 @@ export interface SlideControlProps {
   onChange: (position: PositionId) => void;
   /** Max display height of the trombone image, in CSS pixels. */
   maxHeight?: number;
+  /** Render the 7 large tap-detent buttons below the art (mobile primary input). Default false. */
+  showTapDetents?: boolean;
 }
 
 /**
@@ -26,7 +29,7 @@ export interface SlideControlProps {
  * native image drag hijacks the pointer even with `draggable={false}`, and
  * `preventDefault()` on the surface's `pointerdown` suppresses it.
  */
-export function SlideControl({ value, onChange, maxHeight = 480 }: SlideControlProps) {
+export function SlideControl({ value, onChange, maxHeight = 480, showTapDetents = false }: SlideControlProps) {
   const t = useT();
   const numbersRef = useRef<HTMLDivElement | null>(null);
   const draggingRef = useRef(false);
@@ -56,6 +59,13 @@ export function SlideControl({ value, onChange, maxHeight = 480 }: SlideControlP
     return positionFromRatio(ratio);
   };
 
+  /** Snap to a new position from a pointer interaction, with a detent haptic. */
+  const snapTo = (next: PositionId) => {
+    if (next === value) return;
+    haptic(HAPTIC_VALVE_DOWN);
+    onChange(next);
+  };
+
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     // Suppresses the browser's native image drag, which otherwise hijacks the
     // pointer and swallows the rest of the drag. Also moves focus off the
@@ -66,14 +76,12 @@ export function SlideControl({ value, onChange, maxHeight = 480 }: SlideControlP
     event.currentTarget
       .querySelector<HTMLImageElement>('.trombone-dragwell__image')
       ?.focus();
-    const next = positionFromPointer(event.clientX);
-    if (next !== value) onChange(next);
+    snapTo(positionFromPointer(event.clientX));
   };
 
   const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
     if (!draggingRef.current) return;
-    const next = positionFromPointer(event.clientX);
-    if (next !== value) onChange(next);
+    snapTo(positionFromPointer(event.clientX));
   };
 
   const endDrag = (event: PointerEvent<HTMLDivElement>) => {
@@ -155,6 +163,41 @@ export function SlideControl({ value, onChange, maxHeight = 480 }: SlideControlP
           </Box>
         </Box>
       </Box>
+
+      {/* Seven tap-detent buttons: the primary touch input on mobile. Sits as
+          a SIBLING of the figure (never inside the drag surface) so taps here
+          can't bubble into the drag handler or trip setPointerCapture. */}
+      {showTapDetents && (
+        <Box className="trombone-detents" role="group" aria-label={t('trombone.detents.aria')}>
+          {([1, 2, 3, 4, 5, 6, 7] as const).map(p => {
+            const down = p === value;
+            return (
+              <button
+                key={p}
+                type="button"
+                className={`clay-chip drill-valve trombone-detent${down ? ' drill-valve--down' : ''}`}
+                aria-pressed={down}
+                aria-label={t('trombone.detent.aria').replace('{p}', String(p))}
+                onClick={() => snapTo(p)}
+                // A focused detent must not eat the drill's Space (submit) or
+                // Enter — preventDefault stops the button's native activation
+                // (Enter on keydown, Space on keyup) while still letting the
+                // event bubble to the window handler, which stays the only
+                // thing that submits.
+                onKeyDown={event => {
+                  if (event.key === ' ' || event.key === 'Enter') event.preventDefault();
+                }}
+                onKeyUp={event => {
+                  if (event.key === ' ') event.preventDefault();
+                }}
+                onContextMenu={event => event.preventDefault()}
+              >
+                {p}
+              </button>
+            );
+          })}
+        </Box>
+      )}
     </Stack>
   );
 }
