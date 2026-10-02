@@ -8,6 +8,7 @@
  *   - harmonic-series corrections (C4/C5 open, D4 low = 1+3, D5 = 1)
  *   - unknown note lookup
  *   - pistonsMatch order-independent truth table
+ *   - pistonsMatchIds (touch path) order-independent truth table
  *   - randomNote always returns a member of FINGERINGS
  */
 
@@ -15,11 +16,12 @@ import {
   FINGERINGS,
   getRequiredPistons,
   pistonsMatch,
+  pistonsMatchIds,
   randomNote,
   filterFingerings,
   isNatural,
 } from './fingerings';
-import type { PistonKey } from './fingerings';
+import type { PistonId, PistonKey } from './fingerings';
 
 export interface HarnessCase {
   name: string;
@@ -143,7 +145,42 @@ export function runFingeringsHarness(): HarnessCase[] {
     });
   }
 
-  // 9. randomNote returns member of FINGERINGS
+  // 9. pistonsMatchIds truth table (touch path, already PistonId-native)
+  //
+  //    RULE for duplicates in `required` — pinned here, both for
+  //    pistonsMatchIds below and, by the same implementation shape, for
+  //    pistonsMatch above: `required` is compared AS A MULTISET. The held set's
+  //    size must equal `required.length`, so a duplicated entry in `required`
+  //    is NOT ignored — it makes the lengths disagree and the match fails.
+  //    Duplicates in `required` never occur in practice (FINGERINGS lists each
+  //    piston at most once), and failing loudly on a malformed requirement is
+  //    safer than silently accepting it. See the T-C task report for the
+  //    alternative (deduplicate `required` and compare set sizes) — that is a
+  //    production change, out of scope for a test-only task.
+  {
+    const heldIds = (...ids: PistonId[]) => new Set<PistonId>(ids);
+    const checks = [
+      { desc: 'held {} vs required []', got: pistonsMatchIds(heldIds(), []), expected: true },
+      { desc: 'held {1} vs required [1]', got: pistonsMatchIds(heldIds(1), [1]), expected: true },
+      { desc: 'held {1,3} vs required [3,1] (order-independent)', got: pistonsMatchIds(heldIds(1, 3), [3, 1]), expected: true },
+      { desc: 'held {1} vs required [1,3] (missing)', got: pistonsMatchIds(heldIds(1), [1, 3]), expected: false },
+      { desc: 'held {1,2,3} vs required [] (extra)', got: pistonsMatchIds(heldIds(1, 2, 3), []), expected: false },
+      { desc: 'held {1,2} vs required [1,2]', got: pistonsMatchIds(heldIds(1, 2), [1, 2]), expected: true },
+      { desc: 'held {2,1} vs required [1,2] (order-independent)', got: pistonsMatchIds(heldIds(2, 1), [1, 2]), expected: true },
+      // Duplicates in `required` are NOT deduplicated (multiset rule, see above).
+      { desc: 'held {1,2,3} vs required [1,1,2,3] (duplicates in required are not ignored)', got: pistonsMatchIds(heldIds(1, 2, 3), [1, 1, 2, 3]), expected: false },
+    ];
+    const failed = checks.filter(c => c.got !== c.expected);
+    cases.push({
+      name: 'pistonsMatchIds truth table',
+      pass: failed.length === 0,
+      detail: failed.length === 0
+        ? 'all 8 pistonsMatchIds sub-checks pass'
+        : failed.map(c => `${c.desc}: got ${c.got}, expected ${c.expected}`).join('; '),
+    });
+  }
+
+  // 10. randomNote returns member of FINGERINGS
   {
     const runs = 200;
     const invalid = new Set<string>();
@@ -162,7 +199,7 @@ export function runFingeringsHarness(): HarnessCase[] {
     });
   }
 
-  // 10. filterFingerings('all') sanity
+  // 11. filterFingerings('all') sanity
   {
     const got = filterFingerings('all');
     const pass = got.length === 33;
@@ -175,7 +212,7 @@ export function runFingeringsHarness(): HarnessCase[] {
     });
   }
 
-  // 11. filterFingerings('sharps') uses trumpet semantic — count = 25
+  // 12. filterFingerings('sharps') uses trumpet semantic — count = 25
   //     (notes without 'b' in the name: 6 sharps + 19 naturals).
   //     Invariant: never a flat; contains all 6 sharps.
   {
@@ -193,7 +230,7 @@ export function runFingeringsHarness(): HarnessCase[] {
     });
   }
 
-  // 12. filterFingerings('flats') uses trumpet semantic — count = 27
+  // 13. filterFingerings('flats') uses trumpet semantic — count = 27
   //     (notes without '#' in the name: 8 flats + 19 naturals).
   //     Invariant: never a sharp; contains all 8 flats.
   {
@@ -211,7 +248,7 @@ export function runFingeringsHarness(): HarnessCase[] {
     });
   }
 
-  // 13. filterFingerings('naturals') count = 19, all pass isNatural
+  // 14. filterFingerings('naturals') count = 19, all pass isNatural
   {
     const got = filterFingerings('naturals');
     const nonNatural = got.filter(f => !isNatural(f.note)).map(f => f.note);
@@ -225,7 +262,7 @@ export function runFingeringsHarness(): HarnessCase[] {
     });
   }
 
-  // 14. randomNote('sharps') over 200 draws never yields a flat
+  // 15. randomNote('sharps') over 200 draws never yields a flat
   //     (naturals are allowed; sharps are required for full coverage, but
   //     with 6 sharps and 19 naturals the natural path is expected too).
   {

@@ -10,7 +10,7 @@ import type { ExpectedNote } from '../score/types';
 import { formatCents, formatBeats } from '../audio/utils/format';
 import { ScorePicker } from '../components/ScorePicker';
 import { useScoreSession } from '../audio/hooks/useScoreSession';
-import { useDevPanelHarnesses } from '../audio/hooks/useDevPanelHarnesses';
+import { DevPanel } from '../components/DevPanel';
 import { DEFAULT_SCORING_THRESHOLDS, type ScoringThresholds } from '../audio/Scorer';
 import { NoteLane } from '../components/NoteLane';
 import { useT } from '../i18n/I18nContext';
@@ -23,8 +23,6 @@ import SpeedRounded from '@mui/icons-material/SpeedRounded';
 import TimerRounded from '@mui/icons-material/TimerRounded';
 import InsightsRounded from '@mui/icons-material/InsightsRounded';
 import ReplayRounded from '@mui/icons-material/ReplayRounded';
-import CheckCircleRounded from '@mui/icons-material/CheckCircleRounded';
-import ErrorOutlineRounded from '@mui/icons-material/ErrorOutlineRounded';
 import GraphicEqRounded from '@mui/icons-material/GraphicEqRounded';
 
 const MAX_DETECTED_NOTES = 20; // Live log cap for segmented notes
@@ -41,7 +39,6 @@ export function PracticePage() {
     const { isStarted, startAudio, stopAudio, audioContext, audioStartPerfNow } = useAudioContext();
     const [detectedNotes, setDetectedNotes] = useState<DetectedNote[]>([]);
     const segmenterRef = useRef<NoteSegmenter | null>(null);
-    const [showDevPanel, setShowDevPanel] = useState(false);
 
     // Score picker state
     const [bpm, setBpm] = useState<number>(DEFAULT_BPM);
@@ -96,9 +93,6 @@ export function PracticePage() {
         setLoadedScore(null);
         // Keep the current BPM (user may have tuned it); don't force back to DEFAULT_BPM
     };
-
-    // Stage 6 Task 6: extract dev panel harnesses into a dedicated hook.
-    const harnesses = useDevPanelHarnesses();
 
     const pitchData = usePitchDetection({
         audioContext,
@@ -456,81 +450,8 @@ export function PracticePage() {
             )}
 
             {/* ══ DEV PANEL ═══════════════════════════════════════════════════ */}
-            <section className="clay-card dev-panel" aria-labelledby="dev-panel-title">
-                <h2 id="dev-panel-title" className="clay-eyebrow">
-                    {t('practice.dev.title')}
-                </h2>
-                <p className="clay-text dev-panel__lede">{t('practice.dev.lede')}</p>
-                <button
-                    type="button"
-                    className="clay-btn clay-btn--sm clay-btn--ghost"
-                    onClick={() => setShowDevPanel(s => !s)}
-                    aria-expanded={showDevPanel}
-                    aria-controls="dev-panel-content"
-                >
-                    {showDevPanel ? t('practice.dev.toggle_hide') : t('practice.dev.toggle_show')}
-                </button>
-
-                {showDevPanel && (
-                    <div id="dev-panel-content">
-                        <DevPanelContent harnesses={harnesses} />
-                    </div>
-                )}
-            </section>
-        </div>
-    );
-}
-
-// ---------------------------------------------------------------------------
-// Dev panel content (consumes harness results from useDevPanelHarnesses)
-// ---------------------------------------------------------------------------
-
-interface DevPanelContentProps {
-    harnesses: ReturnType<typeof useDevPanelHarnesses>;
-}
-
-function DevPanelContent({ harnesses }: DevPanelContentProps) {
-    const t = useT();
-    const { segmenter, timing, musicXml, matcher, scorer, incrementalMatcher } = harnesses;
-
-    function renderSection(
-        label: string,
-        result: { pass: number; fail: number; details: { name: string; pass: boolean; diff?: string }[] } | null,
-    ) {
-        if (!result) return null;
-        const total = result.pass + result.fail;
-        const allPass = result.fail === 0;
-        return (
-            <div className="dev-section">
-                <p className="dev-section__head">
-                    <span className={`clay-badge ${allPass ? 'clay-badge--green' : 'clay-badge--peach'}`}>
-                        {allPass ? <CheckCircleRounded sx={{ fontSize: 14 }} /> : <ErrorOutlineRounded sx={{ fontSize: 14 }} />}
-                        {t('practice.dev.pass')
-                            .replace('{pass}', String(result.pass))
-                            .replace('{total}', String(total))}
-                    </span>
-                    <span className="dev-section__label">{label}</span>
-                </p>
-                <ul className="dev-section__list">
-                    {result.details.map((d, i) => (
-                        <li key={i} className={`dev-case${d.pass ? '' : ' dev-case--fail'}`}>
-                            <span className="dev-case__name">{d.name}</span>
-                            {d.diff && <span className="dev-case__diff">{d.diff}</span>}
-                        </li>
-                    ))}
-                </ul>
-            </div>
-        );
-    }
-
-    return (
-        <div className="dev-grid">
-            {renderSection(t('practice.dev.section.segmenter'), segmenter)}
-            {renderSection(t('practice.dev.section.timing'), timing)}
-            {renderSection(t('practice.dev.section.parser'), musicXml)}
-            {renderSection(t('practice.dev.section.matcher'), matcher)}
-            {renderSection(t('practice.dev.section.scorer'), scorer)}
-            {renderSection(t('practice.dev.section.incremental'), incrementalMatcher)}
+            {/* The dev panel mounts every harness (audio, trumpet, trombone). */}
+            <DevPanel />
         </div>
     );
 }

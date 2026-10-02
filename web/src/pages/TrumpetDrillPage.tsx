@@ -19,6 +19,7 @@ import {
 } from '../trumpet/valvePress';
 import { TrumpetDisplay } from '../components/TrumpetDisplay';
 import { DrillSubmitButton } from '../components/DrillSubmitButton';
+
 import { HAPTIC_CORRECT, HAPTIC_VALVE_DOWN, HAPTIC_WRONG, haptic } from '../utils/haptics';
 import { useT } from '../i18n/I18nContext';
 import { useInstrumentSound } from '../sound/useInstrumentSound';
@@ -619,6 +620,7 @@ export function TrumpetDrillPage() {
         </span>
         <p className="clay-text">{t('trumpet.tip.body')}</p>
       </footer>
-    </div>
+
+      </div>
   );
 }

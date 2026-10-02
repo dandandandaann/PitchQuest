@@ -20,8 +20,10 @@
  *   - `section.*`    — sidebar section headings (reused as page eyebrows)
  *   - `home.*`       — HomePage copy
  *   - `tuner.*`      — TunerPage copy
- *   - `practice.*`   — PracticePage copy (including dev panel)
+ *   - `practice.*`   — PracticePage copy
  *   - `trumpet.*`    — TrumpetDrillPage copy
+ *   - `dev.*`        — shared dev-panel copy (mounted on every drill/practice
+ *                       page by components/DevPanel.tsx)
  *   - `components.*` — shared component copy (CentsMeter, ScorePicker, …)
  */
 export type TranslationKey =
@@ -143,17 +145,6 @@ export type TranslationKey =
   | 'practice.detected.title'
   | 'practice.detected.subtitle'
   | 'practice.detected.listening'
-  | 'practice.dev.title'
-  | 'practice.dev.lede'
-  | 'practice.dev.toggle_show'
-  | 'practice.dev.toggle_hide'
-  | 'practice.dev.pass'
-  | 'practice.dev.section.segmenter'
-  | 'practice.dev.section.timing'
-  | 'practice.dev.section.parser'
-  | 'practice.dev.section.matcher'
-  | 'practice.dev.section.scorer'
-  | 'practice.dev.section.incremental'
   // ── trumpet ───────────────────────────────────────────────────────────
   | 'trumpet.header.eyebrow'
   | 'trumpet.header.title'
@@ -195,6 +186,21 @@ export type TranslationKey =
   | 'trumpet.status.wrong'
   | 'trumpet.tip.eyebrow'
   | 'trumpet.tip.body'
+  // ── dev panel (shared by every page that mounts <DevPanel />) ──────────
+  | 'dev.title'
+  | 'dev.lede'
+  | 'dev.toggle_show'
+  | 'dev.toggle_hide'
+  | 'dev.pass'
+  | 'dev.section.segmenter'
+  | 'dev.section.timing'
+  | 'dev.section.parser'
+  | 'dev.section.matcher'
+  | 'dev.section.scorer'
+  | 'dev.section.incremental'
+  | 'dev.section.fingerings'
+  | 'dev.section.valve_press'
+  | 'dev.section.positions'
   // ── trombone ──────────────────────────────────────────────────────────
   | 'trombone.header.eyebrow'
   | 'trombone.header.title'
