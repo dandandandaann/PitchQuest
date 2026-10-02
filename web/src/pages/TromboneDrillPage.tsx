@@ -338,7 +338,7 @@ export function TromboneDrillPage() {
                 checked={muted}
                 onChange={event => setMuted(event.target.checked)}
                 size="small"
-                inputProps={{ 'aria-label': t('trombone.filter.mute_aria') }}
+                slotProps={{ input: { 'aria-label': t('trombone.filter.mute_aria') } }}
               />
             }
             label={t('trombone.filter.mute')}
@@ -349,7 +349,7 @@ export function TromboneDrillPage() {
                 checked={hideNoteName}
                 onChange={event => setHideNoteName(event.target.checked)}
                 size="small"
-                inputProps={{ 'aria-label': t('trombone.filter.hide_names_aria') }}
+                slotProps={{ input: { 'aria-label': t('trombone.filter.hide_names_aria') } }}
               />
             }
             label={t('trombone.filter.hide_names')}
@@ -410,7 +410,7 @@ export function TromboneDrillPage() {
                 checked={hideStatus}
                 onChange={event => setHideStatus(event.target.checked)}
                 size="small"
-                inputProps={{ 'aria-label': t('trombone.status.hide_aria') }}
+                slotProps={{ input: { 'aria-label': t('trombone.status.hide_aria') } }}
               />
             }
             label={t('trombone.status.hide')}

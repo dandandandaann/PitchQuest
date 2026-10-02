@@ -372,7 +372,7 @@ export function TrumpetDrillPage() {
                 checked={muted}
                 onChange={event => setMuted(event.target.checked)}
                 size="small"
-                inputProps={{ 'aria-label': t('trumpet.filter.mute_aria') }}
+                slotProps={{ input: { 'aria-label': t('trumpet.filter.mute_aria') } }}
               />
             }
             label={t('trumpet.filter.mute')}
@@ -383,7 +383,7 @@ export function TrumpetDrillPage() {
                 checked={hideNoteName}
                 onChange={event => setHideNoteName(event.target.checked)}
                 size="small"
-                inputProps={{ 'aria-label': t('trumpet.filter.hide_names_aria') }}
+                slotProps={{ input: { 'aria-label': t('trumpet.filter.hide_names_aria') } }}
               />
             }
             label={t('trumpet.filter.hide_names')}
@@ -463,7 +463,7 @@ export function TrumpetDrillPage() {
                 checked={hideStatus}
                 onChange={event => setHideStatus(event.target.checked)}
                 size="small"
-                inputProps={{ 'aria-label': t('trumpet.status.hide_aria') }}
+                slotProps={{ input: { 'aria-label': t('trumpet.status.hide_aria') } }}
               />
             }
             label={t('trumpet.status.hide')}
