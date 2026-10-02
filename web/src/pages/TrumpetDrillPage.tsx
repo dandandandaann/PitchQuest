@@ -1,15 +1,25 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { FormControlLabel, Switch, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { Renderer, Stave, StaveNote, Accidental, Voice, Formatter } from 'vexflow';
 import {
   KEY_TO_PISTON,
+  type PistonId,
   type PistonKey,
-  pistonsMatch,
+  pistonsMatchIds,
   getRequiredPistons,
   randomNote,
   type NoteFilter,
 } from '../trumpet/fingerings';
+import {
+  heldPistons,
+  pressValve,
+  releaseAll,
+  releaseValve,
+  type ValvePressMap,
+} from '../trumpet/valvePress';
 import { TrumpetDisplay } from '../components/TrumpetDisplay';
+import { DrillSubmitButton } from '../components/DrillSubmitButton';
+import { HAPTIC_CORRECT, HAPTIC_VALVE_DOWN, HAPTIC_WRONG, haptic } from '../utils/haptics';
 import { useT } from '../i18n/I18nContext';
 import { useInstrumentSound } from '../sound/useInstrumentSound';
 import KeyboardRounded from '@mui/icons-material/KeyboardRounded';
@@ -196,7 +206,7 @@ export function TrumpetDrillPage() {
   }, [hideNoteName]);
 
   // Instrument sound. The mute flag is persisted like the other view toggles;
-  // `play` is referentially stable, so `submitAnswer` below keeps its identity
+  // `play` is referentially stable, so `submit` below keeps its identity
   // across mute flips and the keydown listener can still be registered once.
   const [muted, setMuted] = useState<boolean>(loadMute);
   useEffect(() => {
@@ -227,28 +237,67 @@ export function TrumpetDrillPage() {
     return () => window.clearInterval(id);
   }, []);
 
-  const [held, setHeld] = useState<ReadonlySet<PistonKey>>(() => new Set());
+  // ── Held valves ────────────────────────────────────────────────────────
+  // PistonId-native (1/2/3) all the way down: keyboard presses arrive as
+  // J/K/L and convert once via KEY_TO_PISTON, pointer presses already carry the
+  // id. The display, the matcher and the trumpet graphic all read `held` directly.
+  const [held, setHeld] = useState<ReadonlySet<PistonId>>(() => new Set());
 
-  // The display layer works in PistonId land (1/2/3) while keyboard logic stays in
-  // PistonKey land (J/K/L) — convert only here, memoized on the held set.
-  const heldPistonIds = useMemo(
-    () => new Set([...held].map((k) => KEY_TO_PISTON[k])),
-    [held],
+  // Latest-value refs so the handlers below (mounted once, stable deps) never
+  // read stale state when checking Space against the current note + held pistons.
+  const heldRef = useRef(held);
+  const currentNoteRef = useRef(currentNote);
+
+  // Two sources feed `held`, and they must not clobber each other:
+  //   keyHeldRef  — pistons held by a physical J/K/L key (no pointer id exists)
+  //   pressMapRef — pointerId → piston for every finger down on a valve
+  // `held` is the union. Only releasing one source ever drops its own valves.
+  const keyHeldRef = useRef<ReadonlySet<PistonId>>(new Set());
+  const pressMapRef = useRef<ValvePressMap>(releaseAll());
+
+  const applyHeld = useCallback((next: ReadonlySet<PistonId>): void => {
+    heldRef.current = next;
+    setHeld(next);
+  }, []);
+
+  /** Commit a new keyboard-held set, merged with whatever fingers are holding. */
+  const applyKeyHeld = useCallback(
+    (next: ReadonlySet<PistonId>): void => {
+      keyHeldRef.current = next;
+      applyHeld(new Set([...next, ...heldPistons(pressMapRef.current)]));
+    },
+    [applyHeld],
   );
 
-  // Latest-value refs so the key handlers below (mounted once, empty deps) never
-  // read stale state when checking SPACE against the current note + held pistons.
-  const currentNoteRef = useRef(currentNote);
-  const heldRef = useRef(held);
+  /** Commit a new pointer map, merged with whatever keys are holding. */
+  const applyPressMap = useCallback(
+    (next: ValvePressMap): void => {
+      pressMapRef.current = next;
+      applyHeld(new Set([...keyHeldRef.current, ...heldPistons(next)]));
+    },
+    [applyHeld],
+  );
 
   /**
-   * The ONE success path: Space and the future on-screen submit button both
-   * call this, so both sound the note and advance. Reads every mutable input
-   * from a ref, so it never reads stale state and stays stable.
+   * The stuck-valve safety net. A valve must never stay down once the input
+   * that held it is gone, so every path that can steal a pointer or a keypress
+   * (pointercancel, lostpointercapture, window blur, tab hidden, unmount) ends
+   * up here and clears BOTH sources.
    */
-  const submitAnswer = useCallback((): void => {
+  const releaseAllValves = useCallback((): void => {
+    keyHeldRef.current = new Set();
+    pressMapRef.current = releaseAll();
+    applyHeld(new Set());
+  }, [applyHeld]);
+
+  /**
+   * The ONE success path: the Space key and the on-screen submit button both
+   * call this, so both score, sound and advance identically. Reads every mutable
+   * input from a ref, so it never reads stale state and stays stable.
+   */
+  const submit = useCallback((): void => {
     const required = getRequiredPistons(currentNoteRef.current);
-    if (required && pistonsMatch(heldRef.current, required)) {
+    if (required && pistonsMatchIds(heldRef.current, required)) {
       if (startedAtRef.current === null) startedAtRef.current = performance.now();
       setSuccessCount(c => c + 1);
       // Capture BEFORE overwriting: the sound is for the note just answered.
@@ -258,11 +307,29 @@ export function TrumpetDrillPage() {
       setCurrentNote(nextNote);
       // WRITTEN note name — the Bb transposition lives in the sound module.
       playNoteSound(answeredNote);
+      haptic(HAPTIC_CORRECT);
     } else {
       // Failed check counts as a wrong note but never starts the timer.
       setWrongCount(c => c + 1);
+      haptic(HAPTIC_WRONG);
     }
+    // NOTE: held valves are deliberately NOT cleared — a multi-finger player
+    // keeps every finger that is still down after a check.
   }, [playNoteSound]);
+
+  /**
+   * Release the valve one pointer was holding. Pointer capture makes the
+   * browser deliver pointerup to the button regardless of where the finger
+   * lifted, so no pointerout/pointerleave bookkeeping is needed (and those two
+   * are suppressed while capture is active anyway).
+   */
+  const releasePointer = useCallback(
+    (pointerId: number): void => {
+      if (!pressMapRef.current.has(pointerId)) return; // already released
+      applyPressMap(releaseValve(pressMapRef.current, pointerId));
+    },
+    [applyPressMap],
+  );
 
   useEffect(() => {
     const isEditableTarget = (event: KeyboardEvent) => {
@@ -275,11 +342,6 @@ export function TrumpetDrillPage() {
       );
     };
 
-    const setHeldKeys = (next: ReadonlySet<PistonKey>) => {
-      heldRef.current = next;
-      setHeld(next);
-    };
-
     const onKeyDown = (event: KeyboardEvent) => {
       if (isEditableTarget(event)) return;
       if (event.repeat) return; // prevent SPACE auto-repeat from cycling notes
@@ -287,15 +349,15 @@ export function TrumpetDrillPage() {
       const k = event.key.toUpperCase();
 
       if (k === 'J' || k === 'K' || k === 'L') {
-        const next = new Set(heldRef.current);
-        next.add(k);
-        setHeldKeys(next);
+        const next = new Set(keyHeldRef.current);
+        next.add(KEY_TO_PISTON[k as PistonKey]);
+        applyKeyHeld(next);
         return;
       }
 
       if (k === ' ') {
         event.preventDefault(); // Space scrolls the page
-        submitAnswer();
+        submit();
       }
     };
 
@@ -304,20 +366,32 @@ export function TrumpetDrillPage() {
 
       const k = event.key.toUpperCase();
       if (k === 'J' || k === 'K' || k === 'L') {
-        const next = new Set(heldRef.current);
-        next.delete(k);
-        setHeldKeys(next);
+        const next = new Set(keyHeldRef.current);
+        next.delete(KEY_TO_PISTON[k as PistonKey]);
+        applyKeyHeld(next);
       }
       // No action for SPACE keyup.
     };
 
+    // A keyup that never arrives (window switch, tab switch, page tear-down)
+    // would leave a valve stuck down forever — release on all of them.
+    const onBlur = () => releaseAllValves();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') releaseAllValves();
+    };
+
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', onBlur);
+    document.addEventListener('visibilitychange', onVisibilityChange);
     return () => {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', onBlur);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      releaseAllValves(); // unmount: never leave a valve stuck
     };
-  }, [submitAnswer]);
+  }, [submit, applyKeyHeld, releaseAllValves]);
 
   return (
     <div className="pq-page">
@@ -413,27 +487,54 @@ export function TrumpetDrillPage() {
           {/* Trumpet + held valves */}
           <div className="drill-side">
             <div className="clay-well drill-side__trumpet">
-              <TrumpetDisplay held={heldPistonIds} maxHeight={240} />
+              <TrumpetDisplay held={held} maxHeight={240} />
             </div>
 
             <div className="drill-valves" aria-label={t('trumpet.valves.aria')}>
               {([1, 2, 3] as const).map(id => {
-                const down = heldPistonIds.has(id);
+                const down = held.has(id);
                 return (
-                  <span
+                  <button
                     key={id}
+                    type="button"
                     className={`clay-chip drill-valve${down ? ' drill-valve--down' : ''}`}
+                    aria-pressed={down}
                     aria-label={t(down ? 'trumpet.valve.held' : 'trumpet.valve.released').replace('{id}', String(id))}
+                    // Press-and-hold per finger: capture keeps this button the
+                    // event target until the finger lifts, so 1, 2 or 3 valves
+                    // can be held at once and each lifts independently.
+                    onPointerDown={event => {
+                      event.preventDefault(); // no text selection / no focus steal
+                      event.currentTarget.setPointerCapture(event.pointerId);
+                      applyPressMap(pressValve(pressMapRef.current, event.pointerId, id));
+                      haptic(HAPTIC_VALVE_DOWN);
+                    }}
+                    onPointerUp={event => releasePointer(event.pointerId)}
+                    onPointerCancel={event => releasePointer(event.pointerId)}
+                    onLostPointerCapture={event => releasePointer(event.pointerId)}
+                    // A focused valve must not eat the drill's Space (submit)
+                    // or Enter — preventDefault stops the button's native
+                    // activation (Enter on keydown, Space on keyup) while still
+                    // letting the event bubble to the window handler, which
+                    // stays the only thing that submits.
+                    onKeyDown={event => {
+                      if (event.key === ' ' || event.key === 'Enter') event.preventDefault();
+                    }}
+                    onKeyUp={event => {
+                      if (event.key === ' ') event.preventDefault();
+                    }}
+                    // Kill the iOS/Android long-press callout on a press-and-hold.
+                    onContextMenu={event => event.preventDefault()}
                   >
                     {id}
-                  </span>
+                  </button>
                 );
               })}
             </div>
           </div>
         </div>
 
-        {/* Keyboard legend */}
+        {/* Keyboard legend — always visible, even on touch devices. */}
         <div className="drill-legend">
           <span className="drill-legend__item">
             <kbd className="kbd">J</kbd> {t('trumpet.legend.valve1')}
@@ -449,6 +550,15 @@ export function TrumpetDrillPage() {
             <span className="clay-visually-hidden">{t('trumpet.legend.space_key_name')}</span> {t('trumpet.legend.space')}
           </span>
         </div>
+
+        {/* Touch hint — supplements the keyboard legend above, never replaces it. */}
+        <p className="drill-legend__touch">{t('trumpet.legend.touch')}</p>
+
+        <DrillSubmitButton
+          onPress={submit}
+          label={t('trumpet.submit.label')}
+          ariaLabel={t('trumpet.submit.aria')}
+        />
       </section>
 
       {/* ═ SESSION STATUS ═════════════════════════════════════════════════ */}

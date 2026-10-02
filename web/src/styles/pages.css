@@ -1155,41 +1155,77 @@
 }
 
 /* Touch hardening: a roomier gap between the three targets and no grey tap
-   flash on mobile. Valve sizing itself is handled elsewhere. */
+   flash on mobile. `touch-action` / `user-select` / `-webkit-touch-callout`
+   are NOT inherited, so they are repeated on `.drill-valve` below — without
+   them a finger resting on a valve can scroll the page, zoom it, select the
+   digits as text, or pop the iOS callout. Scoped to this subtree only. */
 .drill-valves {
   display: flex;
   gap: var(--sp-4);
+  width: 100%;
+  max-width: 320px;
   -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 /* On-screen replacement for the Space key. Full-width and thumb-sized; the
-   clay look comes from .clay-btn--primary. */
+   clay look comes from .clay-btn--primary. `touch-action: manipulation` keeps
+   pan/pinch but drops double-tap-zoom, so a quick tap is never swallowed
+   waiting to see whether a second one follows (also set via `sx` in
+   DrillSubmitButton, so the rule survives moving this class). */
 .drill-submit {
   width: 100%;
-  min-height: 56px;
   margin-top: var(--sp-4);
+  touch-action: manipulation;
 }
 
+/* The 56px minimum touch target. This needs a specificity bump: `.clay-btn`
+   sets min-height: 48px and MUI's `.MuiButton-root` sets its own, and Emotion
+   appends its <style> tags to <head> at runtime — AFTER this stylesheet — so
+   a lone `.drill-submit` (0,1,0) loses on source order and the button measured
+   48px, not 56px. `.drill-stage` + the MUI class lifts this to (0,3,0), which
+   wins without `!important` and without hard-coding a generated class name. */
+.drill-stage .drill-submit.MuiButton-root {
+  min-height: 56px;
+}
+
+/* A real <button> now (press-and-hold, per-pointer capture), so it needs the
+   UA button defaults neutralised on top of the chip look. The three targets
+   share the row equally and never drop below a 64px touch target; at 360px
+   viewport they measure 80px each, so all three stay on one row. */
 .drill-valve {
-  width: 52px;
-  height: 52px;
+  flex: 1 1 0;
+  min-width: 64px;
+  height: 64px;
   padding: 0;
+  border: 0;
   font-size: 1.25rem;
+  line-height: 1;
   color: var(--ink-soft);
   background: var(--clay-white);
+  cursor: pointer;
   box-shadow: var(--clay-inner-soft), inset 0 0 0 2px var(--peach-300);
   transition:
     transform var(--dur) var(--ease-clay),
     background-color var(--dur) var(--ease-out),
     box-shadow var(--dur) var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
-/* Held = pressed INTO the surface (inverted shadow), plus a colour shift. */
+/* Held = pressed INTO the surface (inverted shadow), plus a colour shift and a
+   thicker green rim so the pressed state is unmistakable under a finger. */
 .drill-valve--down {
   color: var(--ink);
   background: var(--clay-green);
   transform: translateY(2px);
-  box-shadow: var(--clay-pressed), inset 0 0 0 2px var(--green-700);
+  box-shadow: var(--clay-pressed), inset 0 0 0 3px var(--green-700);
 }
 
 .drill-legend {
@@ -1206,6 +1242,14 @@
   gap: 8px;
   font-size: var(--fs-sm);
   font-weight: 700;
+  color: var(--ink-soft);
+}
+
+/* Touch hint that sits under the keyboard legend. It supplements the kbd
+   legend, never replaces it — both stay visible. */
+.drill-legend__touch {
+  margin: var(--sp-3) 0 0;
+  font-size: var(--fs-sm);
   color: var(--ink-soft);
 }
 

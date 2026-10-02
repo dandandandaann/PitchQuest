@@ -112,3 +112,20 @@ export function pistonsMatch(
   }
   return true;
 }
+
+/**
+ * Same order-independent set comparison as {@link pistonsMatch}, but for a held
+ * set that is already in PistonId land (1/2/3). Used by the touch path, where
+ * the held set comes from the multi-pointer map rather than from key events, so
+ * there is nothing to translate.
+ */
+export function pistonsMatchIds(
+  held: ReadonlySet<PistonId>,
+  required: readonly PistonId[],
+): boolean {
+  if (held.size !== required.length) return false;
+  for (const p of required) {
+    if (!held.has(p)) return false;
+  }
+  return true;
+}
