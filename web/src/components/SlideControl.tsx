@@ -76,8 +76,11 @@ export function SlideControl({ value, onChange, maxHeight = 480, showTapDetents 
     // (e.g. a replayed/synthetic pointerdown). Guard it so a failed capture
     // can never leave draggingRef stuck true — that used to hijack every
     // later pointermove over the surface. Mirrors TrumpetDrillPage's valve
-    // guard; a pointer that ALREADY holds capture counts as captured, since
-    // touch's implicit capture is active by the time pointerdown dispatches.
+    // guard. The hasPointerCapture check is just a cheap short-circuit when
+    // capture is already held — it does NOT make real drags work; that is the
+    // setPointerCapture call below, which is REQUIRED (touch's implicit
+    // capture lands on the pointerdown target, not this surface) and must
+    // stay so pointermoves keep tracking while the pointer is down.
     let captured = target.hasPointerCapture?.(event.pointerId) === true;
     if (!captured) {
       try {
