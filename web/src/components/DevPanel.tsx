@@ -1,7 +1,8 @@
 /**
  * DevPanel — the shared "developer" card with the live pure-function harness
- * results. Mounted by PracticePage, TrumpetDrillPage and (soon)
- * TromboneDrillPage; every page shows the same full set of harnesses.
+ * results. Mounted ONLY by PracticePage (see `web/src/pages/PracticePage.tsx`).
+ * Deliberately not mounted on TrumpetDrillPage or TromboneDrillPage by manager
+ * decision — do not re-add those mounts without asking.
  *
  * Owns the collapsed/expanded state and the rendering of the two result shapes
  * returned by useDevPanelHarnesses (see that hook for the shapes). Collapsed
