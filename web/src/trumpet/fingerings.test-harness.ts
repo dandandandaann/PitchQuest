@@ -175,31 +175,39 @@ export function runFingeringsHarness(): HarnessCase[] {
     });
   }
 
-  // 11. filterFingerings('sharps') is exactly the 6 sharp notes
+  // 11. filterFingerings('sharps') uses trumpet semantic — count = 25
+  //     (notes without 'b' in the name: 6 sharps + 19 naturals).
+  //     Invariant: never a flat; contains all 6 sharps.
   {
     const expected = new Set(['F#3', 'C#4', 'F#4', 'C#5', 'F#5', 'C#6']);
-    const got = new Set(filterFingerings('sharps').map(f => f.note));
-    const pass = got.size === expected.size && [...expected].every(n => got.has(n));
+    const got = filterFingerings('sharps').map(f => f.note);
+    const gotSet = new Set(got);
+    const containsFlat = got.some(n => n.includes('b'));
+    const pass = got.length === 25 && !containsFlat && [...expected].every(n => gotSet.has(n));
     cases.push({
-      name: "filterFingerings('sharps') is exactly the 6 expected sharp notes",
+      name: "filterFingerings('sharps') count = 25 (trumpet semantics: sharps + naturals)",
       pass,
       detail: pass
-        ? 'sharps = {F#3, C#4, F#4, C#5, F#5, C#6}'
-        : `sharps = {${[...got].join(', ')}} (expected {${[...expected].join(', ')}})`,
+        ? `filterFingerings('sharps').length=25, no flats, contains all 6 sharps`
+        : `length=${got.length} (expected 25), containsFlat=${containsFlat}, missing sharps: ${[...expected].filter(n => !gotSet.has(n)).join(', ') || 'none'}`,
     });
   }
 
-  // 12. filterFingerings('flats') is exactly the 8 flat notes
+  // 12. filterFingerings('flats') uses trumpet semantic — count = 27
+  //     (notes without '#' in the name: 8 flats + 19 naturals).
+  //     Invariant: never a sharp; contains all 8 flats.
   {
     const expected = new Set(['Ab3', 'Bb3', 'Eb4', 'Ab4', 'Bb4', 'Eb5', 'Ab5', 'Bb5']);
-    const got = new Set(filterFingerings('flats').map(f => f.note));
-    const pass = got.size === expected.size && [...expected].every(n => got.has(n));
+    const got = filterFingerings('flats').map(f => f.note);
+    const gotSet = new Set(got);
+    const containsSharp = got.some(n => n.includes('#'));
+    const pass = got.length === 27 && !containsSharp && [...expected].every(n => gotSet.has(n));
     cases.push({
-      name: "filterFingerings('flats') is exactly the 8 expected flat notes",
+      name: "filterFingerings('flats') count = 27 (trumpet semantics: flats + naturals)",
       pass,
       detail: pass
-        ? 'flats = {Ab3, Bb3, Eb4, Ab4, Bb4, Eb5, Ab5, Bb5}'
-        : `flats = {${[...got].join(', ')}} (expected {${[...expected].join(', ')}})`,
+        ? `filterFingerings('flats').length=27, no sharps, contains all 8 flats`
+        : `length=${got.length} (expected 27), containsSharp=${containsSharp}, missing flats: ${[...expected].filter(n => !gotSet.has(n)).join(', ') || 'none'}`,
     });
   }
 
@@ -217,20 +225,22 @@ export function runFingeringsHarness(): HarnessCase[] {
     });
   }
 
-  // 14. randomNote('sharps') over 200 draws always yields a sharp note
+  // 14. randomNote('sharps') over 200 draws never yields a flat
+  //     (naturals are allowed; sharps are required for full coverage, but
+  //     with 6 sharps and 19 naturals the natural path is expected too).
   {
     const runs = 200;
-    const invalid = new Set<string>();
+    const flats = new Set<string>();
     for (let i = 0; i < runs; i++) {
       const n = randomNote('sharps');
-      if (!n.note.includes('#')) invalid.add(n.note);
+      if (n.note.includes('b')) flats.add(n.note);
     }
     cases.push({
-      name: "randomNote('sharps') over 200 draws always yields a sharp note",
-      pass: invalid.size === 0,
-      detail: invalid.size === 0
-        ? `${runs} draws from 'sharps', all contain #`
-        : `${runs} draws from 'sharps' produced non-sharps: ${[...invalid].join(', ')}`,
+      name: "randomNote('sharps') over 200 draws never yields a flat",
+      pass: flats.size === 0,
+      detail: flats.size === 0
+        ? `${runs} draws from 'sharps', no flats`
+        : `${runs} draws from 'sharps' produced flats: ${[...flats].join(', ')}`,
     });
   }
 

@@ -49,11 +49,20 @@ export function isNatural(note: string): boolean {
 }
 
 /**
- * Returns the subset of POSITIONS matching the filter:
+ * Returns the subset of POSITIONS matching the filter. Each branch
+ * EXCLUDES the opposite accidental class rather than restricting to one
+ * class, so the four filters overlap on natural notes by design:
  *   'all'      → full POSITIONS (same reference)
- *   'sharps'   → notes containing '#'
- *   'flats'    → notes containing 'b'
- *   'naturals' → notes containing neither (see isNatural)
+ *   'sharps'   → excludes flats   → {sharps, naturals}
+ *   'flats'    → excludes sharps  → {flats,  naturals}
+ *   'naturals' → excludes both    → {naturals only}   (see isNatural)
+ *
+ * Rationale: the drill UI presents these four filters as mutually exclusive
+ * buttons (All / Sharps / Flats / Naturals), so each branch removes a single
+ * accidental class instead of narrowing to one. This lets the user keep
+ * natural notes visible while focusing on just one chromatic spelling.
+ * (The trumpet module uses the same convention; its harness refers to this
+ * as "trumpet semantics".)
  */
 export function filterPositions(filter: NoteFilter): readonly SlidePosition[] {
   if (filter === 'sharps') return POSITIONS.filter(p => !p.note.includes('b'));

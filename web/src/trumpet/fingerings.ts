@@ -57,11 +57,18 @@ export function isNatural(note: string): boolean {
 }
 
 /**
- * Returns the subset of FINGERINGS matching the filter:
+ * Returns the subset of FINGERINGS matching the filter. Each branch
+ * EXCLUDES the opposite accidental class rather than restricting to one
+ * class, so the four filters overlap on natural notes by design:
  *   'all'      → full FINGERINGS (same reference)
- *   'sharps'   → notes containing '#'
- *   'flats'    → notes containing 'b'
- *   'naturals' → notes containing neither (see isNatural)
+ *   'sharps'   → excludes flats   → {sharps, naturals}
+ *   'flats'    → excludes sharps  → {flats,  naturals}
+ *   'naturals' → excludes both    → {naturals only}   (see isNatural)
+ *
+ * Rationale: the drill UI presents these four filters as mutually exclusive
+ * buttons (All / Sharps / Flats / Naturals), so each branch removes a single
+ * accidental class instead of narrowing to one. This lets the user keep
+ * natural notes visible while focusing on just one chromatic spelling.
  */
 export function filterFingerings(filter: NoteFilter): readonly Fingering[] {
   if (filter === 'sharps') return FINGERINGS.filter(f => !f.note.includes('b'));
