@@ -75,7 +75,10 @@ export function DrillSubmitButton({ onPress, label, ariaLabel }: DrillSubmitButt
         pressedPointerId.current = null;
       }}
       onKeyDown={event => {
-        // Space stays the page's window handler (see above).
+        // preventDefault cancels the button's native Space activation (which
+        // fires on keyup); the event still bubbles to the page's window
+        // keydown handler so the drill's Space-submit path stays intact.
+        // Enter is handled just below (see the doc block above).
         if (event.key === ' ') event.preventDefault();
         if (event.key === 'Enter' && !event.repeat) {
           event.preventDefault();
