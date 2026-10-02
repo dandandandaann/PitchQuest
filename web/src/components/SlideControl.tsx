@@ -71,11 +71,25 @@ export function SlideControl({ value, onChange, maxHeight = 480, showTapDetents 
     // pointer and swallows the rest of the drag. Also moves focus off the
     // default mousedown target, so focus the slider handle explicitly.
     event.preventDefault();
+    const target = event.currentTarget;
+    // Capture can throw NotFoundError when the pointer is no longer active
+    // (e.g. a replayed/synthetic pointerdown). Guard it so a failed capture
+    // can never leave draggingRef stuck true — that used to hijack every
+    // later pointermove over the surface. Mirrors TrumpetDrillPage's valve
+    // guard; a pointer that ALREADY holds capture counts as captured, since
+    // touch's implicit capture is active by the time pointerdown dispatches.
+    let captured = target.hasPointerCapture?.(event.pointerId) === true;
+    if (!captured) {
+      try {
+        target.setPointerCapture(event.pointerId);
+        captured = true;
+      } catch {
+        /* pointer not active; ignore */
+      }
+    }
+    if (!captured) return;
     draggingRef.current = true;
-    event.currentTarget.setPointerCapture(event.pointerId);
-    event.currentTarget
-      .querySelector<HTMLImageElement>('.trombone-dragwell__image')
-      ?.focus();
+    target.querySelector<HTMLImageElement>('.trombone-dragwell__image')?.focus();
     snapTo(positionFromPointer(event.clientX));
   };
 
@@ -91,6 +105,21 @@ export function SlideControl({ value, onChange, maxHeight = 480, showTapDetents 
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
   };
+
+  /** Abandon an in-flight drag (window blur, tab hidden, unmount). */
+  const cancelDrag = () => {
+    draggingRef.current = false;
+  };
+
+  // The listener set is stable, so an empty dep array is correct here.
+  useEffect(() => {
+    window.addEventListener('blur', cancelDrag);
+    document.addEventListener('visibilitychange', cancelDrag);
+    return () => {
+      window.removeEventListener('blur', cancelDrag);
+      document.removeEventListener('visibilitychange', cancelDrag);
+    };
+  }, []);
 
   const onKeyDown = (event: KeyboardEvent<HTMLImageElement>) => {
     let next: PositionId | null = null;
@@ -128,6 +157,7 @@ export function SlideControl({ value, onChange, maxHeight = 480, showTapDetents 
           onPointerMove={onPointerMove}
           onPointerUp={endDrag}
           onPointerCancel={endDrag}
+          onLostPointerCapture={endDrag}
         >
           <TromboneDisplay
             position={value}
@@ -179,13 +209,14 @@ export function SlideControl({ value, onChange, maxHeight = 480, showTapDetents 
                 aria-pressed={down}
                 aria-label={t('trombone.detent.aria').replace('{p}', String(p))}
                 onClick={() => snapTo(p)}
-                // A focused detent must not eat the drill's Space (submit) or
-                // Enter — preventDefault stops the button's native activation
-                // (Enter on keydown, Space on keyup) while still letting the
-                // event bubble to the window handler, which stays the only
-                // thing that submits.
+                // Space is reserved by the drill's window handler for
+                // "check & advance", so preventDefault stops the button's
+                // native Space activation (which fires on keyup) while the
+                // event still bubbles to the window handler. Enter keeps its
+                // native button activation on keydown and therefore selects
+                // this detent — do not preventDefault it.
                 onKeyDown={event => {
-                  if (event.key === ' ' || event.key === 'Enter') event.preventDefault();
+                  if (event.key === ' ') event.preventDefault();
                 }}
                 onKeyUp={event => {
                   if (event.key === ' ') event.preventDefault();
