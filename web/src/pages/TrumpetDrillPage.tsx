@@ -506,7 +506,27 @@ export function TrumpetDrillPage() {
                     // can be held at once and each lifts independently.
                     onPointerDown={event => {
                       event.preventDefault(); // no text selection / no focus steal
-                      event.currentTarget.setPointerCapture(event.pointerId);
+                      // Mirror DrillSubmitButton's release-side guard: only act
+                      // if we actually hold the capture. hasPointerCapture
+                      // filters synthetic never-active pointerIds; the try is
+                      // belt-and-braces for any other Blink edge case. A failed
+                      // capture drops the press — same behaviour as today
+                      // (the NotFoundError used to abort the handler).
+                      // NOTE: a pointer that ALREADY holds the capture (touch's
+                      // implicit capture is active by the time pointerdown
+                      // dispatches) counts as captured — otherwise every real
+                      // touch press would be dropped.
+                      const target = event.currentTarget;
+                      let captured = target.hasPointerCapture?.(event.pointerId) === true;
+                      if (!captured) {
+                        try {
+                          target.setPointerCapture(event.pointerId);
+                          captured = true;
+                        } catch {
+                          // pointer is not active; ignore silently
+                        }
+                      }
+                      if (!captured) return;
                       applyPressMap(pressValve(pressMapRef.current, event.pointerId, id));
                       haptic(HAPTIC_VALVE_DOWN);
                     }}
