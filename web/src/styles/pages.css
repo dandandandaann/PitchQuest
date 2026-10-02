@@ -1403,16 +1403,22 @@
   outline-offset: 2px;
 }
 
-/* Ruler overlapping the bottom of the trombone, aligned to the brace travel
-   band of the image. Image is 2700x1000 (2.7:1), artwork left-anchored
-   (body at x=88). The slide brace travels from x=842 (pos-1) to x=1639
-   (pos-7), so the band is left:31.19%, width:29.52% of the figure width. */
+/* Ruler sitting in normal flow BELOW the trombone image, horizontally aligned
+   to the brace travel band of the image. Image is 2700x1000 (2.7:1), artwork
+   left-anchored (body at x=88). The slide brace travels from x=842 (pos-1) to
+   x=1639 (pos-7), so the band is left:31.19%, width:29.52% of the figure
+   width. The ruler used to overlap the brace via a fixed margin-top: -100px,
+   but at phone widths the image shrinks (~183px tall) and the ruler landed
+   mid-image — a fixed-pixel overlap is not robust across sizes, so it lives
+   in normal flow below the art instead. Horizontal geometry (width /
+   margin-left) must stay in sync with positionFromPointer, which maps drag
+   clientX through this band's getBoundingClientRect(). */
 .trombone-dragwell__ruler {
-  position: relative;
+  position: relative; /* ticks below are absolutely positioned against this box */
   width: 29.52%;
   margin-left: 30.4%;
   height: 44px;
-  margin-top: -100px;
+  margin-top: var(--sp-2);
   pointer-events: none;
 }
 
