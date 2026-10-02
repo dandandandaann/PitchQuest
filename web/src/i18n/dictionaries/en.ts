@@ -180,6 +180,10 @@ export const en: Record<TranslationKey, string> = {
   'trumpet.legend.valve3': 'valve 3',
   'trumpet.legend.space': 'check & advance',
   'trumpet.legend.space_key_name': 'Space',
+  'trumpet.legend.touch':
+    'On a touchscreen, press and hold the valve buttons with your fingers, then tap the button below to advance.',
+  'trumpet.submit.label': 'Check & next note',
+  'trumpet.submit.aria': 'Check the valves and advance to the next note',
   'trumpet.status.title': 'Session',
   'trumpet.status.hide': 'Hide',
   'trumpet.status.hide_aria': 'Hide status values',

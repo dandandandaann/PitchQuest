@@ -1154,9 +1154,20 @@
   height: auto;
 }
 
+/* Touch hardening: a roomier gap between the three targets and no grey tap
+   flash on mobile. Valve sizing itself is handled elsewhere. */
 .drill-valves {
   display: flex;
-  gap: var(--sp-3);
+  gap: var(--sp-4);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* On-screen replacement for the Space key. Full-width and thumb-sized; the
+   clay look comes from .clay-btn--primary. */
+.drill-submit {
+  width: 100%;
+  min-height: 56px;
+  margin-top: var(--sp-4);
 }
 
 .drill-valve {
