@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate the 14 General-MIDI brass samples for PitchQuest.
 
-Run from anywhere:  python3 web/scripts/make_sound_samples.py   (no arguments)
+Run from anywhere:  python3 web/scripts/make_sound_samples.py [--only <instrument>]
 
 Output
 ------
@@ -23,6 +23,12 @@ instrument with MuseScore, measures the real sounding pitch of every note with
 requested one.  MuseScore's importer can silently map a part onto its own
 transposing instrument, so "measure, then name" is the load-bearing rule.
 
+MuseScore also ignores `<midi-program>` when importing and picks the soundfont
+preset from the part name, silently falling back to its default piano patch for
+an unrecognised name -- hence the recognised part name AND the explicit
+`<instrument-sound>` pin, plus a sustain gate that fails the render if it still
+decays like a piano.
+
 PITCH SETS (sounding / concert MIDI)
 ------------------------------------
     trumpet  : 52 57 61 66 70 75 79 84
@@ -35,17 +41,19 @@ PIPELINE
   1. author MusicXML into .tmp/sounds/ (no <transpose>, GM program pinned)
   2. render with `mscore -o raw/<inst>.wav`
   3. gate the render (duration / loudness / 8 or 6 onsets ~4 s apart)
-  4. measure each note's real pitch (measure_pitch.py)
-  5. if every note is offset by the same constant, re-render shifted (<=2x)
-  6. slice 0.80 s from each measured onset, peak-normalise to -3.0 dBFS,
+  4. gate the sustain (tail/head RMS + dB/s slope -- catches a piano fallback)
+  5. measure each note's real pitch (measure_pitch.py)
+  6. if every note is offset by the same constant, re-render shifted (<=2x)
+  7. slice 0.80 s from each measured onset, peak-normalise to -3.0 dBFS,
      encode mono 44.1 kHz MP3 @ 96 kbps CBR
-  7. re-measure the final MP3s, write manifest.json + CREDITS.md
+  8. re-measure the final MP3s, write manifest.json + CREDITS.md
 
 The script is idempotent: it recreates its scratch tree and output tree on every
 run, and the render/measure/encode chain is deterministic.
 """
 import datetime
 import json
+import math
 import os
 import re
 import subprocess
@@ -74,14 +82,23 @@ ONSET_DB = -45          # silencedetect threshold
 ONSET_MIN_SIL = 1.5     # silencedetect minimum silence length
 MEASURE_OFFSET = 0.20   # analysis frame start, seconds after the onset
 MEASURE_DUR = 0.55      # analysis frame length, seconds (fits inside the slice)
+SUSTAIN_WINDOWS = 16           # 16 x 50 ms over the 0.80 s slice
+SUSTAIN_MIN_TAIL_HEAD = 0.65   # measured: brass 0.71..1.28 vs piano 0.10..0.58
+SUSTAIN_MIN_SLOPE_DB_S = -6.0  # measured: brass -5.4..+1.5 vs piano -43.6..-6.9
 MIDI_STEP = ["C", "C", "D", "D", "E", "F", "F", "G", "G", "A", "A", "B"]
 MIDI_ALTER = [0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0]
 
 INSTRUMENTS = [
     {
         "name": "trumpet",
-        "partName": "Trumpet in C",
-        "program": 57,            # GM 1-based (56 zero-based)
+        # MuseScore 4.7 ignores <midi-program> on import (program 57 and 1
+        # render byte-identically) and picks the soundfont preset from
+        # <part-name>; an unrecognised name ("Trumpet in C") silently falls
+        # back to the default piano patch.  So use the recognised "Trumpet"
+        # and pin the preset with <instrument-sound> as well.
+        "partName": "Trumpet",
+        "program": 57,            # GM 1-based (56 zero-based); provenance only
+        "sound": "brass.trumpet",
         "clef": ("G", 2),
         "transposeSemitones": -2,  # written pitch is a M2 above sounding
         "pitches": [52, 57, 61, 66, 70, 75, 79, 84],
@@ -90,6 +107,7 @@ INSTRUMENTS = [
         "name": "trombone",
         "partName": "Trombone",
         "program": 58,            # GM 1-based (57 zero-based)
+        "sound": "brass.trombone",
         "clef": ("F", 4),
         "transposeSemitones": 0,
         "pitches": [40, 45, 50, 55, 60, 65],
@@ -128,6 +146,10 @@ def write_musicxml(path, inst, shift=0):
          '  <part-list>',
          '    <score-part id="P1">',
          '      <part-name>%s</part-name>' % inst["partName"],
+         '      <score-instrument id="P1-I1">',
+         '        <instrument-name>%s</instrument-name>' % inst["partName"],
+         '        <instrument-sound>%s</instrument-sound>' % inst["sound"],
+         '      </score-instrument>',
          '      <midi-instrument id="P1-I1">',
          '        <midi-channel>1</midi-channel>',
          '        <midi-program>%d</midi-program>' % inst["program"],
@@ -255,6 +277,36 @@ def decode_mp3(src, dst):
         raise RuntimeError("ffmpeg failed to decode %s" % src)
 
 
+def sustain_stats(samples, sr, onset):
+    """Return (tail/head RMS ratio, least-squares slope in dB/s over 0.20..0.80 s).
+
+    Splits the SLICE_SEC window after `onset` into SUSTAIN_WINDOWS equal frames,
+    takes the RMS of each, and fits the frame level in dB (relative to the
+    loudest frame) across windows 4..15.  A real brass tone holds its level;
+    the piano patch MuseScore falls back to decays by tens of dB/s.
+    """
+    total = int(round(SLICE_SEC * sr))
+    start = int(round(onset * sr))
+    frame = total // SUSTAIN_WINDOWS
+    env = []
+    for i in range(SUSTAIN_WINDOWS):
+        w = samples[start + i * frame:start + (i + 1) * frame]
+        env.append(math.sqrt(sum(v * v for v in w) / len(w)) if w else 0.0)
+    peak = max(env)
+    head = max(env[:4])
+    tail = max(env[-4:])
+    window_sec = SLICE_SEC / SUSTAIN_WINDOWS
+    xs = [i * window_sec for i in range(4, SUSTAIN_WINDOWS)]
+    ys = [20.0 * math.log10(max(env[i], 1e-12) / max(peak, 1e-12))
+          for i in range(4, SUSTAIN_WINDOWS)]
+    mx = sum(xs) / len(xs)
+    my = sum(ys) / len(ys)
+    den = sum((x - mx) ** 2 for x in xs)
+    slope = (sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / den
+             if den > 0.0 else 0.0)
+    return (tail / head if head > 0.0 else 0.0), slope
+
+
 def render_and_measure(inst):
     """Author -> render -> gate -> measure one instrument.
 
@@ -302,6 +354,24 @@ def render_and_measure(inst):
         assert err <= 0.06, ("%s note intended %d measured midi %.4f "
                              "(%.1f cents) -- octave/spelling error"
                              % (name, p, m["midi"], (m["midi"] - round(m["midi"])) * 100))
+        assert round(m["midi"]) == p, (
+            "%s note %d measured midi %d -- filename drift would break the "
+            "app's sample table" % (name, p, round(m["midi"])))
+
+    # --- sustain gate -----------------------------------------------------
+    # MuseScore ignores <midi-program> and picks the soundfont preset from
+    # <part-name>; an unrecognised name silently falls back to its default
+    # piano patch, which decays instead of sustaining.  Gate on the tail/head
+    # RMS ratio and the dB/s slope so that never ships.
+    sr, samples = measure_pitch.read_wav_mono(mono_path)
+    for i, onset in enumerate(onsets):
+        tail_head, slope = sustain_stats(samples, sr, onset)
+        assert tail_head >= SUSTAIN_MIN_TAIL_HEAD and slope >= SUSTAIN_MIN_SLOPE_DB_S, (
+            "%s note %d sustain tail/head %.2f, %+.1f dB/s -- MuseScore fell "
+            "back to its default piano patch; check part-name / "
+            "<instrument-sound> in write_musicxml()"
+            % (name, i, tail_head, slope))
+        print("  sustain OK: tail/head %.2f, %+.1f dB/s" % (tail_head, slope))
     return onsets, ms
 
 
@@ -355,34 +425,47 @@ SOFTWARE.
 
 
 def write_manifest(results, generated):
-    manifest = {
-        "version": 1,
-        "generator": "web/scripts/make_sound_samples.py",
-        "generated": generated,
-        "source": {
-            "renderer": "MuseScore 4.7.4 (mscore CLI)",
-            "soundfont": "MS Basic.sf3 (MuseScore_General)",
-            "soundfontPath": SOUNDFONT,
-            "license": "MIT",
-            "credits": "CREDITS.md",
-        },
-        "format": {
-            "codec": "mp3",
-            "bitrateKbps": MP3_KBPS,
-            "channels": 1,
-            "sampleRate": SAMPLE_RATE,
-            "sliceSec": SLICE_SEC,
-            "peakDbFS": PEAK_DBFS,
-        },
-        "instruments": {},
+    path = os.path.join(OUT_DIR, "manifest.json")
+    # Seed from the existing manifest so a --only run keeps the untouched
+    # instrument's block verbatim (including its measuredHz/measuredCentsError)
+    # and any extra top-level fields; the regenerated keys below overwrite in
+    # place, preserving the existing key order (trumpet, trombone).
+    manifest = {}
+    try:
+        with open(path) as fh:
+            manifest = json.load(fh)
+        if not isinstance(manifest, dict):
+            manifest = {}
+    except (ValueError, OSError):
+        manifest = {}
+    manifest["version"] = 1
+    manifest["generator"] = "web/scripts/make_sound_samples.py"
+    manifest["generated"] = generated
+    manifest["source"] = {
+        "renderer": "MuseScore 4.7.4 (mscore CLI)",
+        "soundfont": "MS Basic.sf3 (MuseScore_General)",
+        "soundfontPath": SOUNDFONT,
+        "license": "MIT",
+        "credits": "CREDITS.md",
     }
+    manifest["format"] = {
+        "codec": "mp3",
+        "bitrateKbps": MP3_KBPS,
+        "channels": 1,
+        "sampleRate": SAMPLE_RATE,
+        "sliceSec": SLICE_SEC,
+        "peakDbFS": PEAK_DBFS,
+    }
+    instruments = manifest.get("instruments")
+    if not isinstance(instruments, dict):
+        instruments = {}
+        manifest["instruments"] = instruments
     for inst, samples in results:
-        manifest["instruments"][inst["name"]] = {
+        instruments[inst["name"]] = {
             "gmProgram1Based": inst["program"],
             "transposeSemitones": inst["transposeSemitones"],
             "samples": samples,
         }
-    path = os.path.join(OUT_DIR, "manifest.json")
     with open(path, "w") as fh:
         json.dump(manifest, fh, indent=2)
         fh.write("\n")
@@ -391,13 +474,28 @@ def write_manifest(results, generated):
 
 # ------------------------------------------------------------------- pipeline
 def main():
+    argv = sys.argv[1:]
+    if not argv:
+        selected = INSTRUMENTS
+    elif len(argv) == 2 and argv[0] == "--only":
+        names = [i["name"] for i in INSTRUMENTS]
+        if argv[1] not in names:
+            sys.stderr.write("unknown instrument '%s' -- choose from %s\n"
+                             % (argv[1], ", ".join(names)))
+            return 2
+        selected = [i for i in INSTRUMENTS if i["name"] == argv[1]]
+    else:
+        sys.stderr.write("usage: make_sound_samples.py [--only trumpet|trombone]\n")
+        return 2
+    only = bool(argv)
+
     os.makedirs(RAW_DIR, exist_ok=True)
     os.makedirs(OUT_DIR, exist_ok=True)
-    for inst in INSTRUMENTS:
+    for inst in selected:
         os.makedirs(os.path.join(OUT_DIR, inst["name"]), exist_ok=True)
 
     results = []
-    for inst in INSTRUMENTS:
+    for inst in selected:
         name = inst["name"]
         print("=== %s (%d samples) ===" % (name, len(inst["pitches"])))
         onsets, ms = render_and_measure(inst)
@@ -433,9 +531,12 @@ def main():
 
     generated = datetime.date.today().isoformat()
     write_manifest(results, generated)
-    with open(os.path.join(OUT_DIR, "CREDITS.md"), "w") as fh:
-        fh.write(CREDITS)
-    print("wrote manifest.json + CREDITS.md")
+    if only:
+        print("wrote manifest.json (--only: CREDITS.md left untouched)")
+    else:
+        with open(os.path.join(OUT_DIR, "CREDITS.md"), "w") as fh:
+            fh.write(CREDITS)
+        print("wrote manifest.json + CREDITS.md")
 
     total = 0
     for _root, _dirs, files in os.walk(OUT_DIR):
@@ -445,4 +546,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
