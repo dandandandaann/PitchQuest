@@ -22,8 +22,9 @@
  *   - `tuner.*`      — TunerPage copy
  *   - `practice.*`   — PracticePage copy
  *   - `trumpet.*`    — TrumpetDrillPage copy
- *   - `dev.*`        — shared dev-panel copy (mounted on every drill/practice
- *                       page by components/DevPanel.tsx)
+ *   - `trombone.*`   — TromboneDrillPage copy
+ *   - `dev.*`        — shared dev-panel copy (mounted on PracticePage only,
+ *                       by components/DevPanel.tsx)
  *   - `components.*` — shared component copy (CentsMeter, ScorePicker, …)
  */
 export type TranslationKey =
