@@ -53,8 +53,24 @@ export function DrillSubmitButton({ onPress, label, ariaLabel }: DrillSubmitButt
       onPointerDown={event => {
         // Capture keeps this button the event target until the finger lifts, so
         // a tap that slides off still completes — and so no other finger's
-        // release can ever land here.
-        event.currentTarget.setPointerCapture(event.pointerId);
+        // release can ever land here. Mirrors SlideControl's guard shape: a
+        // replayed/synthetic pointerdown carries a never-active pointerId and
+        // setPointerCapture throws NotFoundError for it.
+        //
+        // Deliberate divergence from the valve/surface guard (SlideControl):
+        // there a failed capture declines the press (`if (!captured) return`),
+        // because a drag that can't own its pointer is worthless. Here the
+        // press is a submit intent — a pointer we couldn't capture is still a
+        // pointer that came DOWN on this button, so we register it anyway and
+        // let pointerup fire the submit rather than silently dropping it.
+        const target = event.currentTarget;
+        if (target.hasPointerCapture?.(event.pointerId) !== true) {
+          try {
+            target.setPointerCapture(event.pointerId);
+          } catch {
+            /* pointer not active; ignore — the press still registers below */
+          }
+        }
         pressedPointerId.current = event.pointerId;
       }}
       onPointerUp={event => {
