@@ -572,9 +572,6 @@ export function TrumpetDrillPage() {
           </span>
         </div>
 
-        {/* Touch hint — supplements the keyboard legend above, never replaces it. */}
-        <p className="drill-legend__touch">{t('trumpet.legend.touch')}</p>
-
         <DrillSubmitButton
           onPress={submit}
           label={t('trumpet.submit.label')}

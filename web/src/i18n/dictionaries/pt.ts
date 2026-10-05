@@ -175,8 +175,6 @@ export const pt: Record<TranslationKey, string> = {
   'trumpet.legend.valve3': 'pisto 3',
   'trumpet.legend.space': 'verificar e avançar',
   'trumpet.legend.space_key_name': 'Espaço',
-  'trumpet.legend.touch':
-    'Na tela sensível ao toque, pressione e segure os botões dos pistos com os dedos e toque no botão abaixo para avançar.',
   'trumpet.submit.label': 'Conferir e próxima nota',
   'trumpet.submit.aria': 'Conferir os pistos e avançar para a próxima nota',
   'trumpet.status.title': 'Sessão',
@@ -217,8 +215,6 @@ export const pt: Record<TranslationKey, string> = {
   'trombone.legend.drag': 'arraste a vara até a posição da nota',
   'trombone.legend.space': 'verificar e avançar',
   'trombone.legend.space_key_name': 'Espaço',
-  'trombone.legend.touch':
-    'Na tela sensível ao toque, toque uma posição abaixo ou arraste a vara e toque no botão para avançar.',
   'trombone.submit.label': 'Conferir e próxima nota',
   'trombone.submit.aria': 'Conferir a posição da vara e avançar para a próxima nota',
   'trombone.status.title': 'Sessão',

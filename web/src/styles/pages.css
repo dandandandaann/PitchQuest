@@ -1268,14 +1268,6 @@
   color: var(--ink-soft);
 }
 
-/* Touch hint that sits under the keyboard legend. It supplements the kbd
-   legend, never replaces it — both stay visible. */
-.drill-legend__touch {
-  margin: var(--sp-3) 0 0;
-  font-size: var(--fs-sm);
-  color: var(--ink-soft);
-}
-
 .kbd {
   display: inline-flex;
   align-items: center;

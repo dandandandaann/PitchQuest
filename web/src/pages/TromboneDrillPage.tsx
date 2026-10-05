@@ -401,9 +401,6 @@ export function TromboneDrillPage() {
           </span>
         </div>
 
-        {/* Touch hint — supplements the keyboard legend above, never replaces it. */}
-        <p className="drill-legend__touch">{t('trombone.legend.touch')}</p>
-
         <DrillSubmitButton
           onPress={submitAnswer}
           label={t('trombone.submit.label')}

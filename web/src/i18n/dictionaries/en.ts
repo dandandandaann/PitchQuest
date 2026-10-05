@@ -168,8 +168,6 @@ export const en: Record<TranslationKey, string> = {
   'trumpet.legend.valve3': 'valve 3',
   'trumpet.legend.space': 'check & advance',
   'trumpet.legend.space_key_name': 'Space',
-  'trumpet.legend.touch':
-    'On a touchscreen, press and hold the valve buttons with your fingers, then tap the button below to advance.',
   'trumpet.submit.label': 'Check & next note',
   'trumpet.submit.aria': 'Check the valves and advance to the next note',
   'trumpet.status.title': 'Session',
@@ -210,8 +208,6 @@ export const en: Record<TranslationKey, string> = {
   'trombone.legend.drag': 'drag the slide to the note’s position',
   'trombone.legend.space': 'check & advance',
   'trombone.legend.space_key_name': 'Space',
-  'trombone.legend.touch':
-    'On a touchscreen, tap a position below or drag the slide, then tap the button to advance.',
   'trombone.submit.label': 'Check & next note',
   'trombone.submit.aria': 'Check the slide position and advance to the next note',
   'trombone.status.title': 'Session',
