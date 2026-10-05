@@ -41,9 +41,9 @@ PIPELINE
   1. author MusicXML into .tmp/sounds/ (no <transpose>, GM program pinned)
   2. render with `mscore -o raw/<inst>.wav`
   3. gate the render (duration / loudness / 8 or 6 onsets ~4 s apart)
-  4. gate the sustain (tail/head RMS + dB/s slope -- catches a piano fallback)
-  5. measure each note's real pitch (measure_pitch.py)
-  6. if every note is offset by the same constant, re-render shifted (<=2x)
+  4. measure each note's real pitch (measure_pitch.py)
+  5. if every note is offset by the same constant, re-render shifted (<=2x)
+  6. gate the sustain (tail/head RMS + dB/s slope -- catches a piano fallback)
   7. slice 0.80 s from each measured onset, peak-normalise to -3.0 dBFS,
      encode mono 44.1 kHz MP3 @ 96 kbps CBR
   8. re-measure the final MP3s, write manifest.json + CREDITS.md
@@ -507,7 +507,7 @@ def main():
             out_mp3 = os.path.join(OUT_DIR, name, "%s-%03d.mp3" % (name, midi))
             gain = encode_slice(os.path.join(RAW_DIR, "%s.mono.wav" % name),
                                 onset, out_mp3)
-            # Phase 6: re-measure the FINAL mp3 (onset is 0 -- the slice starts
+            # Phase 8: re-measure the FINAL mp3 (onset is 0 -- the slice starts
             # on the note; window 0.20..0.75 s fits inside the 0.80 s slice).
             decoded = os.path.join(RAW_DIR, "%s-%03d.decoded.wav" % (name, midi))
             decode_mp3(out_mp3, decoded)
@@ -542,7 +542,7 @@ def main():
     for _root, _dirs, files in os.walk(OUT_DIR):
         for f in files:
             total += os.path.getsize(os.path.join(_root, f))
-    print("sounds/ total: %.0f KB" % (total / 1024.0))
+    print("sounds/ directory total (all files): %.0f KB" % (total / 1024.0))
 
 
 if __name__ == "__main__":
