@@ -1359,8 +1359,8 @@
     font-size: 2.75rem;
   }
 
-  /* Trumpet drill: keep staff + valves inside a ~360px viewport.
-     Staff shrink is CSS-only — the VexFlow SVG carries
+  /* Drill pages (trumpet AND trombone): keep staff + valves inside a ~360px
+     viewport. Staff shrink is CSS-only — the VexFlow SVG carries
      viewBox="0 0 340 220" (SVGContext.resize → scale()), so a shorter
      CSS height scales the whole staff uniformly with no clipping. */
   .drill-legend {
@@ -1381,6 +1381,22 @@
 
   .drill-valve {
     min-width: 52px;
+  }
+
+  /* Trombone drill: seven 56px detent chips + 6 gaps exceed a 360px row,
+     so the base flex-wrap breaks them 4+3. Force ONE row and let the chips
+     share it evenly — at 360px that is ~44px per chip, still a comfortable
+     touch target. (0,2,0) here wins on source order over the base rule. */
+  .trombone-detents {
+    flex-wrap: nowrap;
+    gap: var(--sp-1);
+  }
+
+  .trombone-detents .drill-valve {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+    height: 48px;
   }
 }
 
