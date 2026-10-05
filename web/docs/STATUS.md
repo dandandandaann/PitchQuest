@@ -1,13 +1,13 @@
 # PitchQuest — Status & Handoff
 
-**Last updated:** post-Stage 6 — DIY i18n expanded to full-app coverage (commits `3bb0051` → `f1f47b4`, reviewer APPROVED); Stage 7 still pending.
+**Last updated:** 2026-10-05 — doc refresh after the post-Stage 6 drill/sound era (40 commits `35d08de` → `45b220a`: trumpet drill, trombone drill, sound layer, i18n to 248 keys, mobile passes, bug fixes). Stages 1–6 unchanged; **Stage 7 still pending**.
 **Audience:** the next manager agent (or human) picking up this project.
 
 ---
 
 ## What is this project?
 
-PitchQuest is a React 19 + TypeScript + Vite app at `/Users/daniel/repo/PitchQuest/web/`. The original app was a basic microphone pitch tuner (Tuner page); the work documented here evolved it into a Guitar-Hero-style practice tool that takes a MusicXML score, segments the user's live mic input, matches expected vs detected notes, scores the result, and animates it in a scrolling lane.
+PitchQuest is a React 19 + TypeScript + Vite app at `/home/daniel/repo/pitch-quest/web/`. The original app was a basic microphone pitch tuner (Tuner page); the work documented here evolved it into a Guitar-Hero-style practice tool that takes a MusicXML score, segments the user's live mic input, matches expected vs detected notes, scores the result, and animates it in a scrolling lane. After Stage 6 the app grew two instrument **finger drills** (trumpet valves, trombone slide) with a Web Audio **sound layer** — see "Post-Stage 6: drills + sound" below.
 
 ## Where things live
 
@@ -18,7 +18,7 @@ web/src/
 │   │   ├── useAudioContext.ts        # AudioContext lifecycle + audioStartPerfNow (beat-zero anchor)
 │   │   ├── usePitchDetection.ts      # Mic → worklet → pitchy → PitchData
 │   │   ├── useScoreSession.ts       # Stage 6: per-session state machine (IncrementalMatcher, rAF ticker, liveScored[])
-│   │   └── useDevPanelHarnesses.ts   # Stage 6: mounts all 6 harness results for the dev panel
+│   │   └── useDevPanelHarnesses.ts   # Stage 6: mounts 9 of the 11 harnesses for the dev panel
 │   ├── IncrementalMatcher.ts         # Stage 6: stateful wait-mode matcher (cursor over ExpectedNote[])
 │   ├── laneConfig.ts                 # Stage 6: pure lane constants (PX_PER_BEAT, GRACE_BEATS, etc.)
 │   ├── NoteSegmenter.ts              # Stage 1: PitchData[] → DetectedNote[]
@@ -30,31 +30,68 @@ web/src/
 │   │   ├── pitch-math.ts             # frequencyToNote (flats-style: "C4", "Db5")
 │   │   ├── smoothing.ts              # MedianFilter, MovingAverage
 │   │   └── format.ts                 # formatCents, formatBeats
-│   └── *.test-harness.ts             # 6 pure-function harnesses (see "Test harnesses" below)
+│   └── *.test-harness.ts             # 5 pure-function harnesses (see "Test harnesses" below)
 ├── score/                   # Score domain — sheet music in
 │   ├── types.ts                      # ExpectedNote
-│   ├── MusicXmlParser.ts             # XML string → ExpectedNote[]
-│   └── MusicXmlParser.test-harness.ts
-├── components/              # Shared UI
+│   ├── MusicXmlParser.ts             # XML string → ExpectedNote[] (browser-only: DOMParser)
+│   └── MusicXmlParser.test-harness.ts  # ⚠ cannot run under Node/tsx (DOMParser) — dev panel only
+├── trumpet/                 # Trumpet drill domain (built after the roadmap)
+│   ├── fingerings.ts                 # Written note → valve combination
+│   ├── fingerings.test-harness.ts
+│   ├── valvePress.ts                 # Multi-touch valve press state machine
+│   └── valvePress.test-harness.ts
+├── trombone/                # Trombone drill domain
+│   ├── positions.ts                  # Slide positions (log-spaced real geometry)
+│   └── positions.test-harness.ts
+├── sound/                   # Web Audio playback layer (built after the roadmap)
+│   ├── SamplePlayer.ts               # Fetch → decode (lazy OfflineAudioContext) → play
+│   ├── useInstrumentSound.ts         # React hook over SamplePlayer (lazy AudioContext unlock in play())
+│   ├── sampleSets.ts                 # 14-sample config (trumpet ×8, trombone ×6) + transpose
+│   ├── selectSample.ts               # Nearest-sample selection
+│   ├── noteMath.ts                   # MIDI/note helpers (pure)
+│   ├── envelope.ts                   # Attack/hold/release envelope spec
+│   └── sound.test-harness.ts
+├── components/              # Shared UI (12 components)
 │   ├── CentsMeter.tsx, PitchDisplay.tsx, SidebarLayout.tsx, NoteHistory.tsx
 │   ├── LanguageToggle.tsx            # i18n: EN/PT switcher, sidebar (above mic card)
 │   ├── ScorePicker.tsx               # Stage 6: library picker + file upload
-│   └── NoteLane.tsx, NoteLane.css   # Stage 6: rAF-driven scrolling lane
+│   ├── NoteLane.tsx, NoteLane.css   # Stage 6: rAF-driven scrolling lane
+│   ├── DevPanel.tsx                  # Collapsed-by-default harness card — mounted ONLY on PracticePage
+│   ├── DrillSubmitButton.tsx         # Shared drill submit (Space-equivalent, pointer-capture guarded)
+│   ├── SlideControl.tsx              # Trombone slide control (drag / 7 tap detents / arrow keys)
+│   ├── SlideControl.test-harness.ts  # ⚠ returns a formatted STRING, not a case array
+│   ├── slidePositions.ts             # Pure detent math shared by SlideControl + its harness
+│   ├── TrumpetDisplay.tsx            # Staff + valve pistons (VexFlow)
+│   └── TromboneDisplay.tsx           # Trombone artwork + slide ruler
 ├── i18n/                    # DIY i18n — I18nContext (provider + useT/useLocale/useSetLocale), keys.ts, dictionaries/{en,pt}.ts
+├── styles/                  # Design system — tokens.css, clay.css, pages.css (drill + mobile overrides)
+├── theme/
+│   └── muiTheme.ts                   # MUI theme
+├── utils/
+│   └── haptics.ts                    # Vibration API wrapper (Android-only; silent no-op on iOS)
 ├── pages/
 │   ├── HomePage.tsx
 │   ├── TunerPage.tsx                 # Real-time needle + cents meter
-│   └── PracticePage.tsx              # Score practice + lane + dev panel
-└── App.tsx                           # HashRouter with / /tuner /practice routes
+│   ├── PracticePage.tsx              # Score practice + lane + dev panel (the only DevPanel mount)
+│   ├── TrumpetDrillPage.tsx          # Valve drill (J/K/L + Space)
+│   └── TromboneDrillPage.tsx         # Slide-position drill (drag / detents / arrows)
+└── App.tsx                           # HashRouter with / /practice /tuner /trumpet-drill /trombone-drill routes (drills lazy-loaded with Suspense RouteFallback)
+
+web/scripts/                       # Reproducible asset generators (run on the host, not in the app)
+├── make_sound_samples.py             # Renders the 14 brass MP3s (MuseScore 4 + MS Basic.sf3)
+├── make_trombone_assets.py           # Renders the 7 slide-position WebPs
+└── measure_pitch.py                  # Offline pitch measurement for tuning checks
 
 web/public/
 ├── pitch-processor.js                # AudioWorklet (pitch detection)
-└── scores/
-    ├── manifest.json                  # Stage 6: 22-entry score catalog
-    ├── twinkle-twinkle-little-star.musicxml
-    ├── mary-had-a-little-lamb.musicxml
-    ├── ode-to-joy.musicxml
-    └── frere-jacques.musicxml
+├── scores/                           # 22-entry manifest.json; only 4 MusicXML files bundled
+│   ├── twinkle-twinkle-little-star.musicxml
+│   ├── mary-had-a-little-lamb.musicxml
+│   ├── ode-to-joy.musicxml
+│   └── frere-jacques.musicxml
+├── sounds/                           # 14 MP3 brass samples + CREDITS.md (MS Basic.sf3, MIT) + manifest.json
+├── trumpet/                          # 8 valve press-state PNGs (trumpet-press-*.png)
+└── trombone/                         # 7 slide-position WebPs (trombone-pos-*.webp)
 ```
 
 ## What's done (roadmap stages)
@@ -93,26 +130,50 @@ Mic ──→ usePitchDetection           (Stage 1)
    Completion overlay (scoreMatches on liveScored)
 ```
 
-### Test harnesses (41 cases total, all passing)
+### Test harnesses (11 files, 128 cases total)
 
-Run any of them at runtime via `npx tsx`:
+Most of them run under Node via `npx tsx`, **except `MusicXmlParser.test-harness.ts`, which is browser-only** (the parser needs `DOMParser`):
 
 ```bash
 cd web
 npx tsx -e "import { runSegmenterHarness } from './src/audio/NoteSegmenter.test-harness'; console.log(runSegmenterHarness());"
-# same pattern for: TimingEngine, MusicXmlParser, Matcher, Scorer, IncrementalMatcher
+# same pattern for: TimingEngine, Matcher, Scorer, IncrementalMatcher, valvePress, fingerings, positions, sound
+# ⚠ NOT MusicXmlParser — under tsx/Node it reports 0/7 ("DOMParser is not defined").
+#   It only passes in the browser (dev panel). SlideControl's harness is also CLI-runnable,
+#   but returns a formatted string ("SlideControl harness: 32/32 pass"), not a case array.
 ```
 
 | Harness | Cases | Notes |
 |---|---|---|
 | NoteSegmenter | 6 | Wall-clock silence finalization is NOT deterministically testable (documented caveat) |
 | TimingEngine | 8 | Includes a `bpm=0` throw case |
-| MusicXmlParser | 7 | Includes rest-advances-currentBeat regression test |
+| MusicXmlParser | 7 | **Browser-only** — throws `DOMParser is not defined` under Node/tsx (reports 0/7 there). Passes in the dev panel. Includes rest-advances-currentBeat regression test |
 | Matcher | 7 | Includes cross-window-steal artifact |
-| Scorer | 7 | Includes wrong-pitch-class-mismatch case (the matcher gap); case 7 locks `scoreOne` passthrough contract |
-| IncrementalMatcher | 6 | Wait-mode cursor; cases: perfect run, out-of-window ignored, dropped note + forceMissActive, out-of-order ignored, empty list, wrong-pitch window match |
+| Scorer | 6 | Includes wrong-pitch-class-mismatch case (the matcher gap); locks `scoreOne` passthrough contract |
+| IncrementalMatcher | 8 | Wait-mode cursor; perfect run, out-of-window ignored, dropped note + forceMissActive, out-of-order ignored, empty list, wrong-pitch window match, … |
+| valvePress | 8 | Trumpet multi-touch valve state machine |
+| fingerings | 15 | Written-note → valve combination, incl. accidental-filter semantics |
+| positions | 12 | Trombone slide positions (log-spaced geometry) |
+| SlideControl | 32 | Trombone slide control. **Different shape:** `runSlideControlHarness()` returns a formatted string (e.g. `"SlideControl harness: 32/32 pass"`), not a case array |
+| sound | 19 | Pure note/envelope/sample-selection core (no Web Audio at test time) |
 
-All harnesses are pure functions (no React/DOM/I/O). They're also wired into the **dev panel on PracticePage** (6 sections, "Show dev panel" button at the bottom). When you open the page, you can see all 41 cases running live in the browser.
+All harnesses are pure functions (no React/DOM/I/O), except that MusicXmlParser's needs a browser `DOMParser`. The **dev panel mounts 9 of the 11** (all except SlideControl and sound) and is mounted **only on PracticePage** — deliberately not on the drill pages (see `DevPanel.tsx` JSDoc). Open PracticePage and click "Show dev panel" to see those 9 sections running live in the browser.
+
+### Post-Stage 6: drills + sound (40 commits `35d08de` → `45b220a`)
+
+After Stage 6 (and the full-app i18n work documented below), the app grew two instrument drills and a sound layer. These are **not part of the original 7-stage roadmap** — they were built after it. Stage 7 is still the next planned roadmap work.
+
+**Trumpet drill (`/trumpet-drill`, TrumpetDrillPage):** a random note on a VexFlow staff; hold its valves (J/K/L, multi-touch on the on-screen pistons), then Space or the on-screen `DrillSubmitButton` to check & advance. Correct fingering only.
+
+**Trombone drill (`/trombone-drill`, TromboneDrillPage):** slide-position drill. `SlideControl` accepts drag on the trombone image, 7 tap detents, and arrow keys.
+
+**Shared drill features:** accidental filter (all / ♯ / ♭ / ♮), toggles (hide note names, hide status, mute), metrics (Time, Notes/min, Correct notes, Wrong notes), haptics (`web/src/utils/haptics.ts`, Vibration API — Android-only, silent no-op on iOS), and — since the sound layer — playback of the answered note on a correct submit.
+
+**Sound layer (`web/src/sound/`):** Web Audio playback of committed samples; the drill pages play the ANSWERED note on a correct submit. 14 MP3s in `web/public/sounds/` — trumpet ×8 (MIDI 52, 57, 61, 66, 70, 75, 79, 84; `transposeSemitones: -2` — Bb trumpet) and trombone ×6 (MIDI 40, 45, 50, 55, 60, 65; transpose 0). Rendered by `web/scripts/make_sound_samples.py` (MuseScore 4.7.4 + MS Basic.sf3, MIT licence — see `web/public/sounds/CREDITS.md`); 0.8 s slices, 96 kbps mono 44.1 kHz, peak −3 dBFS; envelope 5 ms attack / 445 ms hold / 250 ms release. Sample paths in `sampleSets.ts` are RELATIVE (no leading slash); `SamplePlayer` prepends the app base URL. Decoding uses a lazily-created module-scoped `OfflineAudioContext`; the LIVE `AudioContext` is created lazily inside `play()` — that lazy creation IS the autoplay unlock, so never call `play()` outside a user-gesture-triggered path.
+
+**Mobile (≤640 px) drill tightening** (commits `9d6d8e1`, `d91e6d7`, `45b220a`): the drill legend is hidden; the staff well shrinks 220 px → 140 px CSS-only (VexFlow's SVG carries `viewBox="0 0 340 220"`, so a shorter CSS height scales the staff uniformly with NO clipping — the renderer is deliberately NOT changed); trumpet valves share one row (`max-width: 100%`, `min-width: 52px`); trombone detents share one row (`flex-wrap: nowrap`, `flex: 1 1 0`, `min-width: 0`, `height: 48px`, `gap: var(--sp-1)`). Desktop (≥641 px) is unchanged. Every override lives inside the single `@media (max-width: 640px)` block in `pages.css`.
+
+**Recent bug fixes worth knowing:** `DrillSubmitButton` guards `setPointerCapture` (try/catch + `hasPointerCapture` check) — unlike the valve/surface guard it deliberately does NOT decline the press when capture fails, because a submit must not be silently dropped. `SlideControl`'s dead `surfaceRef` was removed (`fc1c043`). The `.drill-legend__touch` touch-hint paragraph was deleted entirely (both drill pages, `pages.css`, and both i18n dictionaries — `d62e0b7`).
 
 ### DIY i18n (full-app) — post-Stage 6, reviewer APPROVED
 
@@ -123,13 +184,14 @@ Added after Stage 6 in commits `3bb0051` → `3846137` (provider + dictionaries,
 - **Persistence:** `localStorage['pq.lang']`, with a `navigator` Portuguese-detection fallback (any `pt*` navigator language → `pt`, final default `pt`). The `pt` locale is **Brazilian Portuguese (pt-BR)**, not European Portuguese — this applies to all PT copy, the pt-BR-reviewed glossary, and any future PT additions. Stored choice wins. `pq.lang` is a reserved key — don't reuse it for other persisted prefs.
 - **Side effect:** the provider keeps `<html lang>` in sync with the active locale.
 - **UI:** `LanguageToggle` (`web/src/components/LanguageToggle.tsx`) renders in the sidebar, directly above the mic card.
-- **Scope: full-app — 195 keys.** All 4 pages (Home, Tuner, Practice, TrumpetDrill), all shared components (SidebarLayout incl. a11y strings, ScorePicker, NoteLane, CentsMeter, NoteHistory, PitchDisplay, TrumpetDisplay, LanguageToggle), and the App route-fallback strings are translated. The PT glossary lives as a comment at the top of `web/src/i18n/dictionaries/pt.ts` (perfeito / ok / errou, cents, batidas, sustenido / bemol, afinado, partitura, exercício, digitação, estrito / automático) — **do not retranslate ad hoc**; follow the approved glossary. To extend: add strings to `web/src/i18n/dictionaries/en.ts` + `pt.ts` (keys in `keys.ts`) and swap the hardcoded strings in the component.
+- **Scope: full-app — 248 keys.** All 5 pages (Home, Tuner, Practice, TrumpetDrill, TromboneDrill), all shared components (SidebarLayout incl. a11y strings, ScorePicker, NoteLane, CentsMeter, NoteHistory, PitchDisplay, TrumpetDisplay, TromboneDisplay, LanguageToggle, DevPanel, DrillSubmitButton, SlideControl), and the App route-fallback strings are translated. The PT glossary lives as a comment at the top of `web/src/i18n/dictionaries/pt.ts` (perfeito / ok / errou, cents, batidas, sustenido / bemol, afinado, partitura, exercício, digitação, estrito / automático) — **do not retranslate ad hoc**; follow the approved glossary. To extend: add strings to `web/src/i18n/dictionaries/en.ts` + `pt.ts` (keys in `keys.ts`) and swap the hardcoded strings in the component.
+- **Other persisted prefs (localStorage):** `pq.lang` plus per-drill UI prefs — `pq.trumpetDrill.{filter,hideNoteName,hideStatus,mute}` and `pq.tromboneDrill.{filter,hideNoteName,hideStatus,mute}`. `pq.lang` is a reserved key — don't reuse it for other persisted prefs.
 - **Interpolation convention:** dynamic values use `{name}` placeholders in dictionary copy (e.g. `{bpm}`, `{cents}`, `{tier}`); the consuming component substitutes them at usage time (see `keys.ts` header).
 - **PT copy** is Brazilian Portuguese (pt-BR) and has been reviewed. The PT lede on TrumpetDrillPage (`trumpet.header.lede`) must keep the literal `J`, `K`, `L`, and `Space` tokens — `LedeText` (in `TrumpetDrillPage.tsx`) splits on exactly those tokens to bold them; translating "Space" as "espaço" would break the highlighting.
 
 ## What's next
 
-Per `web/docs/roadmap.md`, only Stage 7 remains:
+Per `web/docs/roadmap.md`, only Stage 7 remains. The drills + sound layer described above are **extra, post-roadmap work** — they don't change the Stage 7 plan:
 
 ### Stage 7 — Mode B (continuous scrolling) + session results screen
 
@@ -148,15 +210,15 @@ Every commit in this repo should be authored as `Daniel <7233639+dandandandaann@
 **Mitigation:** every delegation to a worker MUST include the git identity check + amend-if-wrong instructions. The pattern is:
 
 ```bash
-git -C /Users/daniel/repo/PitchQuest config user.name
-git -C /Users/daniel/repo/PitchQuest config user.email
+git -C /home/daniel/repo/pitch-quest config user.name
+git -C /home/daniel/repo/pitch-quest config user.email
 # If either is empty or wrong, set them:
-git -C /Users/daniel/repo/PitchQuest config user.name "Daniel"
-git -C /Users/daniel/repo/PitchQuest config user.email "7233639+dandandandaann@users.noreply.github.com"
+git -C /home/daniel/repo/pitch-quest config user.name "Daniel"
+git -C /home/daniel/repo/pitch-quest config user.email "7233639+dandandandaann@users.noreply.github.com"
 # After commit, verify:
-git -C /Users/daniel/repo/PitchQuest log -1 --format="%an <%ae>"
+git -C /home/daniel/repo/pitch-quest log -1 --format="%an <%ae>"
 # If wrong, amend:
-git -C /Users/daniel/repo/PitchQuest commit --amend --reset-author --no-edit
+git -C /home/daniel/repo/pitch-quest commit --amend --reset-author --no-edit
 ```
 
 This was caught and fixed once (Stage 3 Task A → `916f73c` after amend); the local config was set at that point so subsequent commits should be fine, but sandboxed workers may still slip up.
@@ -167,11 +229,9 @@ This was caught and fixed once (Stage 3 Task A → `916f73c` after amend); the l
 
 Worker agents often run `git add -A` from the repo root which would commit `.gitignore`-covered files like `.tmp/`. **Always use selective `git add <files>`** — never `git add -A`.
 
-### 3. Pre-existing lint errors in `useAudioContext.ts`
+### 3. Pre-existing lint errors in `useAudioContext.ts` (now resolved)
 
-This file has 2 `react-hooks/refs` errors (accessing `audioContextRef.current` during render on lines 28 and 30-something). They've been there since before any of the Stage 1+ work began.
-
-**Mitigation:** every lint task says "0 errors, pre-existing warnings acceptable". DO NOT fix as part of unrelated work — open a dedicated housekeeping task if you want to address it.
+This file historically had 2 `react-hooks/refs` errors (accessing `audioContextRef.current` during render). As of this doc refresh, `npm run lint` is **fully clean (0 errors, 0 warnings)** — the rule no longer fires. Keep it that way: don't reintroduce render-time ref access.
 
 ### 4. PracticePage is split across hooks now
 
@@ -179,7 +239,7 @@ After Stage 6, `PracticePage.tsx` is slimmed down; session state lives in `useSc
 
 ### 5. No automated test suite
 
-`AGENTS.md` says: "No test suite". All testing is via the dev-only pure-function harnesses in `web/src/**/test-harness.ts`. This is intentional — adding `vitest`/`jest` would be a meta-task; the harnesses work and have 41 cases passing.
+`AGENTS.md` says: "No test suite". All testing is via the dev-only pure-function harnesses in `web/src/**/test-harness.ts`. This is intentional — adding `vitest`/`jest` would be a meta-task; the harnesses work and have 128 cases across 11 files (see the harness table above).
 
 ### 6. The `performance.now()` zero-origin problem (resolved)
 
@@ -188,6 +248,10 @@ Stage 3 Task A solved this: `audioStartPerfNow` is captured on Start Mic and sub
 ### 7. Browser-only modules
 
 `MusicXmlParser.ts` uses browser-native `DOMParser`. It works fine in the SPA. If anyone ever tries to SSR, it will break — there's no SSR config in `vite.config.ts` so this isn't a current concern, but worth noting.
+
+**Harness corollary:** `MusicXmlParser.test-harness.ts` CANNOT run under Node/tsx — it reports `0/7` with `"DOMParser is not defined"`. Only its dev-panel run (browser) counts as passing. Don't "fix" it by stubbing `DOMParser` globally; that would test a mock, not the parser.
+
+Two more harness-shape quirks: `SlideControl.test-harness.ts` returns a formatted **string** (`"SlideControl harness: 32/32 pass"`), not a case array; and the dev panel mounts only **9 of the 11** harnesses (SlideControl and sound are excluded) and is mounted **only on PracticePage**.
 
 ### 8. The matcher has greedy-window-steal artifact
 
@@ -205,21 +269,27 @@ The scorer reports C4 vs C5 as "miss" even though they share the same pitch clas
 - `audioContextRef.current` reactivity quirk in `useAudioContext`: the hook returns `audioContextRef.current` (ref value at render time), not the ref itself. `useScoreSession` and `NoteLane` deliberately avoid depending on `audioContext` in rAF loops — they use `performance.now()` exclusively.
 - Stage 7 will reuse `IncrementalMatcher`, `useScoreSession`, and `<NoteLane>` verbatim; only the wait-mode cursor logic is replaced with continuous scrolling.
 
+### 11. The sound layer must stay autoplay-safe
+
+`web/src/sound/SamplePlayer.ts` creates the LIVE `AudioContext` lazily **inside `play()`** (that lazy creation is the autoplay unlock — `play()` only ever runs from a keydown/button path). Decoding uses a separately-created module-scoped `OfflineAudioContext`. Do not hoist the live `AudioContext` to module scope or to hook mount; that would break the unlock chain. Sample paths in `sampleSets.ts` are relative (no leading slash) and `SamplePlayer` prepends the base URL — keep that split (it was corrected once in `8ec6767`). The drill pages play the answered note only on a CORRECT submit; mute is a per-drill localStorage pref.
+
 ## Tasks currently in the backlog
 
 - `eb19ec46` — Follow-up: add 6/8 case without `<duration>` to exercise type+beat-type math (low priority)
-- Stage 7 backlog: Mode B (continuous scrolling), session results screen, library expansion to 22 pieces, `pitchClassOnly` flag in `ScoringThresholds`, pre-existing `useAudioContext.ts` lint errors
+- Stage 7 backlog: Mode B (continuous scrolling), session results screen, library expansion to 22 pieces, `pitchClassOnly` flag in `ScoringThresholds`
+- Pre-existing `useAudioContext.ts` lint errors — **resolved** as of this refresh (lint fully clean); keep it that way
+- Possible follow-ons from the drill/sound era (not committed to anything): dev-panel mounts for SlideControl (32 cases) and sound (19 cases) — currently only runnable via CLI
 
 ## How to continue (for the next manager agent)
 
-1. **Read this file and `web/docs/roadmap.md`** to understand state and direction.
+1. **Read this file and `web/docs/roadmap.md`** to understand state and direction. Note that the trumpet/trombone drills and the sound layer are post-roadmap additions — the roadmap's Stage 7 is still the next planned stage.
 2. **Pick up Stage 7** — Mode B + session results screen are the planned next steps. The `IncrementalMatcher` + `<NoteLane>` + `useScoreSession` architecture is already in place and Stage 7-ready. Before delegating:
    - Decide on the results screen UX (modal overlay vs. separate route).
    - Confirm the Mode B scroll approach (remove wait-mode cursor, let rAF flow continuously).
 3. **Consider housekeeping**:
-   - Pre-existing `useAudioContext.ts` lint errors (small, dedicated task).
    - Stage 3 6/8 follow-up (already in backlog).
    - Library expansion (Tasks 1b/1c from Stage 6 plan — fill in remaining 18 MusicXML files).
+   - Optional: mount the SlideControl + sound harnesses in the dev panel (currently CLI-only).
 4. **Don't push to remote** — the user said they'll push after testing locally.
 
 ## Commands cheat sheet
@@ -231,12 +301,13 @@ cd web
 # Build (type-check + production build)
 npm run build
 
-# Lint (will show the pre-existing useAudioContext.ts errors — expected)
+# Lint (fully clean as of 2026-10-05 — keep it that way)
 npm run lint
 
 # Dev server with HMR
 npm run dev
 
-# Run any harness at runtime
+# Run most harnesses at runtime (⚠ MusicXmlParser's is browser-only — dev panel only)
 npx tsx -e "import { runSegmenterHarness } from './src/audio/NoteSegmenter.test-harness'; console.log(runSegmenterHarness());"
+npx tsx -e "import { runSlideControlHarness } from './src/components/SlideControl.test-harness'; console.log(runSlideControlHarness());"  # returns a formatted string
 ```
