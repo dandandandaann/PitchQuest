@@ -1,8 +1,8 @@
 /**
  * useDevPanelHarnesses — Stage 6 Task 6.
  *
- * Extracts the dev-panel rendering (currently inline in PracticePage, then
- * shared by every page that mounts <DevPanel />) into a dedicated hook. Owns:
+ * Extracts the dev-panel rendering (currently inline in PracticePage, now
+ * consumed by PracticePage's <DevPanel />) into a dedicated hook. Owns:
  *   - one `useState` call per harness result
  *   - A mount-effect that runs every harness `run*()` function
  *   - Returns the raw result objects for consumption by the caller

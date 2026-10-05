@@ -450,7 +450,7 @@ export function PracticePage() {
             )}
 
             {/* ══ DEV PANEL ═══════════════════════════════════════════════════ */}
-            {/* The dev panel mounts every harness (audio, trumpet, trombone). */}
+            {/* The dev panel mounts 9 of the 11 harnesses (SlideControl and sound are CLI-only). */}
             <DevPanel />
         </div>
     );

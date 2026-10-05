@@ -186,7 +186,7 @@ export type TranslationKey =
   | 'trumpet.status.wrong'
   | 'trumpet.tip.eyebrow'
   | 'trumpet.tip.body'
-  // ── dev panel (shared by every page that mounts <DevPanel />) ──────────
+  // ── dev panel (rendered only by PracticePage's <DevPanel />) ───────────
   | 'dev.title'
   | 'dev.lede'
   | 'dev.toggle_show'

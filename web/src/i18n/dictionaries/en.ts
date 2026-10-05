@@ -268,7 +268,7 @@ export const en: Record<TranslationKey, string> = {
   'components.trumpet_display.alt_valve_pressed': 'Trumpet diagram with valve {list} pressed.',
   'components.trumpet_display.alt_valves_pressed': 'Trumpet diagram with valves {list} pressed.',
   'components.trombone_display.alt': 'Trombone diagram with the slide at position {position}.',
-  // ── dev panel (shared by every page that mounts <DevPanel />) ──────────
+  // ── dev panel (rendered only by PracticePage's <DevPanel />) ───────────
   'dev.title': 'Developer',
   'dev.lede':
     'Pure-function test harnesses (segmenter, timing, parser, matcher, scorer, trumpet fingerings, valve presses, trombone positions) run live in the browser.',

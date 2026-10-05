@@ -275,7 +275,7 @@ export const pt: Record<TranslationKey, string> = {
   'components.trumpet_display.alt_valve_pressed': 'Diagrama do trompete com o pisto {list} pressionado.',
   'components.trumpet_display.alt_valves_pressed': 'Diagrama do trompete com os pistos {list} pressionados.',
   'components.trombone_display.alt': 'Diagrama do trombone com a vara na posição {position}.',
-  // ── dev panel (shared by every page that mounts <DevPanel />) ──────────
+  // ── dev panel (rendered only by PracticePage's <DevPanel />) ───────────
   'dev.title': 'Desenvolvedor',
   'dev.lede':
     'Bancos de teste de funções puras (segmentador, tempo, parser, matcher, pontuador, digitação do trompete, pressão das válvulas, posições do trombone) rodam ao vivo no navegador.',
