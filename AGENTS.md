@@ -98,7 +98,7 @@ npx tsx -e "import { runSegmenterHarness } from './src/audio/NoteSegmenter.test-
 - **Mobile drill layout (≤640px)** - Drill overrides live in the single `@media (max-width: 640px)` block in `src/styles/pages.css`: legend hidden, staff well 220px → 140px CSS-only (VexFlow SVG scales via its `viewBox="0 0 340 220"` — don't change the renderer), one-row valves and detents. Desktop is unchanged.
 - **`git add -A` is FORBIDDEN** - The working tree may contain untracked files (`.tmp/`, scratch files). Always use selective `git add <specific files>`. See `web/docs/STATUS.md` "Operational gotchas" for the full list.
 - **Brazilian Portuguese (pt-BR)** - The app's `pt` locale is Brazilian Portuguese, never European Portuguese. All PT copy follows the pt-BR glossary in `web/src/i18n/dictionaries/pt.ts`. Keep this in mind for any future translation work.
-- **Pre-existing lint errors** in `web/src/audio/hooks/useAudioContext.ts` (refs accessed during render). **Resolved as of 2026-10-05** — `npm run lint` is fully clean; keep it that way.
+- **Suppressed `react-hooks/refs` errors** in `web/src/audio/hooks/useAudioContext.ts`: line 33 accesses `audioContextRef.current` during render and is deliberately suppressed with an inline `// eslint-disable-line react-hooks/refs` (added in `916f73c`, Stage 3). The suppression is intentional and load-bearing — `npm run lint` is clean (0 errors) only because of it, and the rule WOULD fire (2 errors) without it. Do not "clean it up" as part of unrelated work, and do not reintroduce additional render-time ref access.
 
 ## Tech Stack
 

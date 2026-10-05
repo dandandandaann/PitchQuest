@@ -229,9 +229,9 @@ This was caught and fixed once (Stage 3 Task A → `916f73c` after amend); the l
 
 Worker agents often run `git add -A` from the repo root which would commit `.gitignore`-covered files like `.tmp/`. **Always use selective `git add <files>`** — never `git add -A`.
 
-### 3. Pre-existing lint errors in `useAudioContext.ts` (now resolved)
+### 3. Suppressed `react-hooks/refs` errors in `useAudioContext.ts`
 
-This file historically had 2 `react-hooks/refs` errors (accessing `audioContextRef.current` during render). As of this doc refresh, `npm run lint` is **fully clean (0 errors, 0 warnings)** — the rule no longer fires. Keep it that way: don't reintroduce render-time ref access.
+`useAudioContext.ts:33` accesses `audioContextRef.current` during render (in the returned object); that access is deliberately suppressed with an inline `// eslint-disable-line react-hooks/refs`. Because of that suppression, `npm run lint` is **clean (0 errors, 0 warnings)** — but the rule WOULD fire (2 errors: "Cannot access ref value during render") if the suppression were removed (verified empirically). The suppression was added in `916f73c` (Stage 3 Task A) and is intentional and load-bearing — do NOT "clean it up" without understanding it, and do not reintroduce additional render-time ref access. Do not fix this as part of unrelated work.
 
 ### 4. PracticePage is split across hooks now
 
@@ -277,7 +277,7 @@ The scorer reports C4 vs C5 as "miss" even though they share the same pitch clas
 
 - `eb19ec46` — Follow-up: add 6/8 case without `<duration>` to exercise type+beat-type math (low priority)
 - Stage 7 backlog: Mode B (continuous scrolling), session results screen, library expansion to 22 pieces, `pitchClassOnly` flag in `ScoringThresholds`
-- Pre-existing `useAudioContext.ts` lint errors — **resolved** as of this refresh (lint fully clean); keep it that way
+- Suppressed `useAudioContext.ts` render-time ref access — `useAudioContext.ts:33` carries an inline `// eslint-disable-line react-hooks/refs` (added in `916f73c`); lint is clean only because of it. The suppression is intentional and load-bearing — do not "clean it up" as part of unrelated work; keep it that way
 - Possible follow-ons from the drill/sound era (not committed to anything): dev-panel mounts for SlideControl (32 cases) and sound (19 cases) — currently only runnable via CLI
 
 ## How to continue (for the next manager agent)
