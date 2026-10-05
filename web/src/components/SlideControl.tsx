@@ -33,7 +33,6 @@ export function SlideControl({ value, onChange, maxHeight = 480, showTapDetents 
   const t = useT();
   const numbersRef = useRef<HTMLDivElement | null>(null);
   const draggingRef = useRef(false);
-  const surfaceRef = useRef<HTMLDivElement | null>(null);
 
   // Preload all seven variants so position swaps never flash an empty image.
   useEffect(() => {
@@ -154,7 +153,6 @@ export function SlideControl({ value, onChange, maxHeight = 480, showTapDetents 
         {/* Surface owns the drag: the img underneath stays a pure slider
             handle (role, aria, keyboard) and never sees a pointer event. */}
         <Box
-          ref={surfaceRef}
           className="trombone-dragwell__surface"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
