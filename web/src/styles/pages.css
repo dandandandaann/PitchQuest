@@ -1229,8 +1229,9 @@
 }
 
 /* Seven tap-detent buttons below the trombone art — the primary touch input.
-   flex-wrap + fixed 56px targets means the row lays out 4+3 at 360px and a
-   single centred row once >=440px is available, with no media queries. */
+   Base: flex-wrap + fixed 56px targets → 4+3 at 360px, a single centred row
+   once >=440px is available. The @media (max-width: 640px) block below forces
+   nowrap + shared flex so all seven chips fit one row on phones. */
 .trombone-detents {
   display: flex;
   flex-wrap: wrap;
