@@ -1,7 +1,7 @@
 {
   "version": 1,
   "generator": "web/scripts/make_sound_samples.py",
-  "generated": "2026-10-01",
+  "generated": "2026-10-05",
   "source": {
     "renderer": "MuseScore 4.7.4 (mscore CLI)",
     "soundfont": "MS Basic.sf3 (MuseScore_General)",
@@ -25,50 +25,50 @@
         {
           "file": "trumpet/trumpet-052.mp3",
           "midi": 52,
-          "measuredHz": 164.842,
-          "measuredCentsError": 0.29
+          "measuredHz": 164.775,
+          "measuredCentsError": -0.41
         },
         {
           "file": "trumpet/trumpet-057.mp3",
           "midi": 57,
-          "measuredHz": 220.188,
-          "measuredCentsError": 1.48
+          "measuredHz": 219.859,
+          "measuredCentsError": -1.11
         },
         {
           "file": "trumpet/trumpet-061.mp3",
           "midi": 61,
-          "measuredHz": 277.541,
-          "measuredCentsError": 2.23
+          "measuredHz": 277.042,
+          "measuredCentsError": -0.88
         },
         {
           "file": "trumpet/trumpet-066.mp3",
           "midi": 66,
-          "measuredHz": 370.17,
-          "measuredCentsError": 0.82
+          "measuredHz": 369.762,
+          "measuredCentsError": -1.09
         },
         {
           "file": "trumpet/trumpet-070.mp3",
           "midi": 70,
-          "measuredHz": 466.797,
-          "measuredCentsError": 2.35
+          "measuredHz": 466.598,
+          "measuredCentsError": 1.61
         },
         {
           "file": "trumpet/trumpet-075.mp3",
           "midi": 75,
-          "measuredHz": 621.957,
-          "measuredCentsError": -0.83
+          "measuredHz": 622.289,
+          "measuredCentsError": 0.1
         },
         {
           "file": "trumpet/trumpet-079.mp3",
           "midi": 79,
-          "measuredHz": 784.118,
-          "measuredCentsError": 0.28
+          "measuredHz": 782.934,
+          "measuredCentsError": -2.34
         },
         {
           "file": "trumpet/trumpet-084.mp3",
           "midi": 84,
-          "measuredHz": 1047.365,
-          "measuredCentsError": 1.43
+          "measuredHz": 1045.692,
+          "measuredCentsError": -1.34
         }
       ]
     },
