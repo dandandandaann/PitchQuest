@@ -1358,6 +1358,30 @@
   .drill-staff__name {
     font-size: 2.75rem;
   }
+
+  /* Trumpet drill: keep staff + valves inside a ~360px viewport.
+     Staff shrink is CSS-only — the VexFlow SVG carries
+     viewBox="0 0 340 220" (SVGContext.resize → scale()), so a shorter
+     CSS height scales the whole staff uniformly with no clipping. */
+  .drill-legend {
+    display: none;
+  }
+
+  .drill-staff {
+    padding: var(--sp-3);
+  }
+
+  .drill-staff__svg {
+    height: 140px;
+  }
+
+  .drill-valves {
+    max-width: 100%;
+  }
+
+  .drill-valve {
+    min-width: 52px;
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════════════
