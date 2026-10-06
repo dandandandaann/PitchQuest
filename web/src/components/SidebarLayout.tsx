@@ -127,12 +127,21 @@ function NavBody({ onNavigate }: { onNavigate: (path: string) => void }) {
   const location = useLocation();
   const t = useT();
 
+  // The "Practice / Score practice" section is dev-only — it ships the
+  // wait-mode lane that hasn't been validated for end users yet. It is shown
+  // when running `npm run dev` and hidden from the production build.
+  // (`import.meta.env.DEV` is replaced statically by Vite: true in dev, false
+  // in `vite build`.)
+  const visibleSections = import.meta.env.DEV
+    ? NAV_SECTIONS
+    : NAV_SECTIONS.filter(section => section.label !== 'section.practice');
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Brand />
 
       <Box component="nav" aria-label={t('a11y.nav.primary')} sx={{ flex: '1 1 auto', overflowY: 'auto', pt: 1 }}>
-        {NAV_SECTIONS.map((section, i) => (
+        {visibleSections.map((section, i) => (
           <List
             key={section.label ?? `section-${i}`}
             dense
